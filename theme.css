@@ -18,6 +18,11 @@
   /* Accent */
   --accent: #4f55d8;
   --accent-text: #bc7972; /* 行動文字色：日期/儲存/tab active */
+
+  /* spacing / layout tokens */
+  --page-padding: 16px;
+  --radius: 16px;
+  --tab-height: 84px;
 }
 
 /* 全頁統一背景與預設文字色 */
