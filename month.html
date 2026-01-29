@@ -53,6 +53,16 @@
     .time{font-size:14px;color:var(--secondary)}
     .divider{height:1px;background:var(--divider);border:0;margin:0}
 
+    .empty{
+      margin-top:18px;
+      background:rgba(255,255,255,0.5);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:16px;
+      padding:14px 16px;
+      color:var(--secondary);
+      font-weight:800;
+    }
+
     /* ===== Tab bar ===== */
     .tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
@@ -74,50 +84,22 @@
     .tab.active{color:var(--accent)}
 
     /* =================================================
-       iOS-style tap feedback (只改按鈕/可點擊元件)
+       iOS-style tap feedback（按鈕/列表/Tab）
        ================================================= */
-
-    /* 關掉 Safari 預設點擊高亮 */
     a, button, .tx, .tab{
       -webkit-tap-highlight-color: transparent;
     }
-
-    /* 統一可點擊元件的過場 */
     .tx,
     .tab,
     button{
       user-select:none;
       -webkit-user-select:none;
-      transition:
-        opacity .15s ease,
-        transform .10s ease,
-        background-color .15s ease;
+      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
     }
-
-    /* 交易列表列（像 iOS cell） */
-    .tx:active{
-      opacity:.6;
-      transform:scale(.995);
-    }
-
-    /* 底部 tab */
-    .tab:active{
-      opacity:.6;
-      transform:scale(.98);
-    }
-
-    /* 一般 button（如果未來有） */
-    button:active{
-      opacity:.65;
-      transform:scale(.98);
-    }
-
-    /* 取消 focus 外框（滑順視覺） */
-    .tx:focus,
-    .tab:focus,
-    button:focus{
-      outline:none;
-    }
+    .tx:active{ opacity:.6; transform:scale(.995); }
+    .tab:active{ opacity:.6; transform:scale(.98); }
+    button:active{ opacity:.65; transform:scale(.98); }
+    .tx:focus, .tab:focus, button:focus{ outline:none; }
   </style>
 </head>
 <body>
@@ -125,83 +107,22 @@
     <main class="page">
       <div class="nav-title">本月</div>
 
+      <!-- Summary -->
       <section class="section">
         <div class="card">
           <div class="rows">
-            <div class="row"><div>收入</div><div class="v green" id="sum-income">200</div></div>
-            <div class="row"><div>支出</div><div class="v red" id="sum-expense">520</div></div>
-            <div class="row"><div>結餘</div><div class="v red" id="sum-balance">-320</div></div>
+            <div class="row"><div>收入</div><div class="v green" id="sum-income">0</div></div>
+            <div class="row"><div>支出</div><div class="v red" id="sum-expense">0</div></div>
+            <div class="row"><div>結餘</div><div class="v red" id="sum-balance">0</div></div>
           </div>
         </div>
       </section>
 
-      <section class="section">
-        <div class="day-header">Wed, 1/7</div>
-        <div class="day-card" id="day-0107">
-
-          <a class="tx" id="tx-tx-1"
-             data-id="tx-1"
-             data-date="2026-01-07"
-             data-time="10:04"
-             data-type="expense"
-             data-amount="100"
-             data-category="餐飲 🥣"
-             data-note=""
-             href="edit.html?id=tx-1&ref=month.html&date=2026-01-07&time=10:04&type=expense&amount=100&cat=%E9%A4%90%E9%A3%B2%20%F0%9F%A5%A3&note=">
-            <div>
-              <div class="cat" data-role="category">餐飲 🥣</div>
-              <div class="note" data-role="note" style="display:none;"></div>
-            </div>
-            <div class="right">
-              <div class="amt" data-role="amount" style="color:var(--red)">-100</div>
-              <div class="time" data-role="time">10:04 AM</div>
-            </div>
-          </a>
-          <hr class="divider" data-divider-for="tx-1" />
-
-          <a class="tx" id="tx-tx-2"
-             data-id="tx-2"
-             data-date="2026-01-07"
-             data-time="06:15"
-             data-type="expense"
-             data-amount="200"
-             data-category="飲料 🥤"
-             data-note="麻古"
-             href="edit.html?id=tx-2&ref=month.html&date=2026-01-07&time=06:15&type=expense&amount=200&cat=%E9%A3%B2%E6%96%99%20%F0%9F%A5%A4&note=%E9%BA%BB%E5%8F%A4">
-            <div>
-              <div class="cat" data-role="category">飲料 🥤</div>
-              <div class="note" data-role="note">麻古</div>
-            </div>
-            <div class="right">
-              <div class="amt" data-role="amount" style="color:var(--red)">-200</div>
-              <div class="time" data-role="time">6:15 AM</div>
-            </div>
-          </a>
-          <hr class="divider" data-divider-for="tx-2" />
-
-          <a class="tx" id="tx-tx-3"
-             data-id="tx-3"
-             data-date="2026-01-07"
-             data-time="04:37"
-             data-type="income"
-             data-amount="200"
-             data-category="薪資"
-             data-note="獎金"
-             href="edit.html?id=tx-3&ref=month.html&date=2026-01-07&time=04:37&type=income&amount=200&cat=%E8%96%AA%E8%B3%87&note=%E7%8D%8E%E9%87%91">
-            <div>
-              <div class="cat" data-role="category">薪資</div>
-              <div class="note" data-role="note">獎金</div>
-            </div>
-            <div class="right">
-              <div class="amt" data-role="amount" style="color:var(--green)">200</div>
-              <div class="time" data-role="time">4:37 AM</div>
-            </div>
-          </a>
-
-        </div>
-      </section>
+      <!-- 這裡會由 JS 生成「依日期分組」的列表 -->
+      <div id="list-root"></div>
     </main>
 
+    <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
         <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
@@ -210,5 +131,208 @@
       </div>
     </nav>
   </div>
+
+  <script>
+    // ===== helpers =====
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function formatTime12h(hhmm){
+      if(!hhmm) return "";
+      const [hStr, mStr] = hhmm.split(":");
+      let h = parseInt(hStr,10);
+      const m = parseInt(mStr,10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12; if(h === 0) h = 12;
+      return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
+    }
+    function ymdToDate(ymd){
+      // ymd: YYYY-MM-DD
+      if(!ymd) return null;
+      const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
+      if(!y || !m || !d) return null;
+      return new Date(y, m-1, d);
+    }
+    function formatDayHeader(ymd){
+      const dt = ymdToDate(ymd);
+      if(!dt) return ymd || "";
+      // ex: Wed, 1/7
+      const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
+      const mm = dt.getMonth() + 1;
+      const dd = dt.getDate();
+      return `${wd}, ${mm}/${dd}`;
+    }
+    function parseAmount(v){
+      const n = Number(String(v ?? "").replace(/,/g,""));
+      return (isFinite(n) ? n : 0);
+    }
+    function getTxIndex(){
+      try{
+        const raw = localStorage.getItem("tx:index");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){
+        return [];
+      }
+    }
+    function readTx(id){
+      const raw = localStorage.getItem("tx:"+id);
+      if(!raw) return null;
+      try{ return JSON.parse(raw); }catch(e){ return null; }
+    }
+    function isDeleted(id){
+      return localStorage.getItem("tx:deleted:"+id) === "1";
+    }
+
+    // ===== rendering =====
+    function buildTxRow(tx){
+      const rawAmt = parseAmount(tx.amount);
+      const isIncome = tx.type === "income";
+      const signed = isIncome ? rawAmt : -rawAmt;
+
+      const a = document.createElement("a");
+      a.className = "tx";
+      a.dataset.id = tx.id;
+
+      // 讓 edit.html 能預填 + 回來能更新
+      const params = new URLSearchParams();
+      params.set("id", tx.id);
+      params.set("ref", "month.html");
+      if(tx.date) params.set("date", tx.date);
+      if(tx.time) params.set("time", tx.time);
+      params.set("type", tx.type || "expense");
+      params.set("amount", String(rawAmt));
+      params.set("cat", tx.category || "");
+      params.set("note", tx.note || "");
+      a.href = "edit.html?" + params.toString();
+
+      const left = document.createElement("div");
+      const cat = document.createElement("div");
+      cat.className = "cat";
+      cat.textContent = tx.category || "";
+      left.appendChild(cat);
+
+      const noteTxt = (tx.note || "").trim();
+      const note = document.createElement("div");
+      note.className = "note";
+      if(noteTxt){
+        note.textContent = noteTxt;
+      }else{
+        note.style.display = "none";
+      }
+      left.appendChild(note);
+
+      const right = document.createElement("div");
+      right.className = "right";
+
+      const amt = document.createElement("div");
+      amt.className = "amt";
+      amt.textContent = String(signed);
+      amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+      right.appendChild(amt);
+
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = formatTime12h(tx.time || "");
+      right.appendChild(time);
+
+      a.appendChild(left);
+      a.appendChild(right);
+
+      return a;
+    }
+
+    function render(){
+      const root = document.getElementById("list-root");
+      root.innerHTML = "";
+
+      // 讀取所有明細（以 tx:index 為準）
+      const ids = getTxIndex().filter(Boolean);
+
+      const txs = [];
+      for(const id of ids){
+        if(isDeleted(id)) continue;
+        const tx = readTx(id);
+        if(!tx) continue;
+        if(!tx.id) tx.id = id;
+        txs.push(tx);
+      }
+
+      // 依 date desc, time desc 排序（同日再比時間）
+      txs.sort((a,b) => {
+        const da = (a.date || "");
+        const db = (b.date || "");
+        if(da !== db) return db.localeCompare(da); // YYYY-MM-DD 字串可直接比
+        const ta = (a.time || "");
+        const tb = (b.time || "");
+        return tb.localeCompare(ta);
+      });
+
+      // 計算 summary（目前畫面這個月：這裡先算「全部 tx:index」；你之後可加月份過濾）
+      let income = 0, expense = 0;
+      for(const tx of txs){
+        const amt = parseAmount(tx.amount);
+        if(tx.type === "income") income += amt;
+        else expense += amt;
+      }
+      const balance = income - expense;
+
+      const incomeEl = document.getElementById("sum-income");
+      const expenseEl = document.getElementById("sum-expense");
+      const balEl = document.getElementById("sum-balance");
+      if(incomeEl) incomeEl.textContent = String(income);
+      if(expenseEl) expenseEl.textContent = String(expense);
+      if(balEl){
+        balEl.textContent = String(balance);
+        balEl.classList.remove("green","red");
+        balEl.classList.add(balance >= 0 ? "green" : "red");
+      }
+
+      if(txs.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "目前還沒有明細，點「新增」開始記帳吧！";
+        root.appendChild(empty);
+        return;
+      }
+
+      // 依日期分組
+      const groups = new Map(); // date -> tx[]
+      for(const tx of txs){
+        const key = tx.date || "unknown";
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(tx);
+      }
+
+      // 依日期排序輸出
+      const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
+      for(const dateKey of dates){
+        const section = document.createElement("section");
+        section.className = "section";
+
+        const header = document.createElement("div");
+        header.className = "day-header";
+        header.textContent = formatDayHeader(dateKey);
+        section.appendChild(header);
+
+        const card = document.createElement("div");
+        card.className = "day-card";
+
+        const list = groups.get(dateKey);
+        list.forEach((tx, idx) => {
+          card.appendChild(buildTxRow(tx));
+          if(idx !== list.length - 1){
+            const hr = document.createElement("hr");
+            hr.className = "divider";
+            card.appendChild(hr);
+          }
+        });
+
+        section.appendChild(card);
+        root.appendChild(section);
+      }
+    }
+
+    // 進頁面就渲染（從 add/edit 回來會立刻反映）
+    render();
+  </script>
 </body>
 </html>
