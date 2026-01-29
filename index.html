@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>年度</title>
+  <style>
+    :root{
+      /* 對應 SwiftUI 的 Color("AppBackground") / Color("CardBackground") */
+      --app-bg: #f3e7e3;
+      --card-bg: rgba(0,0,0,0.06);
+      --text: #111;
+      --secondary: rgba(0,0,0,0.45);
+      --divider: rgba(0,0,0,0.10);
+
+      --green: #2e9e4b;
+      --red: #d94a4a;
+
+      --radius: 16px;
+      --page-padding: 16px;
+      --card-padding: 16px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin: 0;
+      background: var(--app-bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+                   Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    .page{
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 18px var(--page-padding) 28px;
+    }
+
+    .nav-title{
+      font-size: 42px;
+      font-weight: 800;
+      margin: 10px 0 18px;
+      letter-spacing: -0.5px;
+    }
+
+    .section{
+      margin-top: 18px;
+    }
+
+    .section-label{
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--secondary);
+      margin: 10px 0 8px;
+    }
+
+    .card{
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: var(--card-padding);
+    }
+
+    /* 年度總計卡：三行 + spacer */
+    .rows{
+      display: grid;
+      gap: 10px; /* 對應 SwiftUI VStack(spacing: 10) */
+    }
+    .row{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 18px;
+    }
+
+    .value.green{ color: var(--green); font-weight: 700; }
+    .value.red{ color: var(--red); font-weight: 700; }
+
+    /* 每月明細：同一張卡片裡 12 條 */
+    .month-list{
+      padding: 8px 16px; /* 對應你卡片內的 .padding(.vertical, 8) + .padding(.horizontal, 16) */
+    }
+
+    .month-item{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0; /* 對應 .padding(.vertical, 12) */
+      text-decoration: none;
+      color: var(--text);
+      font-size: 20px;
+    }
+
+    .month-item:active{
+      opacity: 0.65;
+    }
+
+    .chevron{
+      color: var(--secondary);
+      font-size: 20px;
+      transform: translateY(-1px);
+    }
+
+    .divider{
+      height: 1px;
+      background: var(--divider);
+      margin: 0;
+      border: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <div class="nav-title">年度</div>
+
+    <!-- 年度總計 -->
+    <section class="section">
+      <div class="section-label">年度總計</div>
+      <div class="card">
+        <div class="rows">
+          <div class="row">
+            <div>年收入</div>
+            <div class="value green">200</div>
+          </div>
+          <div class="row">
+            <div>年支出</div>
+            <div class="value red">720</div>
+          </div>
+          <div class="row">
+            <div>年結餘</div>
+            <div class="value red">-520</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 每月明細 -->
+    <section class="section">
+      <div class="section-label">每月明細</div>
+      <div class="card month-list">
+        <!-- 用連結表示可點（對應 NavigationLink） -->
+        <a class="month-item" href="#month-1"><span>January</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-2"><span>February</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-3"><span>March</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-4"><span>April</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-5"><span>May</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-6"><span>June</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-7"><span>July</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-8"><span>August</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-9"><span>September</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-10"><span>October</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-11"><span>November</span><span class="chevron">›</span></a>
+        <hr class="divider" />
+        <a class="month-item" href="#month-12"><span>December</span><span class="chevron">›</span></a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
