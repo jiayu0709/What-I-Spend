@@ -36,45 +36,46 @@
     .field{display:grid;gap:8px;margin-top:14px}
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
-    /* ✅ 統一所有白框（input / select / date / time）高度，並修 iOS 溢出 */
-    .input,
-    input,
-    select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
 
-    height: 52px;              /* ✅ 關鍵：統一高度 */
-    padding: 0 12px;           /* ✅ 垂直置中靠 line-height，不用上下 padding */
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: #fff;
-    font-size: 16px;
-    line-height: 52px;         /* ✅ input 文字垂直置中 */
+    /* ✅✅✅ 修正：讓「類型(select)」與「金額(input)」同高 + iOS 不溢出 */
+    .input{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+
+      height:52px;
+      min-height:52px;
+
+      padding:0 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,0.12);
+      background:#fff;
+
+      font-size:16px;
+      line-height:normal;
+
+      display:flex;
+      align-items:center;      /* ✅ 文字垂直置中（iOS 最穩） */
     }
 
-    /* iOS 的 date/time/select 需要特殊處理 */
-    input[type="date"],
-    input[type="time"],
-    select {
-    display: block;
-    appearance: none;
-    -webkit-appearance: none;
+    /* iOS 對 date/time/select 會套原生外觀，導致高度不同：移除它 */
+    input.input[type="date"],
+    input.input[type="time"],
+    select.input{
+      display:block;                 /* ✅ select/date/time 不要用 flex */
+      -webkit-appearance:none;
+      appearance:none;
     }
 
-    /* select 用 line-height: normal，避免 iOS 裁字 */
-    select {
-    line-height: normal;
-    padding-top: 0;
-    padding-bottom: 0;
+    /* ✅ select 右側要留空間給箭頭，不然文字位置會怪 */
+    select.input{
+      padding-right:36px;
     }
 
-    /* 防止 grid/flex 子元素撐爆 */
-    .field {
-    width: 100%;
-    min-width: 0;
-    }
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    /* 防止 grid 子元素撐爆 */
+    .field { width:100%; min-width:0; }
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;}
+
     .btnbar{margin-top:14px;display:grid;gap:10px}
     .btn{
       width:100%;
@@ -148,22 +149,16 @@
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
 
-    // 回上一頁（可從 ref 帶回去）
     const ref = qs.get("ref") || "month.html";
     document.getElementById("backLink").href = ref;
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-
-    // 將 query 預填入表單（沒有的就空）
     function init(){
-      // 允許 month.html 先把資料存入 localStorage，再從這裡讀
       const saved = localStorage.getItem("tx:"+id);
       let data = null;
 
       if(saved){
         try{ data = JSON.parse(saved); }catch(e){}
       }else{
-        // 沒存過就用 query 當初始值
         data = {
           id,
           date: qs.get("date") || "",
@@ -194,7 +189,6 @@
         amount: document.getElementById("amount").value
       };
 
-      // 基本驗證
       const amt = Number(String(data.amount).replace(/,/g,""));
       if(!isFinite(amt) || amt <= 0){
         alert("請輸入正確金額（> 0）");
@@ -203,8 +197,6 @@
 
       localStorage.setItem("tx:"+id, JSON.stringify(data));
       alert("已儲存（localStorage）");
-
-      // 回到來源頁
       location.href = ref;
     }
 
