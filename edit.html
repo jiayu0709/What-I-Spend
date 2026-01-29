@@ -63,22 +63,41 @@
     padding-bottom: 0;
     }
 
-    /* 防止 grid/flex 子元素撐爆 */ㄌ
+    /* 防止 grid/flex 子元素撐爆 */
     .field {
     width: 100%;
     min-width: 0;
     }
 
-    .btnbar{margin-top:14px;display:grid;gap:10px}
-    .btn{
-    background: var(--btn-secondary-bg);
-    color: var(--btn-secondary-text);
-     }
+   .btnbar{margin-top:14px;display:grid;gap:10px}
 
-    .btn.primary{
-      background: var(--btn-primary-bg);
-      color: var(--btn-primary-text);
-    }
+  /* ✅ 按鈕跟卡片同圓角、不要任何外框直角線 */
+  .btn{
+    width:100%;
+    padding:14px 16px;
+    border:0;                 /* ✅ 不要框線 */
+    outline:0;
+    border-radius: var(--radius);   /* ✅ 跟卡片同一個圓角變數 */
+    background: var(--btn-secondary-bg, var(--card-bg));
+    color: var(--btn-secondary-text, var(--accent-text));
+    font-size:18px;
+    font-weight:900;
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+
+  /* ✅ 主按鈕（儲存） */
+  .btn.primary{
+    background: var(--btn-primary-bg, var(--accent-text));
+    color: var(--btn-primary-text, #fff);
+  }
+
+  /* ✅ iOS 按壓效果 */
+  .btn:active{
+    opacity:.7;
+    transform:scale(.98);
+  }
     /* ===== iOS-style Button Interaction ===== */
 
     /* 關閉瀏覽器預設點擊高亮（超重要） */
