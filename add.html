@@ -46,24 +46,18 @@
       width:100%;padding:12px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.12);
       background:#fff;font-size:16px;
     }
-    input,
-    select {
+    input, select {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
     }
-
-    input[type="date"],
-    input[type="time"] {
-      display: block;
-      appearance: none;
-      -webkit-appearance: none;
+    input[type="date"]{
+      display:block;
+      appearance:none;
+      -webkit-appearance:none;
     }
+    .field, .card { min-width:0; }
 
-    .field,
-    .card {
-      min-width: 0;
-    }
     .save{
       margin-top:14px;
       width:100%;
@@ -73,6 +67,7 @@
       font-size:18px;font-weight:800;
       cursor:pointer;
     }
+
     .tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
       background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
@@ -95,50 +90,15 @@
     /* =================================================
        iOS-style tap feedback（只改按鈕/可點擊元件）
        ================================================= */
-
-    /* 關掉 Safari 預設點擊高亮 */
-    a, button, .seg-btn, .save, .tab{
-      -webkit-tap-highlight-color: transparent;
+    a, button, .seg-btn, .save, .tab{ -webkit-tap-highlight-color: transparent; }
+    .seg-btn, .save, .tab, button{
+      user-select:none; -webkit-user-select:none;
+      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
     }
-
-    /* 共用互動動畫 */
-    .seg-btn,
-    .save,
-    .tab,
-    button{
-      user-select:none;
-      -webkit-user-select:none;
-      transition:
-        opacity .15s ease,
-        transform .10s ease,
-        background-color .15s ease;
-    }
-
-    /* segmented buttons：按壓像 iOS（不影響 active 白底狀態） */
-    .seg-btn:active{
-      opacity:.65;
-      transform:scale(.98);
-    }
-
-    /* 儲存按鈕 */
-    .save:active{
-      opacity:.65;
-      transform:scale(.98);
-    }
-
-    /* 底部 Tab */
-    .tab:active{
-      opacity:.6;
-      transform:scale(.98);
-    }
-
-    /* 移除 focus 外框 */
-    .seg-btn:focus,
-    .save:focus,
-    .tab:focus,
-    button:focus{
-      outline:none;
-    }
+    .seg-btn:active{ opacity:.65; transform:scale(.98); }
+    .save:active{ opacity:.65; transform:scale(.98); }
+    .tab:active{ opacity:.6; transform:scale(.98); }
+    .seg-btn:focus, .save:focus, .tab:focus, button:focus{ outline:none; }
   </style>
 </head>
 <body>
@@ -146,26 +106,26 @@
     <main class="page">
       <div class="nav-title">新增</div>
 
-      <!-- 類型（不包大卡，只是 segmented 區塊） -->
+      <!-- 類型（segmented） -->
       <section class="section">
         <div class="label">類型</div>
         <div class="segment" role="tablist" aria-label="類型">
-          <button class="seg-btn active" type="button">支出</button>
-          <button class="seg-btn" type="button">收入</button>
+          <button class="seg-btn active" id="btn-expense" type="button" aria-pressed="true">支出</button>
+          <button class="seg-btn" id="btn-income" type="button" aria-pressed="false">收入</button>
         </div>
       </section>
 
-      <!-- 日期/分類/金額/備註：同一張深色卡 -->
+      <!-- 日期/分類/金額/備註 -->
       <section class="section">
         <div class="card">
           <div class="field">
             <div class="label">日期</div>
-            <input class="input" type="date" />
+            <input class="input" type="date" id="date" />
           </div>
 
           <div class="field">
             <div class="label">分類</div>
-            <select class="input">
+            <select class="input" id="category">
               <option>餐飲</option>
               <option>飲料</option>
               <option>交通</option>
@@ -176,17 +136,16 @@
 
           <div class="field">
             <div class="label">金額</div>
-            <input class="input" type="number" inputmode="decimal" placeholder="輸入金額" />
+            <input class="input" type="number" id="amount" inputmode="decimal" placeholder="輸入金額" />
           </div>
 
           <div class="field">
             <div class="label">備註</div>
-            <input class="input" type="text" placeholder="備註（可空）" />
+            <input class="input" type="text" id="note" placeholder="備註（可空）" />
           </div>
         </div>
 
-        <!-- 儲存按鈕：同色 -->
-        <button class="save" type="button">儲存</button>
+        <button class="save" id="saveBtn" type="button">儲存</button>
       </section>
     </main>
 
@@ -201,20 +160,86 @@
   </div>
 
   <script>
-    // 預設日期為今天（YYYY-MM-DD，符合 input[type=date] 格式）
-    (function setTodayIfEmpty() {
-      const dateInput = document.querySelector('input[type="date"]');
-      if (!dateInput) return;
-
-      // 只在「尚未有值」時才設定，避免覆蓋使用者操作
-      if (!dateInput.value) {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        dateInput.value = `${yyyy}-${mm}-${dd}`;
+    // ===== helpers =====
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function todayYMD(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+    function nowHHMM(){
+      const d = new Date();
+      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+    function getTxIndex(){
+      try{
+        const raw = localStorage.getItem("tx:index");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){
+        return [];
       }
+    }
+    function setTxIndex(arr){
+      localStorage.setItem("tx:index", JSON.stringify(arr));
+    }
+
+    // ===== state: type =====
+    let currentType = "expense"; // expense | income
+    const btnExpense = document.getElementById("btn-expense");
+    const btnIncome  = document.getElementById("btn-income");
+
+    function setType(t){
+      currentType = t;
+      const isExpense = t === "expense";
+
+      btnExpense.classList.toggle("active", isExpense);
+      btnIncome.classList.toggle("active", !isExpense);
+
+      btnExpense.setAttribute("aria-pressed", String(isExpense));
+      btnIncome.setAttribute("aria-pressed", String(!isExpense));
+    }
+
+    btnExpense.addEventListener("click", () => setType("expense"));
+    btnIncome.addEventListener("click",  () => setType("income"));
+
+    // ===== default date =====
+    (function setTodayIfEmpty() {
+      const dateInput = document.getElementById("date");
+      if (dateInput && !dateInput.value) dateInput.value = todayYMD();
     })();
+
+    // ===== save: create a new tx & store by date =====
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      const date = document.getElementById("date").value || todayYMD();
+      const time = nowHHMM(); // 新增時用現在時間（你也可以之後加時間欄位）
+      const category = (document.getElementById("category").value || "").trim();
+      const note = (document.getElementById("note").value || "").trim();
+
+      const amtRaw = document.getElementById("amount").value;
+      const amount = Number(String(amtRaw).replace(/,/g,""));
+
+      if(!isFinite(amount) || amount <= 0){
+        alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      // ✅ 產生唯一 id
+      const id = "tx-" + Date.now();
+
+      // ✅ 存成一筆明細（month.html / edit.html 都可用）
+      const data = { id, date, time, type: currentType, amount: String(amount), category, note };
+      localStorage.setItem("tx:" + id, JSON.stringify(data));
+
+      // ✅ 建索引（之後 month.html 只要讀 tx:index 就能把新明細插進對應日期）
+      const idx = getTxIndex();
+      idx.unshift(id);               // 新的放最前面
+      setTxIndex(idx);
+
+      alert("已新增");
+
+      // ✅ 回本月頁（month.html 只要之後改成讀 tx:index，就會出現在對應日期）
+      location.href = "month.html";
+    });
   </script>
 </body>
 </html>
