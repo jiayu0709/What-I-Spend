@@ -1,0 +1,42 @@
+/* theme.css — 全站統一色彩（Design Tokens） */
+:root{
+  /* Backgrounds */
+  --app-bg: #b5867a;
+  --card-bg: rgba(0,0,0,0.06);
+
+  /* Text */
+  --text: #111;
+  --secondary: rgba(0,0,0,0.45);
+
+  /* Lines */
+  --divider: rgba(0,0,0,0.10);
+
+  /* Status */
+  --green: #2e9e4b;
+  --red: #d94a4a;
+
+  /* Accent */
+  --accent: #4f55d8;
+  --accent-text: #bc7972; /* 行動文字色：日期/儲存/tab active */
+}
+
+/* 全頁統一背景與預設文字色 */
+body{
+  background: var(--app-bg);
+  color: var(--text);
+}
+
+/* iOS 日期 input 文字顏色（避免系統藍） */
+input[type="date"]{
+  color: var(--accent-text);
+  -webkit-text-fill-color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit{
+  color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field{
+  color: var(--accent-text);
+}
