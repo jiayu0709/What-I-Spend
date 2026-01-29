@@ -1,7 +1,7 @@
 /* theme.css — 全站統一色彩（Design Tokens） */
 :root{
   /* Backgrounds */
-  --app-bg: #b5867a;
+  --app-bg: #f6d8be;
   --card-bg: rgba(0,0,0,0.06);
 
   /* Text */
