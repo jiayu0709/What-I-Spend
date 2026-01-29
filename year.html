@@ -17,7 +17,7 @@
     body{
       margin:0;background:var(--app-bg);color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-    }
+    } 
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
@@ -157,7 +157,14 @@
         </div>
       </section>
     </main>
-
+    <script>
+      const year = new Date().getFullYear();
+      document.querySelectorAll('.month').forEach(a => {
+        const m = a.dataset.month;
+        if (!m) return;
+        a.href = `year-month.html?year=${year}&month=${m}`;
+      });
+    </script>
     <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
