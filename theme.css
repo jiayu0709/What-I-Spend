@@ -24,8 +24,8 @@
   --radius: 16px;
   --tab-height: 84px;
 
-  --btn-primary-bg: var(--accent-text);
-  --btn-primary-text: #fff;
+  --btn-primary-bg: var(--card-bg);
+  --btn-primary-text: var(--accent-text);
 
   --btn-secondary-bg: var(--card-bg);
   --btn-secondary-text: var(--accent-text);
