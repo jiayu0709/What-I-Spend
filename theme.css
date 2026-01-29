@@ -23,6 +23,12 @@
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
+
+  --btn-primary-bg: var(--accent-text);
+  --btn-primary-text: #fff;
+
+  --btn-secondary-bg: var(--card-bg);
+  --btn-secondary-text: var(--accent-text);
 }
 
 /* 全頁統一背景與預設文字色 */
