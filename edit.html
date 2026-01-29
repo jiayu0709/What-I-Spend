@@ -18,7 +18,9 @@
       padding:10px 0 6px;
     }
     .back{
-      text-decoration:none;color:var(--accent);font-weight:800;
+      text-decoration:none;
+  color: var(--accent-text);
+  font-weight:800;
     }
     .title{
       font-size:34px;font-weight:900;margin:6px 0 12px;letter-spacing:-.4px;
@@ -69,15 +71,14 @@
 
     .btnbar{margin-top:14px;display:grid;gap:10px}
     .btn{
-      width:100%;
-      padding:14px 16px;
-      border:0;border-radius:16px;
-      background:var(--card-bg);
-      font-size:18px;font-weight:900;
-      cursor:pointer;
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+     }
+
+    .btn.primary{
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
     }
-    .btn.primary{background:var(--accent);color:#fff}
-    .hint{margin-top:10px;color:var(--secondary);font-size:12px}
     /* ===== iOS-style Button Interaction ===== */
 
     /* 關閉瀏覽器預設點擊高亮（超重要） */
