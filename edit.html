@@ -87,6 +87,42 @@
     }
     .btn.primary{background:var(--accent);color:#fff}
     .hint{margin-top:10px;color:var(--secondary);font-size:12px}
+    /* ===== iOS-style Button Interaction ===== */
+
+    /* 關閉瀏覽器預設點擊高亮（超重要） */
+    button,
+    a {
+    -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 所有按鈕的共同行為 */
+    .btn,
+    .back {
+    transition:
+        background-color 0.15s ease,
+        opacity 0.15s ease,
+        transform 0.1s ease;
+    user-select: none;
+    }
+
+    /* iOS 按下瞬間 */
+    .btn:active,
+    .back:active {
+    opacity: 0.6;              /* iOS 最像的反黑感 */
+    transform: scale(0.98);    /* 微縮，像原生 */
+    }
+
+    /* primary 按鈕按下（藍色） */
+    .btn.primary:active {
+    opacity: 0.75;             /* primary 不要太黑 */
+    }
+
+    /* 防止長按選字 */
+    .btn,
+    .back {
+    -webkit-user-select: none;
+    user-select: none;
+    }
   </style>
 </head>
 <body>
