@@ -48,21 +48,21 @@
     }
     input,
     select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     input[type="date"],
     input[type="time"] {
-    display: block;
-    appearance: none;
-    -webkit-appearance: none;
+      display: block;
+      appearance: none;
+      -webkit-appearance: none;
     }
 
     .field,
     .card {
-    min-width: 0;
+      min-width: 0;
     }
     .save{
       margin-top:14px;
@@ -91,6 +91,54 @@
     }
     .tab .icon{font-size:24px;line-height:1}
     .tab.active{color:var(--accent)}
+
+    /* =================================================
+       iOS-style tap feedback（只改按鈕/可點擊元件）
+       ================================================= */
+
+    /* 關掉 Safari 預設點擊高亮 */
+    a, button, .seg-btn, .save, .tab{
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 共用互動動畫 */
+    .seg-btn,
+    .save,
+    .tab,
+    button{
+      user-select:none;
+      -webkit-user-select:none;
+      transition:
+        opacity .15s ease,
+        transform .10s ease,
+        background-color .15s ease;
+    }
+
+    /* segmented buttons：按壓像 iOS（不影響 active 白底狀態） */
+    .seg-btn:active{
+      opacity:.65;
+      transform:scale(.98);
+    }
+
+    /* 儲存按鈕 */
+    .save:active{
+      opacity:.65;
+      transform:scale(.98);
+    }
+
+    /* 底部 Tab */
+    .tab:active{
+      opacity:.6;
+      transform:scale(.98);
+    }
+
+    /* 移除 focus 外框 */
+    .seg-btn:focus,
+    .save:focus,
+    .tab:focus,
+    button:focus{
+      outline:none;
+    }
   </style>
 </head>
 <body>
@@ -151,21 +199,22 @@
       </div>
     </nav>
   </div>
-  <script>
-  // 預設日期為今天（YYYY-MM-DD，符合 input[type=date] 格式）
-  (function setTodayIfEmpty() {
-    const dateInput = document.querySelector('input[type="date"]');
-    if (!dateInput) return;
 
-    // 只在「尚未有值」時才設定，避免覆蓋使用者操作
-    if (!dateInput.value) {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      dateInput.value = `${yyyy}-${mm}-${dd}`;
-    }
-  })();
-</script>
+  <script>
+    // 預設日期為今天（YYYY-MM-DD，符合 input[type=date] 格式）
+    (function setTodayIfEmpty() {
+      const dateInput = document.querySelector('input[type="date"]');
+      if (!dateInput) return;
+
+      // 只在「尚未有值」時才設定，避免覆蓋使用者操作
+      if (!dateInput.value) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+      }
+    })();
+  </script>
 </body>
 </html>
