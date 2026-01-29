@@ -32,19 +32,25 @@
     .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .v.green{color:var(--green);font-weight:800}
     .v.red{color:var(--red);font-weight:800}
+
     .day-header{font-size:18px;font-weight:800;color:var(--secondary);margin:14px 0 8px;padding-top:6px;padding-bottom:2px}
     .day-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden}
+
     .tx{
       display:grid;grid-template-columns:1fr auto;gap:12px;
       padding:14px 16px;text-decoration:none;color:var(--text);
+      position:relative;
     }
     .tx:active{opacity:.65}
+
     .cat{font-size:20px;font-weight:700;line-height:1.2}
     .note{margin-top:4px;font-size:14px;color:var(--secondary)}
     .right{text-align:right;display:grid;gap:4px;min-width:90px}
     .amt{font-size:20px;font-weight:800}
     .time{font-size:14px;color:var(--secondary)}
     .divider{height:1px;background:var(--divider);border:0;margin:0}
+
+    /* Tab bar */
     .tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
       background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
@@ -70,79 +76,133 @@
     <main class="page">
       <div class="nav-title">本月</div>
 
-      <!-- Summary -->
+      <!-- Summary（示意；你之後可用 JS 動態計算） -->
       <section class="section">
         <div class="card">
           <div class="rows">
-            <div class="row"><div>收入</div><div class="v green">200</div></div>
-            <div class="row"><div>支出</div><div class="v red">520</div></div>
-            <div class="row"><div>結餘</div><div class="v red">-320</div></div>
+            <div class="row"><div>收入</div><div class="v green" id="sum-income">200</div></div>
+            <div class="row"><div>支出</div><div class="v red" id="sum-expense">520</div></div>
+            <div class="row"><div>結餘</div><div class="v red" id="sum-balance">-320</div></div>
           </div>
         </div>
       </section>
 
-      <!-- Day group -->
+      <!-- Day group: Wed, 1/7 -->
       <section class="section">
         <div class="day-header">Wed, 1/7</div>
-        <div class="day-card">
-          <a class="tx" href="#">
+        <div class="day-card" id="day-0107">
+
+          <!-- tx-1 -->
+          <a class="tx" id="tx-tx-1"
+             data-id="tx-1"
+             data-date="2026-01-07"
+             data-time="10:04"
+             data-type="expense"
+             data-amount="100"
+             data-category="餐飲 🥣"
+             data-note=""
+             href="edit.html?id=tx-1&ref=month.html&date=2026-01-07&time=10:04&type=expense&amount=100&cat=%E9%A4%90%E9%A3%B2%20%F0%9F%A5%A3&note=">
             <div>
-              <div class="cat">餐飲 🥣</div>
+              <div class="cat" data-role="category">餐飲 🥣</div>
+              <div class="note" data-role="note" style="display:none;"></div>
             </div>
             <div class="right">
-              <div class="amt" style="color:var(--red)">-100</div>
-              <div class="time">10:04 AM</div>
+              <div class="amt" data-role="amount" style="color:var(--red)">-100</div>
+              <div class="time" data-role="time">10:04 AM</div>
             </div>
           </a>
-          <hr class="divider" />
-          <a class="tx" href="#">
+          <hr class="divider" data-divider-for="tx-1" />
+
+          <!-- tx-2 -->
+          <a class="tx" id="tx-tx-2"
+             data-id="tx-2"
+             data-date="2026-01-07"
+             data-time="06:15"
+             data-type="expense"
+             data-amount="200"
+             data-category="飲料 🥤"
+             data-note="麻古"
+             href="edit.html?id=tx-2&ref=month.html&date=2026-01-07&time=06:15&type=expense&amount=200&cat=%E9%A3%B2%E6%96%99%20%F0%9F%A5%A4&note=%E9%BA%BB%E5%8F%A4">
             <div>
-              <div class="cat">飲料 🥤</div>
-              <div class="note">麻古</div>
+              <div class="cat" data-role="category">飲料 🥤</div>
+              <div class="note" data-role="note">麻古</div>
             </div>
             <div class="right">
-              <div class="amt" style="color:var(--red)">-200</div>
-              <div class="time">6:15 AM</div>
+              <div class="amt" data-role="amount" style="color:var(--red)">-200</div>
+              <div class="time" data-role="time">6:15 AM</div>
             </div>
           </a>
-          <hr class="divider" />
-          <a class="tx" href="#">
+          <hr class="divider" data-divider-for="tx-2" />
+
+          <!-- tx-3 -->
+          <a class="tx" id="tx-tx-3"
+             data-id="tx-3"
+             data-date="2026-01-07"
+             data-time="04:37"
+             data-type="income"
+             data-amount="200"
+             data-category="薪資"
+             data-note="獎金"
+             href="edit.html?id=tx-3&ref=month.html&date=2026-01-07&time=04:37&type=income&amount=200&cat=%E8%96%AA%E8%B3%87&note=%E7%8D%8E%E9%87%91">
             <div>
-              <div class="cat">薪資</div>
-              <div class="note">獎金</div>
+              <div class="cat" data-role="category">薪資</div>
+              <div class="note" data-role="note">獎金</div>
             </div>
             <div class="right">
-              <div class="amt" style="color:var(--green)">200</div>
-              <div class="time">4:37 AM</div>
+              <div class="amt" data-role="amount" style="color:var(--green)">200</div>
+              <div class="time" data-role="time">4:37 AM</div>
             </div>
           </a>
-          <hr class="divider" />
-          <a class="tx" href="#">
+          <hr class="divider" data-divider-for="tx-3" />
+
+          <!-- tx-4 -->
+          <a class="tx" id="tx-tx-4"
+             data-id="tx-4"
+             data-date="2026-01-07"
+             data-time="04:34"
+             data-type="expense"
+             data-amount="120"
+             data-category="醫療 🏥"
+             data-note="掛號"
+             href="edit.html?id=tx-4&ref=month.html&date=2026-01-07&time=04:34&type=expense&amount=120&cat=%E9%86%AB%E7%99%82%20%F0%9F%8F%A5&note=%E6%8E%9B%E8%99%9F">
             <div>
-              <div class="cat">醫療 🏥</div>
-              <div class="note">掛號</div>
+              <div class="cat" data-role="category">醫療 🏥</div>
+              <div class="note" data-role="note">掛號</div>
             </div>
             <div class="right">
-              <div class="amt" style="color:var(--red)">-120</div>
-              <div class="time">4:34 AM</div>
+              <div class="amt" data-role="amount" style="color:var(--red)">-120</div>
+              <div class="time" data-role="time">4:34 AM</div>
             </div>
           </a>
+
         </div>
       </section>
 
+      <!-- Day group: Mon, 1/5 -->
       <section class="section">
         <div class="day-header">Mon, 1/5</div>
-        <div class="day-card">
-          <a class="tx" href="#">
+        <div class="day-card" id="day-0105">
+
+          <!-- tx-5 -->
+          <a class="tx" id="tx-tx-5"
+             data-id="tx-5"
+             data-date="2026-01-05"
+             data-time="00:00"
+             data-type="expense"
+             data-amount="100"
+             data-category="交通"
+             data-note="測試"
+             href="edit.html?id=tx-5&ref=month.html&date=2026-01-05&time=00:00&type=expense&amount=100&cat=%E4%BA%A4%E9%80%9A&note=%E6%B8%AC%E8%A9%A6">
             <div>
-              <div class="cat">交通</div>
-              <div class="note">測試</div>
+              <div class="cat" data-role="category">交通</div>
+              <div class="note" data-role="note">測試</div>
             </div>
             <div class="right">
-              <div class="amt" style="color:var(--red)">-100</div>
-              <div class="time">12:00 AM</div>
+              <div class="amt" data-role="amount" style="color:var(--red)">-100</div>
+              <div class="time" data-role="time">12:00 AM</div>
             </div>
           </a>
+
         </div>
       </section>
     </main>
@@ -156,5 +216,150 @@
       </div>
     </nav>
   </div>
+
+  <script>
+    function formatTime12h(hhmm){
+      if(!hhmm) return "";
+      const [hStr, mStr] = hhmm.split(":");
+      let h = parseInt(hStr,10);
+      const m = parseInt(mStr,10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12; if(h === 0) h = 12;
+      return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
+    }
+
+    function applyTxToRow(row, data){
+      // category
+      const catEl = row.querySelector('[data-role="category"]');
+      if(catEl) catEl.textContent = data.category || "";
+
+      // note
+      const noteEl = row.querySelector('[data-role="note"]');
+      const note = (data.note || "").trim();
+      if(noteEl){
+        if(note){
+          noteEl.textContent = note;
+          noteEl.style.display = "";
+        }else{
+          noteEl.textContent = "";
+          noteEl.style.display = "none";
+        }
+      }
+
+      // amount (+ color + sign)
+      const amtEl = row.querySelector('[data-role="amount"]');
+      const raw = Number(String(data.amount ?? "").replace(/,/g,""));
+      const isIncome = data.type === "income";
+      const signed = isIncome ? raw : -raw;
+
+      if(amtEl){
+        amtEl.textContent = (signed >= 0 ? String(signed) : String(signed)); // 保留負號
+        amtEl.style.color = isIncome ? "var(--green)" : "var(--red)";
+      }
+
+      // time
+      const timeEl = row.querySelector('[data-role="time"]');
+      if(timeEl) timeEl.textContent = formatTime12h(data.time || "");
+
+      // 更新 href（讓下次點進去帶最新資料）
+      const params = new URLSearchParams();
+      params.set("id", data.id);
+      params.set("ref", "month.html");
+      if(data.date) params.set("date", data.date);
+      if(data.time) params.set("time", data.time);
+      params.set("type", data.type || "expense");
+      params.set("amount", String(raw));
+      params.set("cat", data.category || "");
+      params.set("note", data.note || "");
+      row.href = "edit.html?" + params.toString();
+    }
+
+    function loadTxData(id, row){
+      // 若被刪除，直接隱藏
+      if(localStorage.getItem("tx:deleted:"+id) === "1"){
+        row.style.display = "none";
+        // 刪掉該 row 後面的 divider（避免留線）
+        const divider = document.querySelector(`[data-divider-for="${id}"]`);
+        if(divider) divider.style.display = "none";
+        return null;
+      }
+
+      // 有儲存過就用儲存的，沒有就用 data-* 初始值
+      const saved = localStorage.getItem("tx:"+id);
+      if(saved){
+        try{
+          return JSON.parse(saved);
+        }catch(e){}
+      }
+
+      return {
+        id,
+        date: row.dataset.date || "",
+        time: row.dataset.time || "",
+        type: row.dataset.type || "expense",
+        amount: row.dataset.amount || "",
+        category: row.dataset.category || "",
+        note: row.dataset.note || ""
+      };
+    }
+
+    function recalcSummary(){
+      // 只用目前畫面存在的 rows 計算（刪掉/隱藏會反映）
+      const rows = Array.from(document.querySelectorAll('.tx')).filter(r => r.style.display !== "none");
+      let income = 0;
+      let expense = 0;
+
+      for(const row of rows){
+        const id = row.dataset.id;
+        const data = loadTxData(id, row);
+        if(!data) continue;
+
+        const amt = Number(String(data.amount ?? "").replace(/,/g,""));
+        if(!isFinite(amt) || amt <= 0) continue;
+
+        if(data.type === "income") income += amt;
+        else expense += amt;
+      }
+
+      const balance = income - expense;
+
+      const incomeEl = document.getElementById("sum-income");
+      const expenseEl = document.getElementById("sum-expense");
+      const balEl = document.getElementById("sum-balance");
+
+      if(incomeEl) incomeEl.textContent = String(income);
+      if(expenseEl) expenseEl.textContent = String(expense);
+      if(balEl){
+        balEl.textContent = String(balance);
+        balEl.classList.remove("green","red");
+        balEl.classList.add(balance >= 0 ? "green" : "red");
+      }
+    }
+
+    function syncAll(){
+      const rows = document.querySelectorAll('.tx');
+      rows.forEach(row => {
+        const id = row.dataset.id;
+        const data = loadTxData(id, row);
+        if(!data) return; // deleted
+
+        // 套用到 UI
+        applyTxToRow(row, data);
+
+        // 把最新值也同步回 dataset（可選）
+        row.dataset.date = data.date || "";
+        row.dataset.time = data.time || "";
+        row.dataset.type = data.type || "expense";
+        row.dataset.amount = String(data.amount || "");
+        row.dataset.category = data.category || "";
+        row.dataset.note = data.note || "";
+      });
+
+      recalcSummary();
+    }
+
+    // 進頁面就同步（從 edit.html 回來會自動更新）
+    syncAll();
+  </script>
 </body>
 </html>

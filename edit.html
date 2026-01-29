@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>編輯明細</title>
+  <style>
+    :root{
+      --app-bg:#f3e7e3;
+      --card-bg:rgba(0,0,0,0.06);
+      --text:#111;
+      --secondary:rgba(0,0,0,0.45);
+      --accent:#4f55d8;
+      --radius:16px;
+      --page-padding:16px;
+      --tab-height:84px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    .app{min-height:100vh;padding-bottom:18px}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .nav{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 0 6px;
+    }
+    .back{
+      text-decoration:none;color:var(--accent);font-weight:800;
+    }
+    .title{
+      font-size:34px;font-weight:900;margin:6px 0 12px;letter-spacing:-.4px;
+    }
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .field{display:grid;gap:8px;margin-top:14px}
+    .field:first-child{margin-top:0}
+    .label{font-size:14px;font-weight:900;color:var(--secondary)}
+    .input, select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,0.12);
+      background:#fff;
+      font-size:16px;
+    }
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btnbar{margin-top:14px;display:grid;gap:10px}
+    .btn{
+      width:100%;
+      padding:14px 16px;
+      border:0;border-radius:16px;
+      background:var(--card-bg);
+      font-size:18px;font-weight:900;
+      cursor:pointer;
+    }
+    .btn.primary{background:var(--accent);color:#fff}
+    .hint{margin-top:10px;color:var(--secondary);font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav">
+        <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        <div></div>
+      </div>
+
+      <div class="title">編輯明細</div>
+
+      <div class="card">
+        <div class="field">
+          <div class="label">日期</div>
+          <input class="input" type="date" id="date" />
+        </div>
+
+        <div class="field">
+          <div class="label">時間</div>
+          <input class="input" type="time" id="time" />
+        </div>
+
+        <div class="field">
+          <div class="label">分類</div>
+          <input class="input" type="text" id="category" placeholder="例如：飲料" />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <div class="label">類型</div>
+            <select class="input" id="type">
+              <option value="expense">支出</option>
+              <option value="income">收入</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="label">金額</div>
+            <input class="input" type="number" id="amount" placeholder="例如：200" />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">備註</div>
+          <input class="input" type="text" id="note" placeholder="（可空）" />
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn primary" type="button" onclick="save()">儲存</button>
+        <button class="btn" type="button" onclick="removeTx()">刪除</button>
+      </div>
+
+      <div class="hint">此版本用 localStorage 模擬資料編輯（靜態 HTML 無 SwiftData）。</div>
+    </main>
+  </div>
+
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get("id") || "tx-unknown";
+
+    // 回上一頁（可從 ref 帶回去）
+    const ref = qs.get("ref") || "month.html";
+    document.getElementById("backLink").href = ref;
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    // 將 query 預填入表單（沒有的就空）
+    function init(){
+      // 允許 month.html 先把資料存入 localStorage，再從這裡讀
+      const saved = localStorage.getItem("tx:"+id);
+      let data = null;
+
+      if(saved){
+        try{ data = JSON.parse(saved); }catch(e){}
+      }else{
+        // 沒存過就用 query 當初始值
+        data = {
+          id,
+          date: qs.get("date") || "",
+          time: qs.get("time") || "",
+          category: qs.get("cat") || "",
+          note: qs.get("note") || "",
+          type: qs.get("type") || "expense",
+          amount: qs.get("amount") || ""
+        };
+      }
+
+      document.getElementById("date").value = data.date || "";
+      document.getElementById("time").value = data.time || "";
+      document.getElementById("category").value = data.category || "";
+      document.getElementById("note").value = data.note || "";
+      document.getElementById("type").value = data.type || "expense";
+      document.getElementById("amount").value = data.amount || "";
+    }
+
+    function save(){
+      const data = {
+        id,
+        date: document.getElementById("date").value,
+        time: document.getElementById("time").value,
+        category: document.getElementById("category").value.trim(),
+        note: document.getElementById("note").value.trim(),
+        type: document.getElementById("type").value,
+        amount: document.getElementById("amount").value
+      };
+
+      // 基本驗證
+      const amt = Number(String(data.amount).replace(/,/g,""));
+      if(!isFinite(amt) || amt <= 0){
+        alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      localStorage.setItem("tx:"+id, JSON.stringify(data));
+      alert("已儲存（localStorage）");
+
+      // 回到來源頁
+      location.href = ref;
+    }
+
+    function removeTx(){
+      if(!confirm("確定刪除這筆明細？")) return;
+      localStorage.removeItem("tx:"+id);
+      localStorage.setItem("tx:deleted:"+id, "1");
+      location.href = ref;
+    }
+
+    init();
+  </script>
+</body>
+</html>
