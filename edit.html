@@ -36,45 +36,41 @@
     .field{display:grid;gap:8px;margin-top:14px}
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
-    /* ✅ 統一所有白框（input / select / date / time）高度，並修 iOS 溢出 */
-    .input,
-    input,
-    select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
 
-    height: 52px;              /* ✅ 關鍵：統一高度 */
-    padding: 0 12px;           /* ✅ 垂直置中靠 line-height，不用上下 padding */
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: #fff;
-    font-size: 16px;
-    line-height: 52px;         /* ✅ input 文字垂直置中 */
+    /* ✅ 統一白框（input / date / time） */
+    .input{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+
+      height:52px;
+      padding:0 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,0.12);
+      background:#fff;
+      font-size:16px;
     }
 
-    /* iOS 的 date/time/select 需要特殊處理 */
-    input[type="date"],
-    input[type="time"],
-    select {
-    display: block;
-    appearance: none;
-    -webkit-appearance: none;
+    /* input 文字垂直置中（一般 text/number） */
+    input.input{
+      line-height:52px;
     }
 
-    /* select 用 line-height: normal，避免 iOS 裁字 */
-    select {
-    line-height: normal;
-    padding-top: 0;
-    padding-bottom: 0;
+    /* iOS 的 date/time：避免被 line-height 影響 */
+    input.input[type="date"],
+    input.input[type="time"]{
+      line-height:normal;
+      -webkit-appearance:none;
+      appearance:none;
+      display:block;
     }
 
-    /* 防止 grid/flex 子元素撐爆 */ㄌ
-    .field {
-    width: 100%;
-    min-width: 0;
+    /* 防止 grid/flex 子元素撐爆 */
+    .field{
+      width:100%;
+      min-width:0;
     }
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
     .btnbar{margin-top:14px;display:grid;gap:10px}
     .btn{
       width:100%;
@@ -114,10 +110,10 @@
           <input class="input" type="text" id="category" placeholder="例如：飲料" />
         </div>
 
+        <!-- ✅ 已移除「類型」欄位，金額改為單欄 -->
         <div class="field">
           <div class="label">金額</div>
           <input class="input" type="number" id="amount" placeholder="例如：200" />
-          </div>
         </div>
 
         <div class="field">
@@ -143,11 +139,7 @@
     const ref = qs.get("ref") || "month.html";
     document.getElementById("backLink").href = ref;
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-
-    // 將 query 預填入表單（沒有的就空）
     function init(){
-      // 允許 month.html 先把資料存入 localStorage，再從這裡讀
       const saved = localStorage.getItem("tx:"+id);
       let data = null;
 
@@ -161,7 +153,6 @@
           time: qs.get("time") || "",
           category: qs.get("cat") || "",
           note: qs.get("note") || "",
-          type: qs.get("type") || "expense",
           amount: qs.get("amount") || ""
         };
       }
@@ -170,7 +161,6 @@
       document.getElementById("time").value = data.time || "";
       document.getElementById("category").value = data.category || "";
       document.getElementById("note").value = data.note || "";
-      document.getElementById("type").value = data.type || "expense";
       document.getElementById("amount").value = data.amount || "";
     }
 
@@ -181,7 +171,6 @@
         time: document.getElementById("time").value,
         category: document.getElementById("category").value.trim(),
         note: document.getElementById("note").value.trim(),
-        type: document.getElementById("type").value,
         amount: document.getElementById("amount").value
       };
 
