@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>新增</title>
+  <style>
+    :root{
+      --app-bg:#f3e7e3;
+      --card-bg:rgba(0,0,0,0.06);
+      --text:#111;
+      --secondary:rgba(0,0,0,0.45);
+      --divider:rgba(0,0,0,0.10);
+      --accent:#4f55d8;
+      --radius:16px;
+      --page-padding:16px;
+      --tab-height:84px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    .app{min-height:100vh;padding-bottom:var(--tab-height)}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
+    .section{margin-top:18px}
+    .label{font-size:14px;font-weight:800;color:var(--secondary);margin:10px 0 8px}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .segment{
+      display:grid;grid-template-columns:1fr 1fr;
+      background:var(--card-bg);border-radius:12px;padding:4px;
+    }
+    .seg-btn{
+      border:0;background:transparent;padding:10px 0;border-radius:10px;
+      font-weight:800;color:var(--secondary);cursor:pointer;
+    }
+    .seg-btn.active{background:#fff;color:var(--text)}
+    .field{display:grid;gap:8px;margin-top:14px}
+    .field:first-child{margin-top:0}
+    .input, select{
+      width:100%;padding:12px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.12);
+      background:#fff;font-size:16px;
+    }
+    .save{
+      margin-top:14px;
+      width:100%;
+      padding:14px 16px;
+      border:0;border-radius:16px;
+      background:var(--card-bg);
+      font-size:18px;font-weight:800;
+      cursor:pointer;
+    }
+    .tabbar{
+      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
+      background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
+      border-top:1px solid rgba(0,0,0,0.08);
+      display:flex;justify-content:center;
+    }
+    .tabbar-inner{
+      max-width:520px;width:100%;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      padding:10px 18px 18px;gap:6px;align-items:center;
+    }
+    .tab{
+      text-decoration:none;color:var(--secondary);
+      display:grid;place-items:center;gap:6px;
+      font-weight:800;padding:8px 0;
+    }
+    .tab .icon{font-size:24px;line-height:1}
+    .tab.active{color:var(--accent)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav-title">新增</div>
+
+      <!-- 類型（不包大卡，只是 segmented 區塊） -->
+      <section class="section">
+        <div class="label">類型</div>
+        <div class="segment" role="tablist" aria-label="類型">
+          <button class="seg-btn active" type="button">支出</button>
+          <button class="seg-btn" type="button">收入</button>
+        </div>
+      </section>
+
+      <!-- 日期/分類/金額/備註：同一張深色卡 -->
+      <section class="section">
+        <div class="card">
+          <div class="field">
+            <div class="label">日期</div>
+            <input class="input" type="date" />
+          </div>
+
+          <div class="field">
+            <div class="label">分類</div>
+            <select class="input">
+              <option>餐飲</option>
+              <option>飲料</option>
+              <option>交通</option>
+              <option>醫療</option>
+              <option selected>其他</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="label">金額</div>
+            <input class="input" type="number" inputmode="decimal" placeholder="輸入金額" />
+          </div>
+
+          <div class="field">
+            <div class="label">備註</div>
+            <input class="input" type="text" placeholder="備註（可空）" />
+          </div>
+        </div>
+
+        <!-- 儲存按鈕：同色 -->
+        <button class="save" type="button">儲存</button>
+      </section>
+    </main>
+
+    <!-- Tab Bar -->
+    <nav class="tabbar" aria-label="Tab Bar">
+      <div class="tabbar-inner">
+        <a class="tab active" href="add.html"><div class="icon">＋</div><div>新增</div></a>
+        <a class="tab" href="month.html"><div class="icon">▦</div><div>本月</div></a>
+        <a class="tab" href="year.html"><div class="icon">📈</div><div>年度</div></a>
+      </div>
+    </nav>
+  </div>
+</body>
+</html>

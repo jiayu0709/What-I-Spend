@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>年度</title>
+  <style>
+    :root{
+      --app-bg:#f3e7e3;
+      --card-bg:rgba(0,0,0,0.06);
+      --text:#111;
+      --secondary:rgba(0,0,0,0.45);
+      --divider:rgba(0,0,0,0.10);
+      --green:#2e9e4b;
+      --red:#d94a4a;
+      --accent:#4f55d8;
+      --radius:16px;
+      --page-padding:16px;
+      --tab-height:84px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    .app{min-height:100vh;padding-bottom:var(--tab-height)}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
+    .section{margin-top:18px}
+    .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .rows{display:grid;gap:10px;font-size:18px}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .v.green{color:var(--green);font-weight:800}
+    .v.red{color:var(--red);font-weight:800}
+    .month-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden;padding:8px 16px}
+    .month{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 0;text-decoration:none;color:var(--text);font-size:20px;font-weight:700;
+    }
+    .month:active{opacity:.65}
+    .chev{color:var(--secondary);font-size:20px}
+    .divider{height:1px;background:var(--divider);border:0;margin:0}
+    .tabbar{
+      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
+      background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
+      border-top:1px solid rgba(0,0,0,0.08);
+      display:flex;justify-content:center;
+    }
+    .tabbar-inner{
+      max-width:520px;width:100%;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      padding:10px 18px 18px;gap:6px;align-items:center;
+    }
+    .tab{
+      text-decoration:none;color:var(--secondary);
+      display:grid;place-items:center;gap:6px;
+      font-weight:800;padding:8px 0;
+    }
+    .tab .icon{font-size:24px;line-height:1}
+    .tab.active{color:var(--accent)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav-title">年度</div>
+
+      <section class="section">
+        <div class="label">年度總計</div>
+        <div class="card">
+          <div class="rows">
+            <div class="row"><div>年收入</div><div class="v green">200</div></div>
+            <div class="row"><div>年支出</div><div class="v red">720</div></div>
+            <div class="row"><div>年結餘</div><div class="v red">-520</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label">每月明細</div>
+        <div class="month-card">
+          <a class="month" href="#"><span>January</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>February</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>March</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>April</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>May</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>June</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>July</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>August</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>September</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>October</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>November</span><span class="chev">›</span></a><hr class="divider"/>
+          <a class="month" href="#"><span>December</span><span class="chev">›</span></a>
+        </div>
+      </section>
+    </main>
+
+    <!-- Tab Bar -->
+    <nav class="tabbar" aria-label="Tab Bar">
+      <div class="tabbar-inner">
+        <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
+        <a class="tab" href="month.html"><div class="icon">▦</div><div>本月</div></a>
+        <a class="tab active" href="year.html"><div class="icon">📈</div><div>年度</div></a>
+      </div>
+    </nav>
+  </div>
+</body>
+</html>

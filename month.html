@@ -4,351 +4,157 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>本月</title>
-
   <style>
     :root{
-      /* 對應 SwiftUI Color("AppBackground") / Color("CardBackground") */
-      --app-bg: #f3e7e3;
-      --card-bg: rgba(0,0,0,0.06);
-
-      --text: #111;
-      --secondary: rgba(0,0,0,0.45);
-      --divider: rgba(0,0,0,0.10);
-
-      --green: #2e9e4b;
-      --red: #d94a4a;
-
-      --radius: 16px;
-      --page-padding: 16px;
-      --card-padding: 16px;
+      --app-bg:#f3e7e3;
+      --card-bg:rgba(0,0,0,0.06);
+      --text:#111;
+      --secondary:rgba(0,0,0,0.45);
+      --divider:rgba(0,0,0,0.10);
+      --green:#2e9e4b;
+      --red:#d94a4a;
+      --accent:#4f55d8;
+      --radius:16px;
+      --page-padding:16px;
+      --tab-height:84px;
     }
-
-    *{ box-sizing: border-box; }
-
+    *{box-sizing:border-box}
     body{
-      margin: 0;
-      background: var(--app-bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
-                   Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
-
-    .page{
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 18px var(--page-padding) 28px;
+    .app{min-height:100vh;padding-bottom:var(--tab-height)}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
+    .section{margin-top:18px}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .rows{display:grid;gap:10px;font-size:18px}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .v.green{color:var(--green);font-weight:800}
+    .v.red{color:var(--red);font-weight:800}
+    .day-header{font-size:18px;font-weight:800;color:var(--secondary);margin:14px 0 8px;padding-top:6px;padding-bottom:2px}
+    .day-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden}
+    .tx{
+      display:grid;grid-template-columns:1fr auto;gap:12px;
+      padding:14px 16px;text-decoration:none;color:var(--text);
     }
-
-    .nav-title{
-      font-size: 42px;
-      font-weight: 800;
-      margin: 10px 0 14px;
-      letter-spacing: -0.5px;
+    .tx:active{opacity:.65}
+    .cat{font-size:20px;font-weight:700;line-height:1.2}
+    .note{margin-top:4px;font-size:14px;color:var(--secondary)}
+    .right{text-align:right;display:grid;gap:4px;min-width:90px}
+    .amt{font-size:20px;font-weight:800}
+    .time{font-size:14px;color:var(--secondary)}
+    .divider{height:1px;background:var(--divider);border:0;margin:0}
+    .tabbar{
+      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
+      background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
+      border-top:1px solid rgba(0,0,0,0.08);
+      display:flex;justify-content:center;
     }
-
-    /* ===== 通用卡片 ===== */
-    .card{
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: var(--card-padding);
+    .tabbar-inner{
+      max-width:520px;width:100%;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      padding:10px 18px 18px;gap:6px;align-items:center;
     }
-
-    .section{
-      margin-top: 18px;
+    .tab{
+      text-decoration:none;color:var(--secondary);
+      display:grid;place-items:center;gap:6px;
+      font-weight:800;padding:8px 0;
     }
-
-    .section-label{
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--secondary);
-      margin: 12px 0 8px;
-    }
-
-    /* ===== Summary card（收入/支出/結餘） ===== */
-    .summary-rows{
-      display: grid;
-      gap: 10px; /* 對應 SwiftUI VStack(spacing: 10) */
-      font-size: 18px;
-    }
-
-    .summary-row{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .value.green{ color: var(--green); font-weight: 700; }
-    .value.red{ color: var(--red); font-weight: 700; }
-
-    /* ===== 日期 Header（Wed, 1/7） ===== */
-    .day-header{
-      font-size: 18px;         /* 類似 .headline */
-      font-weight: 700;
-      color: var(--secondary);
-      margin: 14px 0 8px;
-      padding-top: 6px;
-      padding-bottom: 2px;
-    }
-
-    /* ===== 同一天大卡 ===== */
-    .day-card{
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      overflow: hidden; /* 讓 divider 不超出圓角 */
-    }
-
-    .tx-row{
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      padding: 14px 16px; /* 讓內容和卡片左右有內距（跟你 SwiftUI 一樣） */
-      text-decoration: none;
-      color: var(--text);
-    }
-
-    .tx-row:active{ opacity: 0.65; }
-
-    .tx-left .category{
-      font-size: 20px;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-
-    .tx-left .note{
-      margin-top: 4px;
-      font-size: 14px;
-      color: var(--secondary);
-    }
-
-    .tx-right{
-      text-align: right;
-      display: grid;
-      gap: 4px;
-      align-content: start;
-      min-width: 88px;
-    }
-
-    .tx-right .amount{
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .tx-right .time{
-      font-size: 14px;
-      color: var(--secondary);
-    }
-
-    .divider{
-      height: 1px;
-      background: var(--divider);
-      margin: 0;
-      border: 0;
-    }
-
-    /* ===== Swipe Delete 的 HTML 模擬（按鈕） ===== */
-    .actions{
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      gap: 8px;
-      opacity: 0;          /* 預設隱藏 */
-      pointer-events: none;
-    }
-
-    .tx-row:hover .actions{
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .btn{
-      border: 0;
-      border-radius: 10px;
-      padding: 8px 10px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-delete{
-      background: #ff3b30;
-      color: white;
-    }
-
-    .btn-edit{
-      background: rgba(0,0,0,0.12);
-      color: var(--text);
-    }
-
-    /* 手機上 hover 不明顯，給一個小提示 */
-    .hint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: var(--secondary);
-    }
+    .tab .icon{font-size:24px;line-height:1}
+    .tab.active{color:var(--accent)}
   </style>
 </head>
-
 <body>
-  <main class="page">
-    <div class="nav-title">本月</div>
+  <div class="app">
+    <main class="page">
+      <div class="nav-title">本月</div>
 
-    <!-- Summary -->
-    <section class="section">
-      <div class="card">
-        <div class="summary-rows">
-          <div class="summary-row">
-            <div>收入</div>
-            <div class="value green">200</div>
-          </div>
-          <div class="summary-row">
-            <div>支出</div>
-            <div class="value red">520</div>
-          </div>
-          <div class="summary-row">
-            <div>結餘</div>
-            <div class="value red">-320</div>
+      <!-- Summary -->
+      <section class="section">
+        <div class="card">
+          <div class="rows">
+            <div class="row"><div>收入</div><div class="v green">200</div></div>
+            <div class="row"><div>支出</div><div class="v red">520</div></div>
+            <div class="row"><div>結餘</div><div class="v red">-320</div></div>
           </div>
         </div>
+      </section>
+
+      <!-- Day group -->
+      <section class="section">
+        <div class="day-header">Wed, 1/7</div>
+        <div class="day-card">
+          <a class="tx" href="#">
+            <div>
+              <div class="cat">餐飲 🥣</div>
+            </div>
+            <div class="right">
+              <div class="amt" style="color:var(--red)">-100</div>
+              <div class="time">10:04 AM</div>
+            </div>
+          </a>
+          <hr class="divider" />
+          <a class="tx" href="#">
+            <div>
+              <div class="cat">飲料 🥤</div>
+              <div class="note">麻古</div>
+            </div>
+            <div class="right">
+              <div class="amt" style="color:var(--red)">-200</div>
+              <div class="time">6:15 AM</div>
+            </div>
+          </a>
+          <hr class="divider" />
+          <a class="tx" href="#">
+            <div>
+              <div class="cat">薪資</div>
+              <div class="note">獎金</div>
+            </div>
+            <div class="right">
+              <div class="amt" style="color:var(--green)">200</div>
+              <div class="time">4:37 AM</div>
+            </div>
+          </a>
+          <hr class="divider" />
+          <a class="tx" href="#">
+            <div>
+              <div class="cat">醫療 🏥</div>
+              <div class="note">掛號</div>
+            </div>
+            <div class="right">
+              <div class="amt" style="color:var(--red)">-120</div>
+              <div class="time">4:34 AM</div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="day-header">Mon, 1/5</div>
+        <div class="day-card">
+          <a class="tx" href="#">
+            <div>
+              <div class="cat">交通</div>
+              <div class="note">測試</div>
+            </div>
+            <div class="right">
+              <div class="amt" style="color:var(--red)">-100</div>
+              <div class="time">12:00 AM</div>
+            </div>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <!-- Tab Bar -->
+    <nav class="tabbar" aria-label="Tab Bar">
+      <div class="tabbar-inner">
+        <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
+        <a class="tab active" href="month.html"><div class="icon">▦</div><div>本月</div></a>
+        <a class="tab" href="year.html"><div class="icon">📈</div><div>年度</div></a>
       </div>
-    </section>
-
-    <!-- Day Group: Wed, 1/7 -->
-    <section class="section">
-      <div class="day-header">Wed, 1/7</div>
-
-      <!-- 同一天大卡 -->
-      <div class="day-card" id="day-0107">
-        <!-- row 1 -->
-        <a class="tx-row" href="#edit-1" data-id="tx-1">
-          <div class="tx-left">
-            <div class="category">餐飲 🥣</div>
-            <!-- note 可省略；示範留空就不放 -->
-          </div>
-
-          <div class="tx-right">
-            <div class="amount" style="color: var(--red);">-100</div>
-            <div class="time">10:04 AM</div>
-          </div>
-
-          <div class="actions">
-            <button class="btn btn-edit" type="button" onclick="openEdit('tx-1')">Edit</button>
-            <button class="btn btn-delete" type="button" onclick="deleteRow('tx-1')">Delete</button>
-          </div>
-        </a>
-        <hr class="divider" />
-
-        <!-- row 2 -->
-        <a class="tx-row" href="#edit-2" data-id="tx-2">
-          <div class="tx-left">
-            <div class="category">飲料 🥤</div>
-            <div class="note">麻古</div>
-          </div>
-
-          <div class="tx-right">
-            <div class="amount" style="color: var(--red);">-200</div>
-            <div class="time">6:15 AM</div>
-          </div>
-
-          <div class="actions">
-            <button class="btn btn-edit" type="button" onclick="openEdit('tx-2')">Edit</button>
-            <button class="btn btn-delete" type="button" onclick="deleteRow('tx-2')">Delete</button>
-          </div>
-        </a>
-        <hr class="divider" />
-
-        <!-- row 3 -->
-        <a class="tx-row" href="#edit-3" data-id="tx-3">
-          <div class="tx-left">
-            <div class="category">薪資</div>
-            <div class="note">獎金</div>
-          </div>
-
-          <div class="tx-right">
-            <div class="amount" style="color: var(--green);">200</div>
-            <div class="time">4:37 AM</div>
-          </div>
-
-          <div class="actions">
-            <button class="btn btn-edit" type="button" onclick="openEdit('tx-3')">Edit</button>
-            <button class="btn btn-delete" type="button" onclick="deleteRow('tx-3')">Delete</button>
-          </div>
-        </a>
-        <hr class="divider" />
-
-        <!-- row 4 -->
-        <a class="tx-row" href="#edit-4" data-id="tx-4">
-          <div class="tx-left">
-            <div class="category">醫療 🏥</div>
-            <div class="note">掛號</div>
-          </div>
-
-          <div class="tx-right">
-            <div class="amount" style="color: var(--red);">-120</div>
-            <div class="time">4:34 AM</div>
-          </div>
-
-          <div class="actions">
-            <button class="btn btn-edit" type="button" onclick="openEdit('tx-4')">Edit</button>
-            <button class="btn btn-delete" type="button" onclick="deleteRow('tx-4')">Delete</button>
-          </div>
-        </a>
-      </div>
-
-      <div class="hint">提示：桌機滑鼠移到列上會出現 Delete（HTML 無法原生右滑，這裡用按鈕模擬）。</div>
-    </section>
-
-    <!-- Day Group: Mon, 1/5 -->
-    <section class="section">
-      <div class="day-header">Mon, 1/5</div>
-
-      <div class="day-card" id="day-0105">
-        <a class="tx-row" href="#edit-5" data-id="tx-5">
-          <div class="tx-left">
-            <div class="category">交通</div>
-            <div class="note">測試</div>
-          </div>
-
-          <div class="tx-right">
-            <div class="amount" style="color: var(--red);">-100</div>
-            <div class="time">12:00 AM</div>
-          </div>
-
-          <div class="actions">
-            <button class="btn btn-edit" type="button" onclick="openEdit('tx-5')">Edit</button>
-            <button class="btn btn-delete" type="button" onclick="deleteRow('tx-5')">Delete</button>
-          </div>
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    // 模擬「點列開編輯」
-    function openEdit(id){
-      alert("Open edit sheet for: " + id);
-    }
-
-    // 模擬「滑動刪除」：從 DOM 移除該 row + 旁邊 divider（如果有）
-    function deleteRow(id){
-      const row = document.querySelector(`.tx-row[data-id="${id}"]`);
-      if(!row) return;
-
-      // 若 row 後面緊接 divider，就一起刪掉
-      const next = row.nextElementSibling;
-      if(next && next.classList.contains("divider")){
-        next.remove();
-      } else {
-        // 若前面是 divider，刪掉前面的（避免卡片尾端多一條線）
-        const prev = row.previousElementSibling;
-        if(prev && prev.classList.contains("divider")){
-          prev.remove();
-        }
-      }
-      row.remove();
-    }
-  </script>
+    </nav>
+  </div>
 </body>
 </html>
