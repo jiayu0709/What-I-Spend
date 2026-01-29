@@ -22,6 +22,7 @@
       --radius:16px;
       --page-padding:16px;
       --tab-height:84px;
+      --accent-text: #d8984f;
     }
     *{box-sizing:border-box}
     body{
@@ -69,6 +70,7 @@
       background:var(--card-bg);
       font-size:18px;font-weight:800;
       cursor:pointer;
+      color: var(--accent-text);
     }
 
     .tabbar{
@@ -102,6 +104,24 @@
     .save:active{ opacity:.65; transform:scale(.98); }
     .tab:active{ opacity:.6; transform:scale(.98); }
     .seg-btn:focus, .save:focus, .tab:focus, button:focus{ outline:none; }
+    /* ===============================
+    iOS 日期 input 文字顏色（統一控色）
+    =============================== */
+    input[type="date"]{
+    color: var(--accent-text);
+    -webkit-text-fill-color: var(--accent-text);
+    }
+
+    input[type="date"]::-webkit-datetime-edit{
+    color: var(--accent-text);
+    }
+
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field{
+    color: var(--accent-text);
+    }
   </style>
 </head>
 <body>
