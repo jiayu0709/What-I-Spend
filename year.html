@@ -77,25 +77,6 @@
 
     .divider{height:1px;background:var(--divider);border:0;margin:0}
 
-    /* ===== Month list (keep) ===== */
-    .month-card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      overflow:hidden;
-      padding:8px 16px
-    }
-    .month{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:12px 0;
-      text-decoration:none;
-      color:var(--text);
-      font-size:20px;
-      font-weight:700;
-    }
-    .chev{color:var(--secondary);font-size:20px}
-
     /* ===== Tab bar ===== */
     .tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
@@ -177,25 +158,7 @@
           <div id="chartRoot" class="donut-wrap"></div>
         </div>
       </section>
-
-      <!-- ✅ 每月明細（保留你原本的） -->
-      <section class="section">
-        <div class="label">每月明細</div>
-        <div class="month-card" id="monthLinks">
-          <a class="month" data-month="1" href="#"><span>January</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="2" href="#"><span>February</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="3" href="#"><span>March</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="4" href="#"><span>April</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="5" href="#"><span>May</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="6" href="#"><span>June</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="7" href="#"><span>July</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="8" href="#"><span>August</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="9" href="#"><span>September</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="10" href="#"><span>October</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="11" href="#"><span>November</span><span class="chev">›</span></a><hr class="divider"/>
-          <a class="month" data-month="12" href="#"><span>December</span><span class="chev">›</span></a>
-        </div>
-      </section>
+      
     </main>
 
     <!-- Tab Bar -->
@@ -419,16 +382,6 @@
       root.appendChild(donutArea);
       root.appendChild(legend);
     }
-
-    // month links
-    (function setupMonthLinks(){
-      const year = new Date().getFullYear();
-      document.querySelectorAll('.month').forEach(a => {
-        const m = a.dataset.month;
-        if (!m) return;
-        a.href = `year-month.html?year=${year}&month=${m}`;
-      });
-    })();
 
     renderYearCategoryChart();
   </script>
