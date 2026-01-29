@@ -151,5 +151,21 @@
       </div>
     </nav>
   </div>
+  <script>
+  // 預設日期為今天（YYYY-MM-DD，符合 input[type=date] 格式）
+  (function setTodayIfEmpty() {
+    const dateInput = document.querySelector('input[type="date"]');
+    if (!dateInput) return;
+
+    // 只在「尚未有值」時才設定，避免覆蓋使用者操作
+    if (!dateInput.value) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+  })();
+</script>
 </body>
 </html>
