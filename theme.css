@@ -1,8 +1,8 @@
 /* theme.css — 全站統一色彩（Design Tokens） */
 :root{
   /* Backgrounds */
-  --app-bg: #6e7c87;
-  --card-bg: #c4cacd;
+  --app-bg: #f0e6e6;
+  --card-bg: #c7adac;
 
   /* Text */
   --text: #111;
@@ -17,7 +17,7 @@
 
   /* Accent */
   --accent: #4f55d8;
-  --accent-text: #6e7c87; /* 行動文字色：日期/儲存/tab active */
+  --accent-text: #ad8e8e; /* 行動文字色：日期/儲存/tab active */
 
   /* spacing / layout tokens */
   --page-padding: 16px;
