@@ -17,7 +17,7 @@
 
   /* Accent */
   --accent: #4f55d8;
-  --accent-text: #ad8e8e; /* 行動文字色：日期/儲存/tab active */
+  --accent-text: #7b6a6c; /* 行動文字色：日期/儲存/tab active */
 
   /* spacing / layout tokens */
   --page-padding: 16px;
