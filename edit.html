@@ -36,41 +36,46 @@
     .field{display:grid;gap:8px;margin-top:14px}
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
-    /* ✅ 統一所有白框（input / select / date / time）高度，並修 iOS 溢出 */
-    .input,
-    input,
-    select {
+    /* ✅ 統一白框外觀（input/select/date/time） */
+    .input{
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 
-    height: 52px;              /* ✅ 關鍵：統一高度 */
-    padding: 0 12px;           /* ✅ 垂直置中靠 line-height，不用上下 padding */
+    height: 52px;
     border-radius: 10px;
     border: 1px solid rgba(0,0,0,0.12);
     background: #fff;
     font-size: 16px;
-    line-height: 52px;         /* ✅ input 文字垂直置中 */
     }
 
-    /* iOS 的 date/time/select 需要特殊處理 */
-    input[type="date"],
-    input[type="time"],
-    select {
-    display: block;
-    appearance: none;
-    -webkit-appearance: none;
+    /* ✅ input 系列：用 line-height 垂直置中 */
+    input.input{
+    padding: 0 12px;
+    line-height: 52px;
     }
 
-    /* select 用 line-height: normal，避免 iOS 裁字 */
-    select {
+    /* iOS 的 date/time：仍維持同高度，但不要被 line-height 搞亂 */
+    input.input[type="date"],
+    input.input[type="time"]{
     line-height: normal;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding: 0 12px;
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    }
+
+    /* ✅ select：用上下 padding 來垂直置中（iOS 最穩） */
+    select.input{
+    padding: 14px 40px 14px 12px; /* 上下14px ≈ 置中 */
+    line-height: normal;
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
     }
 
     /* 防止 grid/flex 子元素撐爆 */
-    .field {
+    .field{
     width: 100%;
     min-width: 0;
     }
