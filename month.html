@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-title" content="What I Spend">
   <meta charset="utf-8" />
   <meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-/>
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  />
   <title>本月</title>
   <style>
     *{box-sizing:border-box}
@@ -19,8 +19,43 @@
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
-    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
+
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
+
+    /* ✅ 月份切換器 */
+    .monthbar{
+      margin-top:8px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .monthbar .m-btn{
+      border:0;
+      background: transparent;
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:900;
+      color: var(--accent-text, var(--accent));
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .monthbar .m-title{
+      font-weight:900;
+      letter-spacing:-.2px;
+      color: var(--text);
+      white-space:nowrap;
+    }
+    .monthbar .m-title .bracket{
+      color: var(--secondary);
+      font-weight:900;
+    }
+
     .section{margin-top:18px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .rows{display:grid;gap:10px;font-size:18px}
@@ -48,7 +83,7 @@
       margin-top:18px;
       background:rgba(255,255,255,0.5);
       border:1px solid rgba(0,0,0,0.06);
-      border-radius:16px;
+      border-radius:var(--radius);
       padding:14px 16px;
       color:var(--secondary);
       font-weight:800;
@@ -72,7 +107,7 @@
       font-weight:800;padding:8px 0;
     }
     .tab .icon{font-size:24px;line-height:1}
-    .tab.active{color:var(--accent)}
+    .tab.active{color:var(--accent-text, var(--accent))}
 
     /* =================================================
        iOS-style tap feedback（按鈕/列表/Tab）
@@ -97,6 +132,15 @@
   <div class="app">
     <main class="page">
       <div class="nav-title">本月</div>
+
+      <!-- ✅ 月份切換器 -->
+      <div class="monthbar" aria-label="月份切換">
+        <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">‹</button>
+        <div class="m-title">
+          <span class="bracket">&lt;</span><span id="monthLabel">January</span><span class="bracket">&gt;</span>
+        </div>
+        <button class="m-btn" type="button" id="btnNext" aria-label="下一月">›</button>
+      </div>
 
       <!-- Summary -->
       <section class="section">
@@ -124,8 +168,45 @@
   </div>
 
   <script>
-    // ===== helpers =====
+    // ===== month state (from ?m=YYYY-MM) =====
+    const qs = new URLSearchParams(location.search);
+
     function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; // YYYY-MM
+    }
+    function parseMonthKey(key){
+      // key: YYYY-MM
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m-1, 1);
+    }
+    function addMonths(dateObj, delta){
+      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
+    }
+    function monthLabel(dateObj){
+      return dateObj.toLocaleDateString("en-US", { month:"long" });
+    }
+
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
+    const currentRef = `month.html?m=${currentKey}`;
+
+    // set label
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+
+    // prev/next buttons
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      location.href = `month.html?m=${monthKeyFromDate(prev)}`;
+    });
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      location.href = `month.html?m=${monthKeyFromDate(next)}`;
+    });
+
+    // ===== helpers =====
     function formatTime12h(hhmm){
       if(!hhmm) return "";
       const [hStr, mStr] = hhmm.split(":");
@@ -136,7 +217,6 @@
       return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
     }
     function ymdToDate(ymd){
-      // ymd: YYYY-MM-DD
       if(!ymd) return null;
       const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
       if(!y || !m || !d) return null;
@@ -145,7 +225,6 @@
     function formatDayHeader(ymd){
       const dt = ymdToDate(ymd);
       if(!dt) return ymd || "";
-      // ex: Wed, 1/7
       const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
       const mm = dt.getMonth() + 1;
       const dd = dt.getDate();
@@ -183,10 +262,10 @@
       a.className = "tx";
       a.dataset.id = tx.id;
 
-      // 讓 edit.html 能預填 + 回來能更新
+      // ✅ 讓 edit.html 回來能回到「同一個月份」
       const params = new URLSearchParams();
       params.set("id", tx.id);
-      params.set("ref", "month.html");
+      params.set("ref", currentRef);
       if(tx.date) params.set("date", tx.date);
       if(tx.time) params.set("time", tx.time);
       params.set("type", tx.type || "expense");
@@ -235,29 +314,33 @@
       const root = document.getElementById("list-root");
       root.innerHTML = "";
 
-      // 讀取所有明細（以 tx:index 為準）
       const ids = getTxIndex().filter(Boolean);
 
+      // ✅ 只取目前選擇月份的明細（date 以 YYYY-MM 開頭）
       const txs = [];
       for(const id of ids){
         if(isDeleted(id)) continue;
         const tx = readTx(id);
         if(!tx) continue;
         if(!tx.id) tx.id = id;
+
+        const d = (tx.date || "");
+        if(!d.startsWith(currentKey)) continue; // 只顯示該月份
+
         txs.push(tx);
       }
 
-      // 依 date desc, time desc 排序（同日再比時間）
+      // 排序：date desc, time desc
       txs.sort((a,b) => {
         const da = (a.date || "");
         const db = (b.date || "");
-        if(da !== db) return db.localeCompare(da); // YYYY-MM-DD 字串可直接比
+        if(da !== db) return db.localeCompare(da);
         const ta = (a.time || "");
         const tb = (b.time || "");
         return tb.localeCompare(ta);
       });
 
-      // 計算 summary（目前畫面這個月：這裡先算「全部 tx:index」；你之後可加月份過濾）
+      // summary（只算該月）
       let income = 0, expense = 0;
       for(const tx of txs){
         const amt = parseAmount(tx.amount);
@@ -280,7 +363,7 @@
       if(txs.length === 0){
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "目前還沒有明細，點「新增」開始記帳吧！";
+        empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
         return;
       }
@@ -322,7 +405,6 @@
       }
     }
 
-    // 進頁面就渲染（從 add/edit 回來會立刻反映）
     render();
   </script>
 </body>
