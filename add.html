@@ -119,17 +119,6 @@
           <div class="field">
             <div class="label">分類</div>
             <select class="input" id="category">
-              <option>餐飲🥣</option>
-              <option>飲料🥤</option>
-              <option>交通🛵</option>
-              <option>日用🛍️</option>
-              <option>娛樂🎮</option>
-              <option>醫療🏥</option>
-              <option>治裝👗</option>
-              <option>家用🏠</option>
-              <option>旅遊🧳</option>
-              <option>其他🧶</option>
-              <option selected>其他</option>
             </select>
           </div>
 
@@ -182,6 +171,16 @@
       localStorage.setItem("tx:index", JSON.stringify(arr));
     }
 
+    // ===== categories =====
+    const expenseCategories = [
+      "餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮",
+      "醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"
+    ];
+
+    const incomeCategories = [
+      "薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"
+    ];
+
     // ===== state: type =====
     let currentType = "expense"; // expense | income
     const btnExpense = document.getElementById("btn-expense");
@@ -196,10 +195,39 @@
 
       btnExpense.setAttribute("aria-pressed", String(isExpense));
       btnIncome.setAttribute("aria-pressed", String(!isExpense));
+
+      updateCategoryOptions(t);
     }
 
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click",  () => setType("income"));
+
+    // 初始狀態（預設支出）
+    updateCategoryOptions("expense");
+
+    const categorySelect = document.getElementById("category");
+
+    function updateCategoryOptions(type){
+      const list = (type === "income") ? incomeCategories : expenseCategories;
+
+      // 記住目前選到的分類（若切回還存在就保留）
+      const prev = categorySelect.value;
+
+      categorySelect.innerHTML = "";
+      list.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        categorySelect.appendChild(opt);
+      });
+
+      // 保留原選項，否則選第一個
+      if(list.includes(prev)){
+        categorySelect.value = prev;
+      }else{
+        categorySelect.value = list[0];
+      }
+    }
 
     // ===== default date =====
     (function setTodayIfEmpty() {
