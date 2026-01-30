@@ -12,15 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function highlightTab(){
   const path = location.pathname.split('/').pop() || 'month.html';
 
-  document.querySelectorAll('.tabbar .tab').forEach(tab => {
-    const href = tab.getAttribute('href');
-    if(!href) return;
+  document.querySelectorAll('.tabbar .tab[href]').forEach(tab => {
+    // ✅ 忽略 query/hash，避免 month.html?m=... 比對失敗
+    const href = tab.getAttribute('href').split('?')[0].split('#')[0];
 
-    if(path === href){
-      tab.classList.add('active');
-    }else{
-      tab.classList.remove('active');
-    }
+    tab.classList.toggle('active', href === path);
   });
 }
 
