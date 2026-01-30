@@ -251,44 +251,6 @@
       location.href = "month.html";
     });
   </script>
-  <script>
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', e => {
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#')) return;
-
-      e.preventDefault();
-
-      const page = document.querySelector('.page');
-      if (!page) {
-        location.href = href;
-        return;
-      }
-
-      page.classList.add('leaving');
-
-      setTimeout(() => {
-        location.href = href;
-      }, 200); // ⏱ 要和 CSS page-leave 時間一致
-    });
-  });
-</script>
-<script>
-  (function highlightTab(){
-    const path = location.pathname.split('/').pop();
-
-    document.querySelectorAll('.tabbar .tab').forEach(tab => {
-      const href = tab.getAttribute('href');
-      if(!href) return;
-
-      // 完全比對檔名（month.html / year.html / add.html）
-      if(path === href){
-        tab.classList.add('active');
-      }else{
-        tab.classList.remove('active');
-      }
-    });
-  })();
-</script>
+  <script src="app.js"></script>
 </body>
 </html> 

@@ -1,38 +1,58 @@
+/* ===============================
+   App bootstrap
+   =============================== */
+document.addEventListener('DOMContentLoaded', () => {
+  highlightTab();
+  pageTransition();
+});
+
+/* ===============================
+   Tab bar active highlight
+   =============================== */
+function highlightTab(){
+  const path = location.pathname.split('/').pop() || 'month.html';
+
+  document.querySelectorAll('.tabbar .tab').forEach(tab => {
+    const href = tab.getAttribute('href');
+    if(!href) return;
+
+    if(path === href){
+      tab.classList.add('active');
+    }else{
+      tab.classList.remove('active');
+    }
+  });
+}
+
+/* ===============================
+   Page transition (iOS style)
+   =============================== */
 function pageTransition(){
   const page = document.querySelector('.page');
   if(!page) return;
 
-  // 進場：確保不是 leaving
+  // 進場動畫
   page.classList.remove('leaving');
 
-  // ✅ 用事件代理：只攔截「站內換頁」的 a 連結
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('a[href]');
-    if(!a) return;
+  // 點擊連結時做離場動畫
+  document.querySelectorAll('a[href]').forEach(link => {
+    const url = link.getAttribute('href');
 
-    const href = a.getAttribute('href');
-    if(!href) return;
-
-    // 不處理：錨點、javascript、外連、下載、開新分頁
+    // 外部連結 / anchor / javascript: 不處理
     if(
-      href.startsWith('#') ||
-      href.startsWith('javascript:') ||
-      href.startsWith('http') ||
-      a.hasAttribute('download') ||
-      a.target === '_blank'
+      !url ||
+      url.startsWith('#') ||
+      url.startsWith('javascript') ||
+      url.startsWith('http')
     ) return;
 
-    // 同頁不處理
-    const current = location.pathname.split('/').pop();
-    if(href === current) return;
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      page.classList.add('leaving');
 
-    e.preventDefault();
-
-    // ✅ 只動 page，不動 tabbar
-    page.classList.add('leaving');
-
-    setTimeout(() => {
-      location.href = href;
-    }, 200);
+      setTimeout(() => {
+        location.href = url;
+      }, 180); // 和 CSS 動畫時間對齊
+    });
   });
 }
