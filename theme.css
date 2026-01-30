@@ -17,18 +17,12 @@
 
   /* Accent */
   --accent: #4f55d8;
-  --accent-text: #7b6a6c; /* 行動文字色：日期/儲存/tab active */
+  --accent-text: #7b6a6c;
 
   /* spacing / layout tokens */
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
-
-  --btn-primary-bg: var(--card-bg);
-  --btn-primary-text: var(--accent-text);
-
-  --btn-secondary-bg: var(--card-bg);
-  --btn-secondary-text: var(--accent-text);
 }
 
 /* 全頁統一背景與預設文字色 */
@@ -51,43 +45,79 @@ input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field{
   color: var(--accent-text);
 }
+
 /* ===============================
    Page transition (iOS style)
    =============================== */
-
-/* 用 main.page 避免被每頁的 .page{...} 覆蓋 */
 main.page{
   animation: page-enter .25s ease-out;
 }
-
 @keyframes page-enter{
   from{ opacity:0; transform: translateX(20px); }
   to  { opacity:1; transform: translateX(0); }
 }
-
 main.page.leaving{
   animation: page-leave .2s ease-in forwards;
 }
-
 @keyframes page-leave{
   from{ opacity:1; transform: translateX(0); }
   to  { opacity:0; transform: translateX(-20px); }
 }
 
 /* ===============================
-   Tabbar icon follow active color
+   Tabbar (GLOBAL)
    =============================== */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0;
+  height: var(--tab-height);
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display:flex;
+  justify-content:center;
+}
+
+.tabbar-inner{
+  max-width:520px;
+  width:100%;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding:10px 18px 18px;
+  gap:6px;
+  align-items:center;
+}
+
 .tabbar .tab{
+  text-decoration:none;
   color: var(--secondary);
+  display:grid;
+  place-items:center;
+  gap:6px;
+  font-weight:800;
+  padding:8px 0;
 }
 
 .tabbar .tab .icon{
-  color: inherit !important;/* ⭐ icon 跟著 tab 一起變色 */
+  font-size:24px;
+  line-height:1;
+  color: inherit;            /* ⭐ icon 跟著文字 */
 }
 
+/* ✅ Active 紅色 */
 .tabbar .tab.active{
-  color: var(--red) !important;
+  color: var(--red);
 }
-body{
-  outline: 6px solid hotpink !important;
+
+/* iOS-style tap feedback（全站） */
+a, button, .tx, .tab{
+  -webkit-tap-highlight-color: transparent;
 }
+.tx, .tab, button{
+  user-select:none;
+  -webkit-user-select:none;
+  transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
+}
+.tx:active{ opacity:.6; transform:scale(.995); }
+.tab:active{ opacity:.6; transform:scale(.98); }
+button:active{ opacity:.65; transform:scale(.98); }
+.tx:focus, .tab:focus, button:focus{ outline:none; }
