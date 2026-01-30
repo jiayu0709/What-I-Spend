@@ -88,5 +88,6 @@ main.page.leaving{
 .tabbar .tab.active{
   color: var(--red) !important;
 }
-
-body{ outline: 6px solid hotpink !important; }
+body{
+  outline: 6px solid hotpink !important;
+}
