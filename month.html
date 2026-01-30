@@ -63,7 +63,32 @@
     .v.green{color:var(--green);font-weight:800}
     .v.red{color:var(--red);font-weight:800}
 
-    .day-header{font-size:18px;font-weight:800;color:var(--secondary);margin:14px 0 8px;padding-top:6px;padding-bottom:2px}
+    /* ✅ 日期列：左日期 / 右當日總計 */
+    .day-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+
+      font-size:18px;
+      font-weight:800;
+      color:var(--secondary);
+
+      margin:14px 0 8px;
+      padding-top:6px;
+      padding-bottom:2px;
+      gap:12px;
+    }
+    .day-total{
+      font-weight:900;
+      color:var(--secondary);
+      white-space:nowrap;
+    }
+    .day-total .v{
+      font-weight:900;
+    }
+    .day-total .v.green{ color:var(--green); }
+    .day-total .v.red{ color:var(--red); }
+
     .day-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden}
 
     .tx{
@@ -109,15 +134,11 @@
     .tab .icon{font-size:24px;line-height:1}
     .tab.active{color:var(--accent-text, var(--accent))}
 
-    /* =================================================
-       iOS-style tap feedback（按鈕/列表/Tab）
-       ================================================= */
+    /* iOS-style tap feedback */
     a, button, .tx, .tab{
       -webkit-tap-highlight-color: transparent;
     }
-    .tx,
-    .tab,
-    button{
+    .tx, .tab, button{
       user-select:none;
       -webkit-user-select:none;
       transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
@@ -176,7 +197,6 @@
       return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; // YYYY-MM
     }
     function parseMonthKey(key){
-      // key: YYYY-MM
       if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
       const [y,m] = key.split("-").map(n => parseInt(n,10));
       if(!y || !m || m < 1 || m > 12) return null;
@@ -193,10 +213,8 @@
     const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
     const currentRef = `month.html?m=${currentKey}`;
 
-    // set label
     document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
 
-    // prev/next buttons
     document.getElementById("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
       location.href = `month.html?m=${monthKeyFromDate(prev)}`;
@@ -262,7 +280,6 @@
       a.className = "tx";
       a.dataset.id = tx.id;
 
-      // ✅ 讓 edit.html 回來能回到「同一個月份」
       const params = new URLSearchParams();
       params.set("id", tx.id);
       params.set("ref", currentRef);
@@ -316,7 +333,7 @@
 
       const ids = getTxIndex().filter(Boolean);
 
-      // ✅ 只取目前選擇月份的明細（date 以 YYYY-MM 開頭）
+      // ✅ 只顯示該月份
       const txs = [];
       for(const id of ids){
         if(isDeleted(id)) continue;
@@ -325,7 +342,7 @@
         if(!tx.id) tx.id = id;
 
         const d = (tx.date || "");
-        if(!d.startsWith(currentKey)) continue; // 只顯示該月份
+        if(!d.startsWith(currentKey)) continue;
 
         txs.push(tx);
       }
@@ -382,15 +399,40 @@
         const section = document.createElement("section");
         section.className = "section";
 
+        const list = groups.get(dateKey);
+
+        // ✅ header：左日期 / 右當日總計（收入-支出）
         const header = document.createElement("div");
         header.className = "day-header";
-        header.textContent = formatDayHeader(dateKey);
+
+        const leftTitle = document.createElement("div");
+        leftTitle.textContent = formatDayHeader(dateKey);
+
+        let dayIncome = 0;
+        let dayExpense = 0;
+        for (const tx of list) {
+          const amt = parseAmount(tx.amount);
+          if (tx.type === "income") dayIncome += amt;
+          else dayExpense += amt;
+        }
+        const dayNet = dayIncome - dayExpense;
+
+        const rightTotal = document.createElement("div");
+        rightTotal.className = "day-total";
+        rightTotal.appendChild(document.createTextNode("總計 "));
+
+        const v = document.createElement("span");
+        v.className = "v " + (dayNet >= 0 ? "green" : "red");
+        v.textContent = String(dayNet);
+        rightTotal.appendChild(v);
+
+        header.appendChild(leftTitle);
+        header.appendChild(rightTotal);
         section.appendChild(header);
 
         const card = document.createElement("div");
         card.className = "day-card";
 
-        const list = groups.get(dateKey);
         list.forEach((tx, idx) => {
           card.appendChild(buildTxRow(tx));
           if(idx !== list.length - 1){
