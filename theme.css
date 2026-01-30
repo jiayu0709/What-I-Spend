@@ -73,3 +73,18 @@ main.page.leaving{
   from{ opacity:1; transform: translateX(0); }
   to  { opacity:0; transform: translateX(-20px); }
 }
+
+/* ===============================
+   Tabbar icon follow active color
+   =============================== */
+.tabbar .tab{
+  color: var(--secondary);
+}
+
+.tabbar .tab .icon{
+  color: inherit; /* ⭐ icon 跟著 tab 一起變色 */
+}
+
+.tabbar .tab.active{
+  color: var(--accent-text, var(--accent));
+}
