@@ -19,7 +19,7 @@
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 12px;letter-spacing:-.5px}
 
-    /* 月份切換器 */
+    /* ✅ 月份切換器（跟 month.html 同風格） */
     .monthbar{
       margin-top:6px;
       background: var(--card-bg);
@@ -38,6 +38,8 @@
       font-weight:900;
       color: var(--accent-text, var(--accent));
       cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
     }
     .monthbar .m-title{
       font-weight:900;
@@ -45,38 +47,22 @@
       color: var(--text);
       white-space:nowrap;
     }
-
-    .section{margin-top:18px}
-    .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
-    
-    /* 核心卡片容器 */
-    .card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      padding:16px;
-      transition: background 0.2s ease;
+    .monthbar .m-title .bracket{
+      color: var(--secondary);
+      font-weight:900;
     }
 
-    /* ✅ 當沒有資料時，外層 card 變透明，讓內部 .empty 獨自呈現白色方塊 */
-    .card.is-empty {
+    /* ✅ empty 狀態：不要外層深色區塊，只留白色方框 */
+    .card.card--empty{
       background: transparent;
       padding: 0;
     }
 
-    /* ✅ 符合截圖風格的無資料樣式 */
-    .empty {
-      background: #ffffff; /* 純白背景 */
-      border-radius: var(--radius);
-      padding: 18px 16px;
-      color: var(--secondary);
-      font-weight: 800;
-      font-size: 16px;
-      text-align: left;
-      line-height: 1.5;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* 增加一點點立體感 */
-    }
+    .section{margin-top:18px}
+    .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
 
-    /* Donut 圖表相關 */
+    /* ===== Donut card ===== */
     .donut-wrap{display:grid;grid-template-columns:1fr;gap:14px;align-items:center;}
     .donut-area{display:grid;place-items:center;padding:8px 0 2px;}
     .donut-legend{margin-top:6px;display:grid;gap:12px;}
@@ -90,13 +76,28 @@
     }
     .legend-left{display:flex;align-items:center;gap:10px;min-width:0;}
     .dot{width:12px;height:12px;border-radius:999px;flex:0 0 auto;}
-    .cat{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cat{
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .pct{color:var(--secondary);font-weight:900;width:56px;text-align:right;}
     .amt{font-weight:900;width:110px;text-align:right;}
+    .empty{
+      background:rgba(255,255,255,0.5);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      color:var(--secondary);
+      font-weight:800;
+    }
 
+    /* Donut SVG sizing */
     .donut-svg{width:260px;height:260px;display:block;}
     .center-title{font-size:18px;font-weight:900;fill:var(--secondary);}
     .center-value{font-size:26px;font-weight:900;fill:var(--text);}
+
   </style>
 </head>
 <body>
@@ -104,22 +105,24 @@
     <main class="page">
       <div class="nav-title">統計</div>
 
+      <!-- ✅ 月份切換器 -->
       <div class="monthbar" aria-label="月份切換">
-        <button class="m-btn" type="button" id="btnPrev">&lt;</button>
+        <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
         <div class="m-title">
           <span id="monthLabel">January</span>
         </div>
-        <button class="m-btn" type="button" id="btnNext">&gt;</button>
+        <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
       <section class="section">
         <div class="label" id="rangeLabel">支出分析</div>
-        <div id="cardContainer" class="card">
+        <div class="card" id="chartCard">
           <div id="chartRoot" class="donut-wrap"></div>
         </div>
       </section>
     </main>
 
+    <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
         <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
@@ -130,19 +133,25 @@
   </div>
 
   <script>
+    // ===== month state: ?m=YYYY-MM =====
     const qs = new URLSearchParams(location.search);
+
     function pad2(n){ return String(n).padStart(2,"0"); }
     function monthKeyFromDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
     function parseMonthKey(key){
       if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
       const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m<1 || m>12) return null;
       return new Date(y, m-1, 1);
     }
     function addMonths(dateObj, delta){ return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1); }
-    function monthLabel(dateObj){ return dateObj.toLocaleDateString("en-US", { month:"long" }); }
+    function monthLabel(dateObj){
+      // 顯示英文月份（跟你 month.html 一樣）；如果要中文我也能改
+      return dateObj.toLocaleDateString("en-US", { month:"long" });
+    }
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const currentKey = monthKeyFromDate(currentMonth);
+    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
 
     document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
     document.getElementById("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth()+1)}）`;
@@ -156,22 +165,28 @@
       location.href = `year.html?m=${monthKeyFromDate(next)}`;
     });
 
-    // 數據讀取
+    // ===== storage helpers =====
     function getTxIndex(){
-      const raw = localStorage.getItem("tx:index");
-      return raw ? JSON.parse(raw) : [];
+      try{
+        const raw = localStorage.getItem("tx:index");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){ return []; }
     }
     function readTx(id){
       const raw = localStorage.getItem("tx:"+id);
-      return raw ? JSON.parse(raw) : null;
+      if(!raw) return null;
+      try{ return JSON.parse(raw); }catch(e){ return null; }
     }
+    function isDeleted(id){ return localStorage.getItem("tx:deleted:"+id) === "1"; }
     function parseAmount(v){
       const n = Number(String(v ?? "").replace(/,/g,""));
       return (isFinite(n) ? n : 0);
     }
     function moneyNT(n){ return "NT$" + Math.round(n).toLocaleString("en-US"); }
+    function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
-    // SVG 繪製工具
+    // ===== Donut (pure SVG) =====
     function polarToCartesian(cx, cy, r, angleDeg){
       const rad = (angleDeg - 90) * Math.PI / 180;
       return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
@@ -183,10 +198,12 @@
       return ["M", start.x, start.y, "A", r, r, 0, largeArcFlag, 0, end.x, end.y].join(" ");
     }
 
-    const palette = ["#f04b3a","#d61c68","#7c3aed","#3b82f6","#06b6d4","#22c55e","#f59e0b","#a855f7"];
+    const palette = ["#f04b3a","#d61c68","#7c3aed","#3b82f6","#06b6d4","#22c55e","#f59e0b","#a855f7","#ef4444","#10b981"];
 
     function buildDonutSVG(total, slices){
-      const size = 260, cx=size/2, cy=size/2, r = 92, stroke = 34;
+      const size = 260, cx=size/2, cy=size/2;
+      const r = 92, stroke = 34;
+
       let start = 0;
       const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
       svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
@@ -194,24 +211,37 @@
 
       const bg = document.createElementNS(svg.namespaceURI,"circle");
       bg.setAttribute("cx", cx); bg.setAttribute("cy", cy); bg.setAttribute("r", r);
-      bg.setAttribute("fill","none"); bg.setAttribute("stroke","rgba(0,0,0,0.06)");
+      bg.setAttribute("fill","none");
+      bg.setAttribute("stroke","rgba(0,0,0,0.06)");
       bg.setAttribute("stroke-width", stroke);
       svg.appendChild(bg);
 
       slices.forEach(s => {
         const sweep = 360 * (s.value / total);
         const end = start + sweep;
+
         const path = document.createElementNS(svg.namespaceURI,"path");
         path.setAttribute("d", describeArc(cx, cy, r, start, end));
-        path.setAttribute("fill","none"); path.setAttribute("stroke", s.color);
+        path.setAttribute("fill","none");
+        path.setAttribute("stroke", s.color);
         path.setAttribute("stroke-width", stroke);
+        path.setAttribute("stroke-linecap", "butt");
         svg.appendChild(path);
+
         start = end;
       });
 
+      const t1 = document.createElementNS(svg.namespaceURI,"text");
+      t1.setAttribute("x", cx); t1.setAttribute("y", cy - 4);
+      t1.setAttribute("text-anchor","middle");
+      t1.setAttribute("class","center-title");
+      t1.textContent = "Expenses";
+      svg.appendChild(t1);
+
       const t2 = document.createElementNS(svg.namespaceURI,"text");
-      t2.setAttribute("x", cx); t2.setAttribute("y", cy + 10);
-      t2.setAttribute("text-anchor","middle"); t2.setAttribute("class","center-value");
+      t2.setAttribute("x", cx); t2.setAttribute("y", cy + 26);
+      t2.setAttribute("text-anchor","middle");
+      t2.setAttribute("class","center-value");
       t2.textContent = moneyNT(total);
       svg.appendChild(t2);
 
@@ -220,16 +250,24 @@
 
     function renderMonthCategoryChart(){
       const ids = getTxIndex().filter(Boolean);
-      const map = new Map();
-      const root = document.getElementById("chartRoot");
-      const cardContainer = document.getElementById("cardContainer");
+      const map = new Map(); // category -> sum
 
       for(const id of ids){
+        if(isDeleted(id)) continue;
         const tx = readTx(id);
-        if(!tx || tx.type === "income" || !tx.date.startsWith(currentKey)) continue;
+        if(!tx) continue;
+
+        // ✅ 只統計「當月」
+        const date = String(tx.date || "");
+        if(!date.startsWith(currentKey)) continue; // YYYY-MM
+
+        // ✅ 只統計支出：type === income 才排除；其他(含沒type)都當支出
+        if(tx.type === "income") continue;
+
         const amt = parseAmount(tx.amount);
         if(amt <= 0) continue;
-        const cat = (tx.category || "其他").trim();
+
+        const cat = (tx.category || "Uncategorized").trim() || "Uncategorized";
         map.set(cat, (map.get(cat) || 0) + amt);
       }
 
@@ -237,11 +275,14 @@
         .map(([name,value]) => ({ name, value }))
         .sort((a,b) => b.value - a.value);
 
+      const root = document.getElementById("chartRoot");
+      const card = document.getElementById("chartCard");
       root.innerHTML = "";
 
-      // ✅ 處理無資料狀態
       if(items.length === 0){
-        cardContainer.classList.add('is-empty'); // 讓背景透明
+        // ✅ 只留白色方框：外層 card 變透明
+        card.classList.add("card--empty");
+
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent = "這個月份還沒有支出資料，先去新增幾筆吧！";
@@ -249,9 +290,25 @@
         return;
       }
 
-      cardContainer.classList.remove('is-empty'); // 恢復原本卡片底色
+      // ✅ 有資料就恢復外層深色 card
+      card.classList.remove("card--empty");
+
       const total = items.reduce((s,x)=>s+x.value,0);
-      const slices = items.slice(0, 8).map((x,i)=>({ ...x, color: palette[i % palette.length], pct: x.value / total }));
+
+      // 最多 8 類，其餘合併 Other
+      const MAX = 8;
+      let main = items.slice(0, MAX);
+      const rest = items.slice(MAX);
+      if(rest.length){
+        const restSum = rest.reduce((s,x)=>s+x.value,0);
+        main = main.concat([{ name:"Other", value:restSum }]);
+      }
+
+      const slices = main.map((x,i)=>({
+        ...x,
+        color: palette[i % palette.length],
+        pct: x.value / total
+      }));
 
       const donutArea = document.createElement("div");
       donutArea.className = "donut-area";
@@ -259,11 +316,37 @@
 
       const legend = document.createElement("div");
       legend.className = "donut-legend";
+
       slices.forEach(s => {
         const row = document.createElement("div");
         row.className = "legend-row";
-        row.innerHTML = `<div class="legend-left"><div class="dot" style="background:${s.color}"></div><div class="cat">${s.name}</div></div>
-                         <div class="pct">${Math.round(s.pct*100)}%</div><div class="amt">${moneyNT(s.value)}</div>`;
+
+        const left = document.createElement("div");
+        left.className = "legend-left";
+
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        dot.style.background = s.color;
+
+        const cat = document.createElement("div");
+        cat.className = "cat";
+        cat.textContent = s.name;
+
+        left.appendChild(dot);
+        left.appendChild(cat);
+
+        const pct = document.createElement("div");
+        pct.className = "pct";
+        pct.textContent = Math.round(clamp01(s.pct)*100) + "%";
+
+        const amt = document.createElement("div");
+        amt.className = "amt";
+        amt.textContent = moneyNT(s.value);
+
+        row.appendChild(left);
+        row.appendChild(pct);
+        row.appendChild(amt);
+
         legend.appendChild(row);
       });
 
@@ -273,5 +356,6 @@
 
     renderMonthCategoryChart();
   </script>
+  <script src="app.js"></script>
 </body>
 </html>
