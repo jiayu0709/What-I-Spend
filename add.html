@@ -230,10 +230,12 @@
     }
 
     // ===== default date =====
-    (function setTodayIfEmpty() {
+    document.addEventListener("DOMContentLoaded", () => {
       const dateInput = document.getElementById("date");
-      if (dateInput && !dateInput.value) dateInput.value = todayYMD();
-    })();
+      if (dateInput) {
+        dateInput.value = todayYMD(); // 每次進來都強制設今天
+      }
+    });
 
     // ===== save: create a new tx & store by date =====
     document.getElementById("saveBtn").addEventListener("click", () => {
