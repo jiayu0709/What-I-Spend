@@ -233,14 +233,12 @@
       }
 
       localStorage.setItem("tx:"+id, JSON.stringify(data));
-      alert("已儲存（localStorage）");
 
       // 回到來源頁
       location.href = ref;
     }
 
     function removeTx(){
-      if(!confirm("確定刪除這筆明細？")) return;
       localStorage.removeItem("tx:"+id);
       localStorage.setItem("tx:deleted:"+id, "1");
       location.href = ref;
