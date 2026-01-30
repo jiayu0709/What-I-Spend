@@ -243,7 +243,6 @@
     function buildTxRow(tx){
       const rawAmt = parseAmount(tx.amount);
       const isIncome = tx.type === "income";
-      const signed = isIncome ? rawAmt : -rawAmt;
 
       const a = document.createElement("a");
       a.className = "tx";
@@ -281,7 +280,7 @@
 
       const amt = document.createElement("div");
       amt.className = "amt";
-      amt.textContent = String(signed);
+      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
       amt.style.color = isIncome ? "var(--green)" : "var(--red)";
       right.appendChild(amt);
 
