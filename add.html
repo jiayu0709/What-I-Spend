@@ -148,126 +148,110 @@
   </div>
 
   <script>
-    // ===== helpers =====
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function todayYMD(){
-      const d = new Date();
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    }
-    function nowHHMM(){
-      const d = new Date();
-      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-    }
-    function getTxIndex(){
-      try{
-        const raw = localStorage.getItem("tx:index");
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      }catch(e){
-        return [];
-      }
-    }
-    function setTxIndex(arr){
-      localStorage.setItem("tx:index", JSON.stringify(arr));
-    }
+  // ===== 1. 工具函數 =====
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function todayYMD(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  }
+  function nowHHMM(){
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+  function getTxIndex(){
+    try{
+      const raw = localStorage.getItem("tx:index");
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){ return []; }
+  }
+  function setTxIndex(arr){
+    localStorage.setItem("tx:index", JSON.stringify(arr));
+  }
 
-    // ===== categories =====
-    const expenseCategories = [
-      "餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮",
-      "醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"
-    ];
+  // ===== 2. 分類資料 =====
+  const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
+  const incomeCategories = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
 
-    const incomeCategories = [
-      "薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"
-    ];
+  // ===== 3. DOM 元素與狀態 =====
+  let currentType = "expense"; 
+  const btnExpense = document.getElementById("btn-expense");
+  const btnIncome  = document.getElementById("btn-income");
+  const categorySelect = document.getElementById("category"); // 先宣告元素
+  const dateInput = document.getElementById("date");
 
-    // ===== state: type =====
-    let currentType = "expense"; // expense | income
-    const btnExpense = document.getElementById("btn-expense");
-    const btnIncome  = document.getElementById("btn-income");
+  // 更新分類選項的函數
+  function updateCategoryOptions(type){
+    const list = (type === "income") ? incomeCategories : expenseCategories;
+    const prev = categorySelect.value;
 
-    function setType(t){
-      currentType = t;
-      const isExpense = t === "expense";
-
-      btnExpense.classList.toggle("active", isExpense);
-      btnIncome.classList.toggle("active", !isExpense);
-
-      btnExpense.setAttribute("aria-pressed", String(isExpense));
-      btnIncome.setAttribute("aria-pressed", String(!isExpense));
-
-      updateCategoryOptions(t);
-    }
-
-    btnExpense.addEventListener("click", () => setType("expense"));
-    btnIncome.addEventListener("click",  () => setType("income"));
-
-    // 初始狀態（預設支出）
-    updateCategoryOptions("expense");
-
-    const categorySelect = document.getElementById("category");
-
-    function updateCategoryOptions(type){
-      const list = (type === "income") ? incomeCategories : expenseCategories;
-
-      // 記住目前選到的分類（若切回還存在就保留）
-      const prev = categorySelect.value;
-
-      categorySelect.innerHTML = "";
-      list.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        categorySelect.appendChild(opt);
-      });
-
-      // 保留原選項，否則選第一個
-      if(list.includes(prev)){
-        categorySelect.value = prev;
-      }else{
-        categorySelect.value = list[0];
-      }
-    }
-
-    // ===== default date =====
-    document.addEventListener("DOMContentLoaded", () => {
-      const dateInput = document.getElementById("date");
-      if (dateInput) {
-        dateInput.value = todayYMD(); // 每次進來都強制設今天
-      }
+    categorySelect.innerHTML = "";
+    list.forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      categorySelect.appendChild(opt);
     });
 
-    // ===== save: create a new tx & store by date =====
-    document.getElementById("saveBtn").addEventListener("click", () => {
-      const date = document.getElementById("date").value || todayYMD();
-      const time = nowHHMM(); // 新增時用現在時間（你也可以之後加時間欄位）
-      const category = (document.getElementById("category").value || "").trim();
-      const note = (document.getElementById("note").value || "").trim();
+    if(list.includes(prev)) {
+      categorySelect.value = prev;
+    } else {
+      categorySelect.value = list[0];
+    }
+  }
 
-      const amtRaw = document.getElementById("amount").value;
-      const amount = Number(String(amtRaw).replace(/,/g,""));
+  // 切換支出/收入類型
+  function setType(t){
+    currentType = t;
+    const isExpense = t === "expense";
+    btnExpense.classList.toggle("active", isExpense);
+    btnIncome.classList.toggle("active", !isExpense);
+    btnExpense.setAttribute("aria-pressed", String(isExpense));
+    btnIncome.setAttribute("aria-pressed", String(!isExpense));
+    
+    updateCategoryOptions(t); // 切換時同步更新分類
+  }
 
-      if(!isFinite(amount) || amount <= 0){
-        alert("請輸入正確金額（> 0）");
-        return;
-      }
+  // ===== 4. 初始化執行 =====
+  document.addEventListener("DOMContentLoaded", () => {
+    // A. 設定預設日期為今天
+    if (dateInput) {
+      dateInput.value = todayYMD();
+    }
+    
+    // B. 初始化分類列表（預設支出）
+    setType("expense");
+  });
 
-      // ✅ 產生唯一 id
-      const id = "tx-" + Date.now();
+  // 綁定按鈕事件
+  btnExpense.addEventListener("click", () => setType("expense"));
+  btnIncome.addEventListener("click",  () => setType("income"));
 
-      // ✅ 存成一筆明細（month.html / edit.html 都可用）
-      const data = { id, date, time, type: currentType, amount: String(amount), category, note };
-      localStorage.setItem("tx:" + id, JSON.stringify(data));
+  // ===== 5. 儲存邏輯 =====
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    const date = dateInput.value || todayYMD();
+    const time = nowHHMM();
+    const category = (categorySelect.value || "").trim();
+    const note = (document.getElementById("note").value || "").trim();
+    const amtRaw = document.getElementById("amount").value;
+    const amount = Number(String(amtRaw).replace(/,/g,""));
 
-      // ✅ 建索引（之後 month.html 只要讀 tx:index 就能把新明細插進對應日期）
-      const idx = getTxIndex();
-      idx.unshift(id);               // 新的放最前面
-      setTxIndex(idx);
+    if(!isFinite(amount) || amount <= 0){
+      alert("請輸入正確金額（> 0）");
+      return;
+    }
 
-      // ✅ 回本月頁（month.html 只要之後改成讀 tx:index，就會出現在對應日期）
-      location.href = "month.html";
-    });
-  </script>
+    const id = "tx-" + Date.now();
+    const data = { id, date, time, type: currentType, amount: String(amount), category, note };
+    localStorage.setItem("tx:" + id, JSON.stringify(data));
+
+    const idx = getTxIndex();
+    idx.unshift(id);
+    setTxIndex(idx);
+
+    location.href = "month.html";
+  });
+</script>
   <script src="app.js"></script>
 </body>
 </html> 
