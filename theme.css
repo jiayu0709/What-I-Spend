@@ -51,3 +51,25 @@ input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field{
   color: var(--accent-text);
 }
+/* ===============================
+   Page transition (iOS style)
+   =============================== */
+
+/* 用 main.page 避免被每頁的 .page{...} 覆蓋 */
+main.page{
+  animation: page-enter .25s ease-out;
+}
+
+@keyframes page-enter{
+  from{ opacity:0; transform: translateX(20px); }
+  to  { opacity:1; transform: translateX(0); }
+}
+
+main.page.leaving{
+  animation: page-leave .2s ease-in forwards;
+}
+
+@keyframes page-leave{
+  from{ opacity:1; transform: translateX(0); }
+  to  { opacity:0; transform: translateX(-20px); }
+}
