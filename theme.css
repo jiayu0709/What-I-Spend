@@ -23,6 +23,8 @@
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
+
+  --tabcolor:#735f5c;
 }
 
 /* 全頁統一背景與預設文字色 */
@@ -105,7 +107,7 @@ main.page.leaving{
 
 /* ✅ Active 紅色 */
 .tabbar .tab.active{
-  color: var(--red);
+  color: var(--tabcolor);
 }
 
 /* iOS-style tap feedback（全站） */
