@@ -251,5 +251,27 @@
       location.href = "month.html";
     });
   </script>
+  <script>
+  document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', e => {
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      e.preventDefault();
+
+      const page = document.querySelector('.page');
+      if (!page) {
+        location.href = href;
+        return;
+      }
+
+      page.classList.add('leaving');
+
+      setTimeout(() => {
+        location.href = href;
+      }, 200); // ⏱ 要和 CSS page-leave 時間一致
+    });
+  });
+</script>
 </body>
 </html>
