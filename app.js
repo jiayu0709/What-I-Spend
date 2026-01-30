@@ -1,63 +1,38 @@
-/* =================================================
-   App Bootstrap
-   ================================================= */
-document.addEventListener("DOMContentLoaded", () => {
-  initTabHighlight();
-  initPageTransition();
-});
-
-/* =================================================
-   Tab Bar Active Highlight
-   - 根據目前頁面自動上色
-   ================================================= */
-function initTabHighlight(){
-  const currentPage = location.pathname.split("/").pop() || "month.html";
-
-  document.querySelectorAll(".tabbar .tab").forEach(tab => {
-    const href = tab.getAttribute("href");
-    if(!href) return;
-
-    tab.classList.toggle("active", href === currentPage);
-  });
-}
-
-/* =================================================
-   Page Transition (iOS style)
-   - 進場：CSS animation 自動執行
-   - 離場：攔截內部連結，播放動畫後再跳轉
-   ================================================= */
-function initPageTransition(){
-  const page = document.querySelector(".page");
+function pageTransition(){
+  const page = document.querySelector('.page');
   if(!page) return;
 
-  // 保證進場動畫正常（避免從 cache 回來卡住）
-  page.classList.remove("leaving");
+  // 進場：確保不是 leaving
+  page.classList.remove('leaving');
 
-  // 攔截所有內部連結
-  document.querySelectorAll("a[href]").forEach(link => {
-    const href = link.getAttribute("href");
+  // ✅ 用事件代理：只攔截「站內換頁」的 a 連結
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if(!a) return;
 
-    // 不處理的情況
+    const href = a.getAttribute('href');
+    if(!href) return;
+
+    // 不處理：錨點、javascript、外連、下載、開新分頁
     if(
-      !href ||
-      href.startsWith("#") ||
-      href.startsWith("javascript") ||
-      href.startsWith("http")
-    ){
-      return;
-    }
+      href.startsWith('#') ||
+      href.startsWith('javascript:') ||
+      href.startsWith('http') ||
+      a.hasAttribute('download') ||
+      a.target === '_blank'
+    ) return;
 
-    link.addEventListener("click", e => {
-      // 如果已經在離場中，不再重複觸發
-      if(page.classList.contains("leaving")) return;
+    // 同頁不處理
+    const current = location.pathname.split('/').pop();
+    if(href === current) return;
 
-      e.preventDefault();
-      page.classList.add("leaving");
+    e.preventDefault();
 
-      // 與 CSS page-leave 時間對齊
-      window.setTimeout(() => {
-        location.href = href;
-      }, 180);
-    });
+    // ✅ 只動 page，不動 tabbar
+    page.classList.add('leaving');
+
+    setTimeout(() => {
+      location.href = href;
+    }, 200);
   });
 }
