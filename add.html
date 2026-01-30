@@ -3,15 +3,15 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="theme.css">
-
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-
+  <meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
   <title>新增</title>
-
   <style>
     *{box-sizing:border-box}
     body{
@@ -20,12 +20,10 @@
     }
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
-
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
     .section{margin-top:18px}
     .label{font-size:14px;font-weight:800;color:var(--secondary);margin:10px 0 8px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
-
     .segment{
       display:grid;grid-template-columns:1fr 1fr;
       background:var(--card-bg);border-radius:12px;padding:4px;
@@ -35,49 +33,38 @@
       font-weight:800;color:var(--secondary);cursor:pointer;
     }
     .seg-btn.active{background:#fff;color:var(--text)}
-
     .field{display:grid;gap:8px;margin-top:14px}
     .field:first-child{margin-top:0}
-
     .input, select{
-      width:100%;
-      padding:12px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,0,0,0.12);
-      background:#fff;
-      font-size:16px;
+      width:100%;padding:12px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.12);
+      background:#fff;font-size:16px;
     }
-    input, select{
-      width:100%;
-      max-width:100%;
-      box-sizing:border-box;
+    input, select {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     input[type="date"]{
       display:block;
       appearance:none;
       -webkit-appearance:none;
     }
-
-    .field, .card{min-width:0;}
+    .field, .card { min-width:0; }
 
     .save{
       margin-top:14px;
       width:100%;
       padding:14px 16px;
-      border:0;
-      border-radius:16px;
+      border:0;border-radius:16px;
       background:var(--card-bg);
-      font-size:18px;
-      font-weight:800;
+      font-size:18px;font-weight:800;
       cursor:pointer;
-      color:var(--accent-text);
+      color: var(--accent-text);
     }
 
-    /* ===== Tab bar ===== */
     .tabbar{
       position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
-      background:rgba(255,255,255,0.65);
-      backdrop-filter:blur(18px);
+      background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
       border-top:1px solid rgba(0,0,0,0.08);
       display:flex;justify-content:center;
     }
@@ -94,32 +81,38 @@
     .tab .icon{font-size:24px;line-height:1}
     .tab.active{color:var(--accent)}
 
-    /* ===== iOS-style tap feedback ===== */
-    a, button, .seg-btn, .save, .tab{ -webkit-tap-highlight-color:transparent; }
+    /* =================================================
+       iOS-style tap feedback（只改按鈕/可點擊元件）
+       ================================================= */
+    a, button, .seg-btn, .save, .tab{ -webkit-tap-highlight-color: transparent; }
     .seg-btn, .save, .tab, button{
-      user-select:none;-webkit-user-select:none;
-      transition:opacity .15s ease, transform .10s ease, background-color .15s ease;
+      user-select:none; -webkit-user-select:none;
+      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
     }
-    .seg-btn:active{opacity:.65;transform:scale(.98);}
-    .save:active{opacity:.65;transform:scale(.98);}
-    .tab:active{opacity:.6;transform:scale(.98);}
-    .seg-btn:focus, .save:focus, .tab:focus, button:focus{outline:none;}
-
-    /* ===== iOS 日期 input 文字顏色（統一控色） ===== */
+    .seg-btn:active{ opacity:.65; transform:scale(.98); }
+    .save:active{ opacity:.65; transform:scale(.98); }
+    .tab:active{ opacity:.6; transform:scale(.98); }
+    .seg-btn:focus, .save:focus, .tab:focus, button:focus{ outline:none; }
+    /* ===============================
+    iOS 日期 input 文字顏色（統一控色）
+    =============================== */
     input[type="date"]{
-      color:var(--accent-text);
-      -webkit-text-fill-color:var(--accent-text);
+    color: var(--accent-text);
+    -webkit-text-fill-color: var(--accent-text);
     }
-    input[type="date"]::-webkit-datetime-edit{ color:var(--accent-text); }
+
+    input[type="date"]::-webkit-datetime-edit{
+    color: var(--accent-text);
+    }
+
     input[type="date"]::-webkit-datetime-edit-text,
     input[type="date"]::-webkit-datetime-edit-month-field,
     input[type="date"]::-webkit-datetime-edit-day-field,
     input[type="date"]::-webkit-datetime-edit-year-field{
-      color:var(--accent-text);
+    color: var(--accent-text);
     }
   </style>
 </head>
-
 <body>
   <div class="app">
     <main class="page">
@@ -178,10 +171,6 @@
     </nav>
   </div>
 
-  <!-- ✅ 共用：Tab 高亮 + Page Transition -->
-  <script src="app.js"></script>
-
-  <!-- ✅ 這頁專用：新增存檔 -->
   <script>
     // ===== helpers =====
     function pad2(n){ return String(n).padStart(2,"0"); }
@@ -226,15 +215,15 @@
     btnIncome.addEventListener("click",  () => setType("income"));
 
     // ===== default date =====
-    (function setTodayIfEmpty(){
+    (function setTodayIfEmpty() {
       const dateInput = document.getElementById("date");
-      if(dateInput && !dateInput.value) dateInput.value = todayYMD();
+      if (dateInput && !dateInput.value) dateInput.value = todayYMD();
     })();
 
-    // ===== save =====
+    // ===== save: create a new tx & store by date =====
     document.getElementById("saveBtn").addEventListener("click", () => {
       const date = document.getElementById("date").value || todayYMD();
-      const time = nowHHMM();
+      const time = nowHHMM(); // 新增時用現在時間（你也可以之後加時間欄位）
       const category = (document.getElementById("category").value || "").trim();
       const note = (document.getElementById("note").value || "").trim();
 
@@ -246,25 +235,60 @@
         return;
       }
 
+      // ✅ 產生唯一 id
       const id = "tx-" + Date.now();
-      const data = {
-        id,
-        date,
-        time,
-        type: currentType,
-        amount: String(amount),
-        category,
-        note
-      };
 
+      // ✅ 存成一筆明細（month.html / edit.html 都可用）
+      const data = { id, date, time, type: currentType, amount: String(amount), category, note };
       localStorage.setItem("tx:" + id, JSON.stringify(data));
 
+      // ✅ 建索引（之後 month.html 只要讀 tx:index 就能把新明細插進對應日期）
       const idx = getTxIndex();
-      idx.unshift(id);
+      idx.unshift(id);               // 新的放最前面
       setTxIndex(idx);
 
+      // ✅ 回本月頁（month.html 只要之後改成讀 tx:index，就會出現在對應日期）
       location.href = "month.html";
     });
   </script>
+  <script>
+  document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', e => {
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      e.preventDefault();
+
+      const page = document.querySelector('.page');
+      if (!page) {
+        location.href = href;
+        return;
+      }
+
+      page.classList.add('leaving');
+
+      setTimeout(() => {
+        location.href = href;
+      }, 200); // ⏱ 要和 CSS page-leave 時間一致
+    });
+  });
+</script>
+<script>
+  (function highlightTab(){
+    const path = location.pathname.split('/').pop();
+
+    document.querySelectorAll('.tabbar .tab').forEach(tab => {
+      const href = tab.getAttribute('href');
+      if(!href) return;
+
+      // 完全比對檔名（month.html / year.html / add.html）
+      if(path === href){
+        tab.classList.add('active');
+      }else{
+        tab.classList.remove('active');
+      }
+    });
+  })();
+</script>
 </body>
-</html>
+</html> 

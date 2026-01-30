@@ -3,235 +3,492 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="theme.css">
-
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
-
   <meta charset="utf-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  />
   <title>本月</title>
-
   <style>
     *{box-sizing:border-box}
     body{
-      margin:0;
-      background:var(--app-bg);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",
-                   Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
-
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
-    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
 
-    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px}
+    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
 
-    /* 月份切換器 */
+    /* ✅ 月份切換器 */
     .monthbar{
-      background:var(--card-bg);
-      border-radius:var(--radius);
+      margin-top:8px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
       padding:10px 12px;
       display:flex;
-      justify-content:space-between;
       align-items:center;
-      margin-bottom:16px;
+      justify-content:space-between;
+      gap:10px;
     }
-    .m-btn{
-      background:none;border:0;
-      font-size:20px;
+    .monthbar .m-btn{
+      border:0;
+      background: transparent;
+      padding:10px 12px;
+      border-radius: 12px;
       font-weight:900;
-      color:var(--accent);
+      color: var(--accent-text, var(--accent));
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
     }
-    .m-title{font-weight:900}
+    .monthbar .m-title{
+      font-weight:900;
+      letter-spacing:-.2px;
+      color: var(--text);
+      white-space:nowrap;
+    }
+    .monthbar .m-title .bracket{
+      color: var(--secondary);
+      font-weight:900;
+    }
 
     .section{margin-top:18px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
-
     .rows{display:grid;gap:10px;font-size:18px}
-    .row{display:flex;justify-content:space-between}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .v.green{color:var(--green);font-weight:800}
     .v.red{color:var(--red);font-weight:800}
 
+    /* ✅ 日期列：左日期 / 右當日總計 */
     .day-header{
       display:flex;
+      align-items:center;
       justify-content:space-between;
+
+      font-size:18px;
       font-weight:800;
       color:var(--secondary);
+
       margin:14px 0 8px;
+      padding-top:6px;
+      padding-bottom:2px;
+      gap:12px;
     }
-    .day-total{font-size:14px;font-weight:900}
-    .day-total .v.green{color:var(--green)}
-    .day-total .v.red{color:var(--red)}
+    .day-total{
+      font-weight:900;
+      color:var(--secondary);
+      white-space:nowrap;
+      font-size: 14px; 
+    }
+    .day-total .v{
+      font-weight:900;
+      font-size: 14px; 
+    }
+    .day-total .v.green{ color:var(--green); }
+    .day-total .v.red{ color:var(--red); }
 
     .day-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden}
 
     .tx{
-      display:grid;
-      grid-template-columns:1fr auto;
-      padding:14px 16px;
-      text-decoration:none;
-      color:var(--text);
+      display:grid;grid-template-columns:1fr auto;gap:12px;
+      padding:14px 16px;text-decoration:none;color:var(--text);
+      position:relative;
     }
-    .cat{font-size:20px;font-weight:700}
-    .note{font-size:14px;color:var(--secondary)}
+
+    .cat{font-size:20px;font-weight:700;line-height:1.2}
+    .note{margin-top:4px;font-size:14px;color:var(--secondary)}
+    .right{text-align:right;display:grid;gap:4px;min-width:90px}
     .amt{font-size:20px;font-weight:800}
     .time{font-size:14px;color:var(--secondary)}
-
     .divider{height:1px;background:var(--divider);border:0;margin:0}
 
     .empty{
-      margin-top:20px;
-      background:rgba(255,255,255,.5);
+      margin-top:18px;
+      background:rgba(255,255,255,0.5);
+      border:1px solid rgba(0,0,0,0.06);
       border-radius:var(--radius);
-      padding:16px;
-      text-align:center;
+      padding:14px 16px;
       color:var(--secondary);
       font-weight:800;
     }
 
-    /* Tab bar */
+    /* ===== Tab bar ===== */
     .tabbar{
-      position:fixed;left:0;right:0;bottom:0;
-      height:var(--tab-height);
-      background:rgba(255,255,255,.65);
-      backdrop-filter:blur(18px);
-      border-top:1px solid rgba(0,0,0,.08);
+      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
+      background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);
+      border-top:1px solid rgba(0,0,0,0.08);
       display:flex;justify-content:center;
     }
     .tabbar-inner{
       max-width:520px;width:100%;
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      padding:10px 18px 18px;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      padding:10px 18px 18px;gap:6px;align-items:center;
     }
     .tab{
-      text-decoration:none;
-      color:var(--secondary);
-      display:grid;
-      place-items:center;
-      font-weight:800;
+      text-decoration:none;color:var(--secondary);
+      display:grid;place-items:center;gap:6px;
+      font-weight:800;padding:8px 0;
     }
-    .tab.active{color:var(--accent)}
+    .tab .icon{font-size:24px;line-height:1}
+    .tab.active{color:var(--accent-text, var(--accent))}
+
+    /* iOS-style tap feedback */
+    a, button, .tx, .tab{
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tx, .tab, button{
+      user-select:none;
+      -webkit-user-select:none;
+      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
+    }
+    .tx:active{ opacity:.6; transform:scale(.995); }
+    .tab:active{ opacity:.6; transform:scale(.98); }
+    button:active{ opacity:.65; transform:scale(.98); }
+    .tx:focus, .tab:focus, button:focus{ outline:none; }
   </style>
 </head>
-
 <body>
-<div class="app">
-  <main class="page">
+  <div class="app">
+    <main class="page">
+      <div class="nav-title">本月</div>
 
-    <div class="nav-title">本月</div>
-
-    <div class="monthbar">
-      <button id="btnPrev" class="m-btn">‹</button>
-      <div class="m-title" id="monthLabel"></div>
-      <button id="btnNext" class="m-btn">›</button>
-    </div>
-
-    <section class="section">
-      <div class="card">
-        <div class="rows">
-          <div class="row">收入 <span id="sum-income" class="v green">0</span></div>
-          <div class="row">支出 <span id="sum-expense" class="v red">0</span></div>
-          <div class="row">結餘 <span id="sum-balance" class="v red">0</span></div>
+      <!-- ✅ 月份切換器 -->
+      <div class="monthbar" aria-label="月份切換">
+        <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">‹</button>
+        <div class="m-title">
+          <span class="bracket">&lt;</span><span id="monthLabel">January</span><span class="bracket">&gt;</span>
         </div>
+        <button class="m-btn" type="button" id="btnNext" aria-label="下一月">›</button>
       </div>
-    </section>
 
-    <div id="list-root"></div>
+      <!-- Summary -->
+      <section class="section">
+        <div class="card">
+          <div class="rows">
+            <div class="row"><div>收入</div><div class="v green" id="sum-income">0</div></div>
+            <div class="row"><div>支出</div><div class="v red" id="sum-expense">0</div></div>
+            <div class="row"><div>結餘</div><div class="v red" id="sum-balance">0</div></div>
+          </div>
+        </div>
+      </section>
 
-  </main>
+      <!-- 這裡會由 JS 生成「依日期分組」的列表 -->
+      <div id="list-root"></div>
+    </main>
 
-  <nav class="tabbar">
-    <div class="tabbar-inner">
-      <a class="tab" href="add.html">新增</a>
-      <a class="tab" href="month.html">本月</a>
-      <a class="tab" href="year.html">年度</a>
-    </div>
-  </nav>
-</div>
+    <!-- Tab Bar -->
+    <nav class="tabbar" aria-label="Tab Bar">
+      <div class="tabbar-inner">
+        <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
+        <a class="tab active" href="month.html"><div class="icon">▦</div><div>本月</div></a>
+        <a class="tab" href="year.html"><div class="icon">📈</div><div>年度</div></a>
+      </div>
+    </nav>
+  </div>
 
-<!-- 本頁專屬 JS -->
-<script>
-  const qs = new URLSearchParams(location.search);
-  const now = new Date();
-  let y = +qs.get('y') || now.getFullYear();
-  let m = +qs.get('m') || now.getMonth() + 1;
+  <script>
+    // ===== month state (from ?m=YYYY-MM) =====
+    const qs = new URLSearchParams(location.search);
 
-  const label = document.getElementById('monthLabel');
-  label.textContent = `${y} / ${m}`;
-
-  btnPrev.onclick = () => location.href = `month.html?y=${y}&m=${m-1}`;
-  btnNext.onclick = () => location.href = `month.html?y=${y}&m=${m+1}`;
-
-  function getTxs(){
-    const ids = JSON.parse(localStorage.getItem('tx:index')||'[]');
-    return ids.map(id=>JSON.parse(localStorage.getItem('tx:'+id)||'{}'))
-      .filter(tx=>tx.date?.startsWith(`${y}-${String(m).padStart(2,'0')}`));
-  }
-
-  function render(){
-    const root = document.getElementById('list-root');
-    root.innerHTML = '';
-
-    const txs = getTxs();
-    if(!txs.length){
-      root.innerHTML = `<div class="empty">這個月還沒有明細</div>`;
-      return;
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; // YYYY-MM
+    }
+    function parseMonthKey(key){
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m-1, 1);
+    }
+    function addMonths(dateObj, delta){
+      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
+    }
+    function monthLabel(dateObj){
+      return dateObj.toLocaleDateString("en-US", { month:"long" });
     }
 
-    let income=0,expense=0;
-    const groups={};
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
+    const currentRef = `month.html?m=${currentKey}`;
 
-    txs.forEach(tx=>{
-      const amt=+tx.amount||0;
-      if(tx.type==='income') income+=amt;
-      else expense+=amt;
-      groups[tx.date]=(groups[tx.date]||[]).concat(tx);
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      location.href = `month.html?m=${monthKeyFromDate(prev)}`;
+    });
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      location.href = `month.html?m=${monthKeyFromDate(next)}`;
     });
 
-    document.getElementById('sum-income').textContent = income;
-    document.getElementById('sum-expense').textContent = expense;
-    document.getElementById('sum-balance').textContent = income - expense;
-    Object.keys(groups).sort().reverse().forEach(date=>{
-      let dayNet=0;
-      const sec=document.createElement('section');
-      sec.className='section';
+    // ===== helpers =====
+    function formatTime12h(hhmm){
+      if(!hhmm) return "";
+      const [hStr, mStr] = hhmm.split(":");
+      let h = parseInt(hStr,10);
+      const m = parseInt(mStr,10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12; if(h === 0) h = 12;
+      return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
+    }
+    function ymdToDate(ymd){
+      if(!ymd) return null;
+      const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
+      if(!y || !m || !d) return null;
+      return new Date(y, m-1, d);
+    }
+    function formatDayHeader(ymd){
+      const dt = ymdToDate(ymd);
+      if(!dt) return ymd || "";
+      const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
+      const mm = dt.getMonth() + 1;
+      const dd = dt.getDate();
+      return `${wd}, ${mm}/${dd}`;
+    }
+    function parseAmount(v){
+      const n = Number(String(v ?? "").replace(/,/g,""));
+      return (isFinite(n) ? n : 0);
+    }
+    function getTxIndex(){
+      try{
+        const raw = localStorage.getItem("tx:index");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){
+        return [];
+      }
+    }
+    function readTx(id){
+      const raw = localStorage.getItem("tx:"+id);
+      if(!raw) return null;
+      try{ return JSON.parse(raw); }catch(e){ return null; }
+    }
+    function isDeleted(id){
+      return localStorage.getItem("tx:deleted:"+id) === "1";
+    }
 
-      const header=document.createElement('div');
-      header.className='day-header';
-      header.innerHTML=`<span>${date}</span><span class="day-total">總計 <span class="v">${groups[date].reduce((s,t)=>{
-        const a=+t.amount||0;
-        return s+(t.type==='income'?a:-a);
-      },0)}</span></span>`;
-      sec.appendChild(header);
+    // ===== rendering =====
+    function buildTxRow(tx){
+      const rawAmt = parseAmount(tx.amount);
+      const isIncome = tx.type === "income";
+      const signed = isIncome ? rawAmt : -rawAmt;
 
-      const card=document.createElement('div');
-      card.className='day-card';
+      const a = document.createElement("a");
+      a.className = "tx";
+      a.dataset.id = tx.id;
 
-      groups[date].forEach((tx,i)=>{
-        const row=document.createElement('a');
-        row.className='tx';
-        row.href=`edit.html?id=${tx.id}`;
-        row.innerHTML=`<div><div class="cat">${tx.category||''}</div>
-                       <div class="note">${tx.note||''}</div></div>
-                       <div><div class="amt">${tx.type==='income'?tx.amount:-tx.amount}</div>
-                       <div class="time">${tx.time||''}</div></div>`;
-        card.appendChild(row);
-        if(i<groups[date].length-1) card.appendChild(document.createElement('hr')).className='divider';
+      const params = new URLSearchParams();
+      params.set("id", tx.id);
+      params.set("ref", currentRef);
+      if(tx.date) params.set("date", tx.date);
+      if(tx.time) params.set("time", tx.time);
+      params.set("type", tx.type || "expense");
+      params.set("amount", String(rawAmt));
+      params.set("cat", tx.category || "");
+      params.set("note", tx.note || "");
+      a.href = "edit.html?" + params.toString();
+
+      const left = document.createElement("div");
+      const cat = document.createElement("div");
+      cat.className = "cat";
+      cat.textContent = tx.category || "";
+      left.appendChild(cat);
+
+      const noteTxt = (tx.note || "").trim();
+      const note = document.createElement("div");
+      note.className = "note";
+      if(noteTxt){
+        note.textContent = noteTxt;
+      }else{
+        note.style.display = "none";
+      }
+      left.appendChild(note);
+
+      const right = document.createElement("div");
+      right.className = "right";
+
+      const amt = document.createElement("div");
+      amt.className = "amt";
+      amt.textContent = String(signed);
+      amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+      right.appendChild(amt);
+
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = formatTime12h(tx.time || "");
+      right.appendChild(time);
+
+      a.appendChild(left);
+      a.appendChild(right);
+
+      return a;
+    }
+
+    function render(){
+      const root = document.getElementById("list-root");
+      root.innerHTML = "";
+
+      const ids = getTxIndex().filter(Boolean);
+
+      // ✅ 只顯示該月份
+      const txs = [];
+      for(const id of ids){
+        if(isDeleted(id)) continue;
+        const tx = readTx(id);
+        if(!tx) continue;
+        if(!tx.id) tx.id = id;
+
+        const d = (tx.date || "");
+        if(!d.startsWith(currentKey)) continue;
+
+        txs.push(tx);
+      }
+
+      // 排序：date desc, time desc
+      txs.sort((a,b) => {
+        const da = (a.date || "");
+        const db = (b.date || "");
+        if(da !== db) return db.localeCompare(da);
+        const ta = (a.time || "");
+        const tb = (b.time || "");
+        return tb.localeCompare(ta);
       });
 
-      sec.appendChild(card);
-      root.appendChild(sec);
+      // summary（只算該月）
+      let income = 0, expense = 0;
+      for(const tx of txs){
+        const amt = parseAmount(tx.amount);
+        if(tx.type === "income") income += amt;
+        else expense += amt;
+      }
+      const balance = income - expense;
+
+      const incomeEl = document.getElementById("sum-income");
+      const expenseEl = document.getElementById("sum-expense");
+      const balEl = document.getElementById("sum-balance");
+      if(incomeEl) incomeEl.textContent = String(income);
+      if(expenseEl) expenseEl.textContent = String(expense);
+      if(balEl){
+        balEl.textContent = String(balance);
+        balEl.classList.remove("green","red");
+        balEl.classList.add(balance >= 0 ? "green" : "red");
+      }
+
+      if(txs.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
+        root.appendChild(empty);
+        return;
+      }
+
+      // 依日期分組
+      const groups = new Map(); // date -> tx[]
+      for(const tx of txs){
+        const key = tx.date || "unknown";
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(tx);
+      }
+
+      // 依日期排序輸出
+      const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
+      for(const dateKey of dates){
+        const section = document.createElement("section");
+        section.className = "section";
+
+        const list = groups.get(dateKey);
+
+        // ✅ header：左日期 / 右當日總計（收入-支出）
+        const header = document.createElement("div");
+        header.className = "day-header";
+
+        const leftTitle = document.createElement("div");
+        leftTitle.textContent = formatDayHeader(dateKey);
+
+        let dayIncome = 0;
+        let dayExpense = 0;
+        for (const tx of list) {
+          const amt = parseAmount(tx.amount);
+          if (tx.type === "income") dayIncome += amt;
+          else dayExpense += amt;
+        }
+        const dayNet = dayIncome - dayExpense;
+
+        const rightTotal = document.createElement("div");
+        rightTotal.className = "day-total";
+        rightTotal.appendChild(document.createTextNode("總計 "));
+
+        const v = document.createElement("span");
+        v.className = "v " + (dayNet >= 0 ? "green" : "red");
+        v.textContent = String(dayNet);
+        rightTotal.appendChild(v);
+
+        header.appendChild(leftTitle);
+        header.appendChild(rightTotal);
+        section.appendChild(header);
+
+        const card = document.createElement("div");
+        card.className = "day-card";
+
+        list.forEach((tx, idx) => {
+          card.appendChild(buildTxRow(tx));
+          if(idx !== list.length - 1){
+            const hr = document.createElement("hr");
+            hr.className = "divider";
+            card.appendChild(hr);
+          }
+        });
+
+        section.appendChild(card);
+        root.appendChild(section);
+      }
+    }
+
+    render();
+  </script>
+  <script>
+  document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', e => {
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      e.preventDefault();
+
+      const page = document.querySelector('.page');
+      if (!page) {
+        location.href = href;
+        return;
+      }
+
+      page.classList.add('leaving');
+
+      setTimeout(() => {
+        location.href = href;
+      }, 200); // ⏱ 要和 CSS page-leave 時間一致
     });
-  }
-
-  render();
+  });
 </script>
+<script>
+  (function highlightTab(){
+    const path = location.pathname.split('/').pop();
 
-<!-- 全站共用 JS -->
-<script src="app.js"></script>
+    document.querySelectorAll('.tabbar .tab').forEach(tab => {
+      const href = tab.getAttribute('href');
+      if(!href) return;
+
+      // 完全比對檔名（month.html / year.html / add.html）
+      if(path === href){
+        tab.classList.add('active');
+      }else{
+        tab.classList.remove('active');
+      }
+    });
+  })();
+</script>
 </body>
 </html>
