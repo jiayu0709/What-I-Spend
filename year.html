@@ -17,125 +17,67 @@
     }
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
-    .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
+    .nav-title{font-size:42px;font-weight:800;margin:10px 0 12px;letter-spacing:-.5px}
+
+    /* ✅ 月份切換器（跟 month.html 同風格） */
+    .monthbar{
+      margin-top:6px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .monthbar .m-btn{
+      border:0;
+      background: transparent;
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:900;
+      color: var(--accent-text, var(--accent));
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .monthbar .m-title{
+      font-weight:900;
+      letter-spacing:-.2px;
+      color: var(--text);
+      white-space:nowrap;
+    }
+    .monthbar .m-title .bracket{
+      color: var(--secondary);
+      font-weight:900;
+    }
+
     .section{margin-top:18px}
     .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
 
     /* ===== Donut card ===== */
-    .donut-wrap{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:14px;
-      align-items:center;
-    }
-    .donut-area{
-      display:grid;
-      place-items:center;
-      padding:8px 0 2px;
-    }
-    .donut-legend{
-      margin-top:6px;
-      display:grid;
-      gap:12px;
-    }
+    .donut-wrap{display:grid;grid-template-columns:1fr;gap:14px;align-items:center;}
+    .donut-area{display:grid;place-items:center;padding:8px 0 2px;}
+    .donut-legend{margin-top:6px;display:grid;gap:12px;}
     .legend-row{
       display:grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns:1fr auto auto;
       gap:10px;
       align-items:center;
       font-size:18px;
       padding:8px 0;
     }
-    .legend-left{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:0;
-    }
-    .dot{
-      width:12px;height:12px;border-radius:999px;
-      flex:0 0 auto;
-    }
+    .legend-left{display:flex;align-items:center;gap:10px;min-width:0;}
+    .dot{width:12px;height:12px;border-radius:999px;flex:0 0 auto;}
     .cat{
       font-weight:800;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .pct{
-      color:var(--secondary);
-      font-weight:900;
-      width:56px;
-      text-align:right;
-    }
-    .amt{
-      font-weight:900;
-      width:110px;
-      text-align:right;
-    }
-
-    .divider{height:1px;background:var(--divider);border:0;margin:0}
-
-    /* ===== Tab bar ===== */
-    .tabbar{
-      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
-      background:rgba(255,255,255,0.65);
-      backdrop-filter:blur(18px);
-      border-top:1px solid rgba(0,0,0,0.08);
-      display:flex;
-      justify-content:center;
-    }
-    .tabbar-inner{
-      max-width:520px;width:100%;
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      padding:10px 18px 18px;
-      gap:6px;
-      align-items:center;
-    }
-    .tab{
-      text-decoration:none;
-      color:var(--secondary);
-      display:grid;
-      place-items:center;
-      gap:6px;
-      font-weight:800;
-      padding:8px 0;
-    }
-    .tab .icon{font-size:24px;line-height:1}
-    .tab.active{color:var(--accent-text, var(--accent))}
-
-    /* iOS tap */
-    a, button, .month, .tab{
-      -webkit-tap-highlight-color: transparent;
-    }
-    .month, .tab, button{
-      user-select:none;
-      -webkit-user-select:none;
-      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
-    }
-    .month:active{ opacity:.6; transform:scale(.995); }
-    .tab:active{ opacity:.6; transform:scale(.98); }
-    button:active{ opacity:.65; transform:scale(.98); }
-    .month:focus, .tab:focus, button:focus{ outline:none; }
-
-    /* Donut SVG sizing */
-    .donut-svg{
-      width: 260px;
-      height: 260px;
-      display:block;
-    }
-    .center-title{
-      font-size:18px;
-      font-weight:900;
-      fill: var(--secondary);
-    }
-    .center-value{
-      font-size:26px;
-      font-weight:900;
-      fill: var(--text);
-    }
+    .pct{color:var(--secondary);font-weight:900;width:56px;text-align:right;}
+    .amt{font-weight:900;width:110px;text-align:right;}
     .empty{
       background:rgba(255,255,255,0.5);
       border:1px solid rgba(0,0,0,0.06);
@@ -144,6 +86,42 @@
       color:var(--secondary);
       font-weight:800;
     }
+
+    /* Donut SVG sizing */
+    .donut-svg{width:260px;height:260px;display:block;}
+    .center-title{font-size:18px;font-weight:900;fill:var(--secondary);}
+    .center-value{font-size:26px;font-weight:900;fill:var(--text);}
+
+    /* ===== Tab bar ===== */
+    .tabbar{
+      position:fixed;left:0;right:0;bottom:0;height:var(--tab-height);
+      background:rgba(255,255,255,0.65);
+      backdrop-filter:blur(18px);
+      border-top:1px solid rgba(0,0,0,0.08);
+      display:flex;justify-content:center;
+    }
+    .tabbar-inner{
+      max-width:520px;width:100%;
+      display:grid;grid-template-columns:repeat(3,1fr);
+      padding:10px 18px 18px;gap:6px;align-items:center;
+    }
+    .tab{
+      text-decoration:none;color:var(--secondary);
+      display:grid;place-items:center;gap:6px;
+      font-weight:800;padding:8px 0;
+    }
+    .tab .icon{font-size:24px;line-height:1}
+    .tab.active{color:var(--accent-text, var(--accent))}
+
+    /* iOS tap */
+    a, button, .tab{-webkit-tap-highlight-color:transparent;}
+    .tab, button{
+      user-select:none;-webkit-user-select:none;
+      transition:opacity .15s ease, transform .10s ease, background-color .15s ease;
+    }
+    .tab:active{opacity:.6;transform:scale(.98);}
+    button:active{opacity:.65;transform:scale(.98);}
+    .tab:focus, button:focus{outline:none;}
   </style>
 </head>
 <body>
@@ -151,14 +129,21 @@
     <main class="page">
       <div class="nav-title">年度</div>
 
-      <!-- ✅ 分類支出圖表 -->
+      <!-- ✅ 月份切換器 -->
+      <div class="monthbar" aria-label="月份切換">
+        <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">‹</button>
+        <div class="m-title">
+          <span class="bracket">&lt;</span><span id="monthLabel">January</span><span class="bracket">&gt;</span>
+        </div>
+        <button class="m-btn" type="button" id="btnNext" aria-label="下一月">›</button>
+      </div>
+
       <section class="section">
-        <div class="label" id="yearLabel">支出分析（本年）</div>
+        <div class="label" id="rangeLabel">支出分析</div>
         <div class="card">
           <div id="chartRoot" class="donut-wrap"></div>
         </div>
       </section>
-      
     </main>
 
     <!-- Tab Bar -->
@@ -172,31 +157,57 @@
   </div>
 
   <script>
-    // ===== data helpers =====
+    // ===== month state: ?m=YYYY-MM =====
+    const qs = new URLSearchParams(location.search);
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+    function parseMonthKey(key){
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m<1 || m>12) return null;
+      return new Date(y, m-1, 1);
+    }
+    function addMonths(dateObj, delta){ return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1); }
+    function monthLabel(dateObj){
+      // 顯示英文月份（跟你 month.html 一樣）；如果要中文我也能改
+      return dateObj.toLocaleDateString("en-US", { month:"long" });
+    }
+
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
+
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+    document.getElementById("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth()+1)}）`;
+
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      location.href = `year.html?m=${monthKeyFromDate(prev)}`;
+    });
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      location.href = `year.html?m=${monthKeyFromDate(next)}`;
+    });
+
+    // ===== storage helpers =====
     function getTxIndex(){
       try{
         const raw = localStorage.getItem("tx:index");
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
-      }catch(e){
-        return [];
-      }
+      }catch(e){ return []; }
     }
     function readTx(id){
       const raw = localStorage.getItem("tx:"+id);
       if(!raw) return null;
       try{ return JSON.parse(raw); }catch(e){ return null; }
     }
-    function isDeleted(id){
-      return localStorage.getItem("tx:deleted:"+id) === "1";
-    }
+    function isDeleted(id){ return localStorage.getItem("tx:deleted:"+id) === "1"; }
     function parseAmount(v){
       const n = Number(String(v ?? "").replace(/,/g,""));
       return (isFinite(n) ? n : 0);
     }
-    function moneyNT(n){
-      return "NT$" + Math.round(n).toLocaleString("en-US");
-    }
+    function moneyNT(n){ return "NT$" + Math.round(n).toLocaleString("en-US"); }
     function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
     // ===== Donut (pure SVG) =====
@@ -208,41 +219,27 @@
       const start = polarToCartesian(cx, cy, r, endAngle);
       const end = polarToCartesian(cx, cy, r, startAngle);
       const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
-      return [
-        "M", start.x, start.y,
-        "A", r, r, 0, largeArcFlag, 0, end.x, end.y
-      ].join(" ");
+      return ["M", start.x, start.y, "A", r, r, 0, largeArcFlag, 0, end.x, end.y].join(" ");
     }
 
-    // palette (可自行調整)
-    const palette = [
-      "#f04b3a", "#d61c68", "#7c3aed", "#3b82f6", "#06b6d4",
-      "#22c55e", "#f59e0b", "#a855f7", "#ef4444", "#10b981"
-    ];
+    const palette = ["#f04b3a","#d61c68","#7c3aed","#3b82f6","#06b6d4","#22c55e","#f59e0b","#a855f7","#ef4444","#10b981"];
 
     function buildDonutSVG(total, slices){
-      // slices: [{name, value, color, pct}]
-      const size = 260;
-      const cx = size/2, cy = size/2;
-      const r = 92;
-      const stroke = 34;
+      const size = 260, cx=size/2, cy=size/2;
+      const r = 92, stroke = 34;
 
-      let start = 0; // degrees
+      let start = 0;
       const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
       svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
       svg.setAttribute("class","donut-svg");
 
-      // background ring
       const bg = document.createElementNS(svg.namespaceURI,"circle");
-      bg.setAttribute("cx", cx);
-      bg.setAttribute("cy", cy);
-      bg.setAttribute("r", r);
+      bg.setAttribute("cx", cx); bg.setAttribute("cy", cy); bg.setAttribute("r", r);
       bg.setAttribute("fill","none");
       bg.setAttribute("stroke","rgba(0,0,0,0.06)");
       bg.setAttribute("stroke-width", stroke);
       svg.appendChild(bg);
 
-      // arcs
       slices.forEach(s => {
         const sweep = 360 * (s.value / total);
         const end = start + sweep;
@@ -258,18 +255,15 @@
         start = end;
       });
 
-      // center text
       const t1 = document.createElementNS(svg.namespaceURI,"text");
-      t1.setAttribute("x", cx);
-      t1.setAttribute("y", cy - 4);
+      t1.setAttribute("x", cx); t1.setAttribute("y", cy - 4);
       t1.setAttribute("text-anchor","middle");
       t1.setAttribute("class","center-title");
       t1.textContent = "Expenses";
       svg.appendChild(t1);
 
       const t2 = document.createElementNS(svg.namespaceURI,"text");
-      t2.setAttribute("x", cx);
-      t2.setAttribute("y", cy + 26);
+      t2.setAttribute("x", cx); t2.setAttribute("y", cy + 26);
       t2.setAttribute("text-anchor","middle");
       t2.setAttribute("class","center-value");
       t2.textContent = moneyNT(total);
@@ -278,11 +272,7 @@
       return svg;
     }
 
-    function renderYearCategoryChart(){
-      const now = new Date();
-      const year = now.getFullYear();
-      document.getElementById("yearLabel").textContent = `支出分析（${year}）`;
-
+    function renderMonthCategoryChart(){
       const ids = getTxIndex().filter(Boolean);
       const map = new Map(); // category -> sum
 
@@ -291,10 +281,11 @@
         const tx = readTx(id);
         if(!tx) continue;
 
+        // ✅ 只統計「當月」
         const date = String(tx.date || "");
-        if(!date.startsWith(String(year) + "-")) continue;
+        if(!date.startsWith(currentKey)) continue; // YYYY-MM
 
-        // ✅ 只統計支出：type === income 才排除，其他(含沒存type)都當支出
+        // ✅ 只統計支出：type === income 才排除；其他(含沒type)都當支出
         if(tx.type === "income") continue;
 
         const amt = parseAmount(tx.amount);
@@ -304,7 +295,6 @@
         map.set(cat, (map.get(cat) || 0) + amt);
       }
 
-      // 轉成陣列排序
       const items = Array.from(map.entries())
         .map(([name,value]) => ({ name, value }))
         .sort((a,b) => b.value - a.value);
@@ -315,14 +305,14 @@
       if(items.length === 0){
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "今年還沒有支出資料，先去新增幾筆吧！";
+        empty.textContent = "這個月份還沒有支出資料，先去新增幾筆吧！";
         root.appendChild(empty);
         return;
       }
 
       const total = items.reduce((s,x)=>s+x.value,0);
 
-      // 組 slices（限制最多 8 類，其他合併成 Other）
+      // 最多 8 類，其餘合併 Other
       const MAX = 8;
       let main = items.slice(0, MAX);
       const rest = items.slice(MAX);
@@ -331,18 +321,16 @@
         main = main.concat([{ name:"Other", value:restSum }]);
       }
 
-      const slices = main.map((x, i) => ({
+      const slices = main.map((x,i)=>({
         ...x,
         color: palette[i % palette.length],
         pct: x.value / total
       }));
 
-      // donut
       const donutArea = document.createElement("div");
       donutArea.className = "donut-area";
       donutArea.appendChild(buildDonutSVG(total, slices));
 
-      // legend list
       const legend = document.createElement("div");
       legend.className = "donut-legend";
 
@@ -366,7 +354,7 @@
 
         const pct = document.createElement("div");
         pct.className = "pct";
-        pct.textContent = Math.round(clamp01(s.pct) * 100) + "%";
+        pct.textContent = Math.round(clamp01(s.pct)*100) + "%";
 
         const amt = document.createElement("div");
         amt.className = "amt";
@@ -383,7 +371,7 @@
       root.appendChild(legend);
     }
 
-    renderYearCategoryChart();
+    renderMonthCategoryChart();
   </script>
 </body>
 </html>
