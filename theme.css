@@ -82,7 +82,7 @@ main.page.leaving{
 }
 
 .tabbar .tab .icon{
-  color: inherit; /* ⭐ icon 跟著 tab 一起變色 */
+  color: inherit !important;/* ⭐ icon 跟著 tab 一起變色 */
 }
 
 .tabbar .tab.active{
