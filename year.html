@@ -148,7 +148,7 @@
     function monthLabel(dateObj){
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}/${m}`;
+      return `${y}-${m}`;
     }
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
