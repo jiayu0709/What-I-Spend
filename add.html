@@ -273,5 +273,22 @@
     });
   });
 </script>
+<script>
+  (function highlightTab(){
+    const path = location.pathname.split('/').pop();
+
+    document.querySelectorAll('.tabbar .tab').forEach(tab => {
+      const href = tab.getAttribute('href');
+      if(!href) return;
+
+      // 完全比對檔名（month.html / year.html / add.html）
+      if(path === href){
+        tab.classList.add('active');
+      }else{
+        tab.classList.remove('active');
+      }
+    });
+  })();
+</script>
 </body>
 </html>
