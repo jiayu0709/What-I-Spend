@@ -33,3 +33,6 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 /* ... 保持原本的 pageTransition 不變 ... */
 
+// 在你的 app.js 初始化後加入這兩行
+window.auth = auth;
+window.db = db;
