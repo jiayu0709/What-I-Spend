@@ -164,6 +164,29 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    const auth = window.auth;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        console.log("確認已登入:", user.uid);
+        try {
+          const txs = await fetchMonthTxs(user.uid);
+          renderWithTxs(txs);
+        } catch (e) {
+          console.error("抓取資料出錯:", e);
+        }
+      } else {
+        // 這裡加一個小延遲，避免 Firebase 還在加載時就判定為沒登入
+        console.log("尚未偵測到登入狀態...");
+        // 如果 2 秒後還是沒登入，才跳轉
+        setTimeout(() => {
+          if (!auth.currentUser) {
+            location.replace("index.html");
+          }
+        }, 2000);
+      }
+    });
+
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
 
