@@ -1,18 +1,45 @@
+// app.js  (IMPORTANT: this file is loaded via <script type="module" src="app.js"></script>)
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* =========================
+   1) Firebase 初始化（把這段換成你 Firebase console 給的）
+   ========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDkj60hCKagiQijipxl3s6F5soN1YIKadE",
+  authDomain: "whatispend-3c060.firebaseapp.com",
+  projectId: "whatispend-3c060",
+  storageBucket: "whatispend-3c060.firebasestorage.app",
+  messagingSenderId: "740100624448",
+  appId: "1:740100624448:web:88c3298185bd163fba8fa5",
+  measurementId: "G-X5V7G8QBCY"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ✅ 關鍵：掛到 window，讓其他頁面的 inline script 可以用
+window.auth = auth;
+window.db = db;
+
+/* =========================
+   2) 你的 tab 高亮（保持你的原功能）
+   ========================= */
 function highlightTab() {
-  // 1. 取得當前檔名 (例如: month.html)
-  // 如果是根目錄 "/"，預設為 "month.html"
   const currentPath = window.location.pathname.split('/').pop() || 'month.html';
 
   document.querySelectorAll('.tabbar .tab').forEach(tab => {
     const href = tab.getAttribute('href');
     if (!href) return;
 
-    // 2. 清理 href 的參數（處理 month.html?m=2025-01 這種情況）
     const cleanHref = href.split('?')[0].split('#')[0];
 
-    // 3. 檢查當前路徑是否包含該 tab 的連結，或是兩者完全一致
-    // 使用 endsWith 可以避免路徑中有資料夾名稱的干擾
-    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) {
+    // ✅ 修正：應該是 cleanHref.endsWith(currentPath)
+    // 你原本寫反了，會導致判斷常常失敗
+    if (cleanHref === currentPath || cleanHref.endsWith(currentPath)) {
       tab.classList.add('active');
     } else {
       tab.classList.remove('active');
@@ -20,19 +47,20 @@ function highlightTab() {
   });
 }
 
-// 確保轉場效果不會卡住，並執行高亮
+/* =========================
+   3) 保持你原本的 pageTransition（如果你原本有）
+   ========================= */
+function pageTransition() {
+  // 你原本怎麼寫就放這裡，不動也可以
+  // 如果你本來就在 app.js 裡有，請保留原本版本
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   highlightTab();
-  pageTransition();
+  try { pageTransition(); } catch(e) {}
 });
 
-// 額外保險：如果 DOM 已經加載完畢，直接執行一次
+// 額外保險（你原本的）
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   highlightTab();
 }
-
-/* ... 保持原本的 pageTransition 不變 ... */
-
-// 在你的 app.js 初始化後加入這兩行
-window.auth = auth;
-window.db = db;

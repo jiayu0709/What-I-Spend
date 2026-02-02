@@ -23,7 +23,6 @@
 
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 14px;letter-spacing:-.5px}
 
-    /* ✅ 月份切換器 */
     .monthbar{
       margin-top:8px;
       background: var(--card-bg);
@@ -63,7 +62,6 @@
     .v.green{color:var(--green);font-weight:800}
     .v.red{color:var(--red);font-weight:800}
 
-    /* ✅ 日期列：左日期 / 右當日總計 */
     .day-header{
       display:flex;
       align-items:center;
@@ -122,7 +120,6 @@
     <main class="page">
       <div class="nav-title">本月</div>
 
-      <!-- ✅ 月份切換器 -->
       <div class="monthbar" aria-label="月份切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
         <div class="m-title">
@@ -131,7 +128,6 @@
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
-      <!-- Summary -->
       <section class="section">
         <div class="card">
           <div class="rows">
@@ -142,11 +138,9 @@
         </div>
       </section>
 
-      <!-- 這裡會由 JS 生成「依日期分組」的列表 -->
       <div id="list-root"></div>
     </main>
 
-    <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
         <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
@@ -156,43 +150,19 @@
     </nav>
   </div>
 
-  <!-- 你原本就有的 app.js：裡面應該初始化 window.auth / window.db -->
+  <!-- 一定要先載入 app.js，讓 window.auth / window.db 存在 -->
   <script src="app.js"></script>
 
-  <!-- ✅ 雲端讀取：只把資料來源改成 Firestore，其餘 UI/功能保持 -->
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const auth = window.auth;
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log("確認已登入:", user.uid);
-        try {
-          const txs = await fetchMonthTxs(user.uid);
-          renderWithTxs(txs);
-        } catch (e) {
-          console.error("抓取資料出錯:", e);
-        }
-      } else {
-        // 這裡加一個小延遲，避免 Firebase 還在加載時就判定為沒登入
-        console.log("尚未偵測到登入狀態...");
-        // 如果 2 秒後還是沒登入，才跳轉
-        setTimeout(() => {
-          if (!auth.currentUser) {
-            location.replace("index.html");
-          }
-        }, 2000);
-      }
-    });
 
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
 
     function pad2(n){ return String(n).padStart(2,"0"); }
     function monthKeyFromDate(d){
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; // YYYY-MM
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
     }
     function parseMonthKey(key){
       if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
@@ -206,11 +176,11 @@
     function monthLabel(dateObj){
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`; // ✅ 你要的 2026-02
+      return `${y}-${m}`;
     }
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
+    const currentKey = monthKeyFromDate(currentMonth);
     const currentRef = `month.html?m=${currentKey}`;
 
     document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
@@ -224,7 +194,6 @@
       location.href = `month.html?m=${monthKeyFromDate(next)}`;
     });
 
-    // ===== helpers (保留你原本功能) =====
     function formatTime12h(hhmm){
       if(!hhmm) return "";
       const [hStr, mStr] = hhmm.split(":");
@@ -253,7 +222,6 @@
       return (isFinite(n) ? n : 0);
     }
 
-    // ===== rendering (保留你原本 UI DOM 生成方式) =====
     function buildTxRow(tx){
       const rawAmt = parseAmount(tx.amount);
       const isIncome = tx.type === "income";
@@ -294,7 +262,7 @@
 
       const amt = document.createElement("div");
       amt.className = "amt";
-      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`; // ✅ 收入加 +
+      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
       amt.style.color = isIncome ? "var(--green)" : "var(--red)";
       right.appendChild(amt);
 
@@ -313,7 +281,6 @@
       const root = document.getElementById("list-root");
       root.innerHTML = "";
 
-      // 排序：date desc, time desc（保持原本功能）
       txs.sort((a,b) => {
         const da = (a.date || "");
         const db = (b.date || "");
@@ -323,7 +290,6 @@
         return tb.localeCompare(ta);
       });
 
-      // summary（只算該月）
       let income = 0, expense = 0;
       for(const tx of txs){
         const amt = parseAmount(tx.amount);
@@ -351,15 +317,13 @@
         return;
       }
 
-      // 依日期分組
-      const groups = new Map(); // date -> tx[]
+      const groups = new Map();
       for(const tx of txs){
         const key = tx.date || "unknown";
         if(!groups.has(key)) groups.set(key, []);
         groups.get(key).push(tx);
       }
 
-      // 依日期排序輸出
       const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
       for(const dateKey of dates){
         const section = document.createElement("section");
@@ -367,7 +331,6 @@
 
         const list = groups.get(dateKey);
 
-        // ✅ header：左日期 / 右當日總計（收入-支出）
         const header = document.createElement("div");
         header.className = "day-header";
 
@@ -413,8 +376,7 @@
       }
     }
 
-    // ✅ Firestore 讀取：只替換資料來源，不動 UI
-    function nextMonthKey(ym){ // ym: YYYY-MM -> next YYYY-MM
+    function nextMonthKey(ym){
       const [y,m] = ym.split("-").map(n=>parseInt(n,10));
       const d = new Date(y, m-1, 1);
       const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
@@ -432,12 +394,9 @@
       }
 
       const txRef = collection(db, "users", uid, "transactions");
-
-      // 用「>= 本月第一天」且「< 下月第一天」避免 02 月被 31 卡住
       const start = `${currentKey}-01`;
       const end = `${nextMonthKey(currentKey)}-01`;
 
-      // Firestore range + orderBy 要一致：我們用 date 做範圍，然後 orderBy date/time
       const q = query(
         txRef,
         where("date", ">=", start),
@@ -454,21 +413,49 @@
       return txs;
     }
 
-    // ===== 登入狀態監聽：沒登入回 index，有登入抓雲端 =====
-    onAuthStateChanged(window.auth, async (user) => {
-      if (!user) {
-        location.replace("index.html");
+    // ✅ 這段是關鍵：等到 window.auth 存在再監聽，避免一開始 undefined 被判定沒登入
+    function waitForAuthReady(timeoutMs = 6000){
+      return new Promise((resolve, reject) => {
+        const start = Date.now();
+        const timer = setInterval(() => {
+          if (window.auth && window.db) {
+            clearInterval(timer);
+            resolve();
+          } else if (Date.now() - start > timeoutMs) {
+            clearInterval(timer);
+            reject(new Error("Firebase not ready: window.auth/window.db missing"));
+          }
+        }, 50);
+      });
+    }
+
+    (async () => {
+      try{
+        await waitForAuthReady();
+      }catch(e){
+        console.error(e);
+        // Firebase 沒初始化好就不要亂跳
+        // 先顯示提示
+        const root = document.getElementById("list-root");
+        root.innerHTML = "<div class='empty'>Firebase 尚未初始化完成，請確認 app.js（window.auth / window.db）</div>";
         return;
       }
-      try{
-        const txs = await fetchMonthTxs(user.uid);
-        renderWithTxs(txs);
-      }catch(e){
-        console.error("讀取失敗:", e);
-        const root = document.getElementById("list-root");
-        root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
-      }
-    });
+
+      onAuthStateChanged(window.auth, async (user) => {
+        if (!user) {
+          location.replace("index.html");
+          return;
+        }
+        try{
+          const txs = await fetchMonthTxs(user.uid);
+          renderWithTxs(txs);
+        }catch(e){
+          console.error("讀取失敗:", e);
+          const root = document.getElementById("list-root");
+          root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+        }
+      });
+    })();
   </script>
 </body>
 </html>
