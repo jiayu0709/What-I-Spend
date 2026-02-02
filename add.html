@@ -10,7 +10,7 @@
   <meta
   name="viewport"
   content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-/>
+  />
   <title>新增</title>
   <style>
     *{box-sizing:border-box}
@@ -78,19 +78,19 @@
     iOS 日期 input 文字顏色（統一控色）
     =============================== */
     input[type="date"]{
-    color: var(--accent-text);
-    -webkit-text-fill-color: var(--accent-text);
+      color: var(--accent-text);
+      -webkit-text-fill-color: var(--accent-text);
     }
 
     input[type="date"]::-webkit-datetime-edit{
-    color: var(--accent-text);
+      color: var(--accent-text);
     }
 
     input[type="date"]::-webkit-datetime-edit-text,
     input[type="date"]::-webkit-datetime-edit-month-field,
     input[type="date"]::-webkit-datetime-edit-day-field,
     input[type="date"]::-webkit-datetime-edit-year-field{
-    color: var(--accent-text);
+      color: var(--accent-text);
     }
   </style>
 </head>
@@ -205,140 +205,165 @@
     location.replace(`month.html?m=${ym}`);
   })();
   </script>
-  <script>
-  // ===== 1. 工具函數 =====
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function todayYMD(){
-    const d = new Date();
-    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-  }
-  function nowHHMM(){
-    const d = new Date();
-    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  }
-  function getTxIndex(){
-    try{
-      const raw = localStorage.getItem("tx:index");
-      const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr : [];
-    }catch(e){ return []; }
-  }
-  function setTxIndex(arr){
-    localStorage.setItem("tx:index", JSON.stringify(arr));
-  }
 
-  // ===== 2. 分類資料 =====
-  const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
-  const incomeCategories = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
+  <!-- ✅ 只改「點擊儲存」：把 localStorage.setItem 換 addDoc -->
+  <script type="module">
+    import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from "./firebase-config.js";
 
-  // ===== 3. DOM 元素與狀態 =====
-  let currentType = "expense"; 
-  const btnExpense = document.getElementById("btn-expense");
-  const btnIncome  = document.getElementById("btn-income");
-  const categorySelect = document.getElementById("category"); // 先宣告元素
-  const dateInput = document.getElementById("date");
-
-  // 更新分類選項的函數
-  function updateCategoryOptions(type){
-    const list = (type === "income") ? incomeCategories : expenseCategories;
-    const prev = categorySelect.value;
-
-    categorySelect.innerHTML = "";
-    list.forEach(name => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      categorySelect.appendChild(opt);
-    });
-
-    if(list.includes(prev)) {
-      categorySelect.value = prev;
-    } else {
-      categorySelect.value = list[0];
+    // ===== 1. 工具函數 =====
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function todayYMD(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
     }
-  }
-
-  // 切換支出/收入類型
-  function setType(t){
-    currentType = t;
-    const isExpense = t === "expense";
-    btnExpense.classList.toggle("active", isExpense);
-    btnIncome.classList.toggle("active", !isExpense);
-    btnExpense.setAttribute("aria-pressed", String(isExpense));
-    btnIncome.setAttribute("aria-pressed", String(!isExpense));
-    
-    updateCategoryOptions(t); // 切換時同步更新分類
-  }
-
-  // ===== 4. 初始化執行 =====
-  document.addEventListener("DOMContentLoaded", () => {
-    // A. 設定預設日期為今天
-    if (dateInput) {
-      dateInput.value = todayYMD();
+    function nowHHMM(){
+      const d = new Date();
+      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
     }
-    
-    // B. 初始化分類列表（預設支出）
-    setType("expense");
-  });
-
-  // 綁定按鈕事件
-  btnExpense.addEventListener("click", () => setType("expense"));
-  btnIncome.addEventListener("click",  () => setType("income"));
-
-  // ===== 5. 儲存邏輯 =====
-  document.getElementById("saveBtn").addEventListener("click", () => {
-    const date = dateInput.value || todayYMD();
-    const time = nowHHMM();
-    const category = (categorySelect.value || "").trim();
-    const note = (document.getElementById("note").value || "").trim();
-    const amtRaw = document.getElementById("amount").value;
-    const amount = Number(String(amtRaw).replace(/,/g,""));
-
-    if(!isFinite(amount) || amount <= 0){
-      alert("請輸入正確金額（> 0）");
-      return;
+    function getTxIndex(){
+      try{
+        const raw = localStorage.getItem("tx:index");
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){ return []; }
+    }
+    function setTxIndex(arr){
+      localStorage.setItem("tx:index", JSON.stringify(arr));
     }
 
-    const id = "tx-" + Date.now();
-    const data = { id, date, time, type: currentType, amount: String(amount), category, note };
-    localStorage.setItem("tx:" + id, JSON.stringify(data));
+    // ===== 2. 分類資料 =====
+    const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
+    const incomeCategories = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
 
-    const idx = getTxIndex();
-    idx.unshift(id);
-    setTxIndex(idx);
+    // ===== 3. DOM 元素與狀態 =====
+    let currentType = "expense";
+    const btnExpense = document.getElementById("btn-expense");
+    const btnIncome  = document.getElementById("btn-income");
+    const categorySelect = document.getElementById("category");
+    const dateInput = document.getElementById("date");
 
-    location.href = "month.html";
-  });
+    // 更新分類選項的函數
+    function updateCategoryOptions(type){
+      const list = (type === "income") ? incomeCategories : expenseCategories;
+      const prev = categorySelect.value;
 
-  // ===== 讀捷徑傳進來的參數 =====
-  (function initFromShortcut(){
-    const qs = new URLSearchParams(location.search);
+      categorySelect.innerHTML = "";
+      list.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        categorySelect.appendChild(opt);
+      });
 
-    const type = qs.get("type");       // expense / income
-    const amount = qs.get("amount");
-    const category = qs.get("category");
-    const note = qs.get("note");
-
-    if(type === "income" || type === "expense"){
-      setType(type);
-    }
-
-    if(category){
-      const sel = document.getElementById("category");
-      if([...sel.options].some(o => o.value === category)){
-        sel.value = category;
+      if(list.includes(prev)) {
+        categorySelect.value = prev;
+      } else {
+        categorySelect.value = list[0];
       }
     }
 
-    if(amount){
-      document.getElementById("amount").value = amount;
+    // 切換支出/收入類型
+    function setType(t){
+      currentType = t;
+      const isExpense = t === "expense";
+      btnExpense.classList.toggle("active", isExpense);
+      btnIncome.classList.toggle("active", !isExpense);
+      btnExpense.setAttribute("aria-pressed", String(isExpense));
+      btnIncome.setAttribute("aria-pressed", String(!isExpense));
+      updateCategoryOptions(t);
     }
 
-    if(note){
-      document.getElementById("note").value = note;
-    }
-  })();
-</script>
+    // ===== 4. 初始化執行 =====
+    document.addEventListener("DOMContentLoaded", () => {
+      // A. 設定預設日期為今天
+      if (dateInput) {
+        dateInput.value = todayYMD();
+      }
+      // B. 初始化分類列表（預設支出）
+      setType("expense");
+    });
+
+    // 綁定按鈕事件
+    btnExpense.addEventListener("click", () => setType("expense"));
+    btnIncome.addEventListener("click",  () => setType("income"));
+
+    // ===== 讀捷徑傳進來的參數（不自動存，只是預填） =====
+    (function initFromShortcut(){
+      const qs = new URLSearchParams(location.search);
+
+      const type = qs.get("type");       // expense / income
+      const amount = qs.get("amount");
+      const category = qs.get("category");
+      const note = qs.get("note");
+
+      if(type === "income" || type === "expense"){
+        setType(type);
+      }
+
+      if(category){
+        const sel = document.getElementById("category");
+        if([...sel.options].some(o => o.value === category)){
+          sel.value = category;
+        }
+      }
+
+      if(amount){
+        document.getElementById("amount").value = amount;
+      }
+
+      if(note){
+        document.getElementById("note").value = note;
+      }
+    })();
+
+    // ===== ✅ 5. 儲存邏輯：只把 localStorage.setItem 改成 addDoc =====
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+      const date = dateInput.value || todayYMD();
+      const time = nowHHMM();
+      const category = (categorySelect.value || "").trim();
+      const note = (document.getElementById("note").value || "").trim();
+      const amtRaw = document.getElementById("amount").value;
+      const amount = Number(String(amtRaw).replace(/,/g,""));
+
+      if(!isFinite(amount) || amount <= 0){
+        alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      // ✅ 保留原本會產生 id 的行為（但這次 id 存在欄位內，Firestore 文件 id 會另外產生）
+      const id = "tx-" + Date.now();
+
+      // ✅ 原本存 local 的資料結構保持一致
+      const data = { id, date, time, type: currentType, amount: String(amount), category, note };
+
+      // ✅ 只替換：localStorage.setItem("tx:"+id, JSON.stringify(data))  →  addDoc(...)
+      if(!auth.currentUser){
+        alert("請先登入！");
+        return;
+      }
+
+      try{
+        await addDoc(
+          collection(db, "users", auth.currentUser.uid, "transactions"),
+          { ...data, createdAt: serverTimestamp() }
+        );
+      }catch(e){
+        console.error("儲存失敗: ", e);
+        alert("儲存失敗");
+        return;
+      }
+
+      // ✅ 保留原本索引行為（不動功能）
+      const idx = getTxIndex();
+      idx.unshift(id);
+      setTxIndex(idx);
+
+      // ✅ 保留原本跳轉（不動功能）
+      location.href = "month.html";
+    });
+  </script>
+
   <script src="app.js"></script>
 </body>
-</html> 
+</html>
