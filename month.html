@@ -158,6 +158,20 @@
   </div>
 
   <script>
+    // 在 month.html 中
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    onAuthStateChanged(window.auth, (user) => {
+      if (!user) {
+        // 如果發現沒登入，才跳回登入頁
+        location.replace("index.html");
+      } else {
+        // 登入成功，開始抓取雲端資料
+        console.log("登入成功，使用者 UID:", user.uid);
+        fetchDataFromFirestore(user.uid); 
+      }
+    });
+
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
 
