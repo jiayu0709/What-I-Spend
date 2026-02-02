@@ -24,8 +24,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ✅ iOS/PWA 必做：登入狀態要能跨頁保留
-(async () => {
+window.firebaseReady = (async () => {
   try {
     await setPersistence(auth, indexedDBLocalPersistence);
   } catch (e1) {

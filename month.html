@@ -435,25 +435,20 @@
       return;
     }
 
-    let sawUser = false;
-    const kickTimer = setTimeout(() => {
-      if (!sawUser && !window.auth.currentUser) {
-        location.replace("index.html");
-      }
-    }, 1500);
-
     onAuthStateChanged(window.auth, async (user) => {
-      if (user) {
-        sawUser = true;
-        clearTimeout(kickTimer);
-        try {
-          const txs = await fetchMonthTxs(user.uid);
-          renderWithTxs(txs);
-        } catch (e) {
-          console.error("讀取失敗:", e);
-          document.getElementById("list-root").innerHTML =
-            "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
-        }
+      if (!user) {
+        // ✅ 只有確認「真的沒登入」才回登入頁
+        location.replace("index.html");
+        return;
+      }
+
+      try {
+        const txs = await fetchMonthTxs(user.uid);
+        renderWithTxs(txs);
+      } catch (e) {
+        console.error("讀取失敗:", e);
+        document.getElementById("list-root").innerHTML =
+          "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
       }
     });
   })();
