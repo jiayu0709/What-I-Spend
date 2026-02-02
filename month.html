@@ -7,10 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>本月</title>
   <style>
     *{box-sizing:border-box}
@@ -150,298 +147,273 @@
     </nav>
   </div>
 
+  <!-- ✅ 只載入一次，且一定是 module -->
+  <script type="module" src="app.js"></script>
 
-  <!-- ✅ 一定要用 module 載入，app.js 才能 import firebase -->
-<script type="module" src="app.js"></script>
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script type="module">
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // ✅ 等 persistence + firebase 初始化穩定（iOS/PWA）
+    await window.firebaseReady;
 
-  // ===== month state (from ?m=YYYY-MM) =====
-  const qs = new URLSearchParams(location.search);
+    // ===== month state (from ?m=YYYY-MM) =====
+    const qs = new URLSearchParams(location.search);
 
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function monthKeyFromDate(d){
-    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-  }
-  function parseMonthKey(key){
-    if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-    const [y,m] = key.split("-").map(n => parseInt(n,10));
-    if(!y || !m || m < 1 || m > 12) return null;
-    return new Date(y, m-1, 1);
-  }
-  function addMonths(dateObj, delta){
-    return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
-  }
-  function monthLabel(dateObj){
-    const y = dateObj.getFullYear();
-    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  }
-
-  let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  const currentKey = monthKeyFromDate(currentMonth);
-  const currentRef = `month.html?m=${currentKey}`;
-
-  document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
-
-  document.getElementById("btnPrev").addEventListener("click", () => {
-    const prev = addMonths(currentMonth, -1);
-    location.href = `month.html?m=${monthKeyFromDate(prev)}`;
-  });
-  document.getElementById("btnNext").addEventListener("click", () => {
-    const next = addMonths(currentMonth, 1);
-    location.href = `month.html?m=${monthKeyFromDate(next)}`;
-  });
-
-  // ===== helpers =====
-  function formatTime12h(hhmm){
-    if(!hhmm) return "";
-    const [hStr, mStr] = hhmm.split(":");
-    let h = parseInt(hStr,10);
-    const m = parseInt(mStr,10);
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12; if(h === 0) h = 12;
-    return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
-  }
-  function ymdToDate(ymd){
-    if(!ymd) return null;
-    const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
-    if(!y || !m || !d) return null;
-    return new Date(y, m-1, d);
-  }
-  function formatDayHeader(ymd){
-    const dt = ymdToDate(ymd);
-    if(!dt) return ymd || "";
-    const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
-    const mm = dt.getMonth() + 1;
-    const dd = dt.getDate();
-    return `${wd}, ${mm}/${dd}`;
-  }
-  function parseAmount(v){
-    const n = Number(String(v ?? "").replace(/,/g,""));
-    return (isFinite(n) ? n : 0);
-  }
-
-  // ===== rendering (完全保留你原本 UI 生成) =====
-  function buildTxRow(tx){
-    const rawAmt = parseAmount(tx.amount);
-    const isIncome = tx.type === "income";
-
-    const a = document.createElement("a");
-    a.className = "tx";
-    a.dataset.id = tx.id;
-
-    const params = new URLSearchParams();
-    params.set("id", tx.id);
-    params.set("ref", currentRef);
-    if(tx.date) params.set("date", tx.date);
-    if(tx.time) params.set("time", tx.time);
-    params.set("type", tx.type || "expense");
-    params.set("amount", String(rawAmt));
-    params.set("cat", tx.category || "");
-    params.set("note", tx.note || "");
-    a.href = "edit.html?" + params.toString();
-
-    const left = document.createElement("div");
-    const cat = document.createElement("div");
-    cat.className = "cat";
-    cat.textContent = tx.category || "";
-    left.appendChild(cat);
-
-    const noteTxt = (tx.note || "").trim();
-    const note = document.createElement("div");
-    note.className = "note";
-    if(noteTxt){
-      note.textContent = noteTxt;
-    }else{
-      note.style.display = "none";
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
     }
-    left.appendChild(note);
+    function parseMonthKey(key){
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m-1, 1);
+    }
+    function addMonths(dateObj, delta){
+      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
+    }
+    function monthLabel(dateObj){
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}`;
+    }
 
-    const right = document.createElement("div");
-    right.className = "right";
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth);
+    const currentRef = `month.html?m=${currentKey}`;
 
-    const amt = document.createElement("div");
-    amt.className = "amt";
-    amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
-    amt.style.color = isIncome ? "var(--green)" : "var(--red)";
-    right.appendChild(amt);
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
 
-    const time = document.createElement("div");
-    time.className = "time";
-    time.textContent = formatTime12h(tx.time || "");
-    right.appendChild(time);
-
-    a.appendChild(left);
-    a.appendChild(right);
-
-    return a;
-  }
-
-  function renderWithTxs(txs){
-    const root = document.getElementById("list-root");
-    root.innerHTML = "";
-
-    txs.sort((a,b) => {
-      const da = (a.date || "");
-      const db = (b.date || "");
-      if(da !== db) return db.localeCompare(da);
-      const ta = (a.time || "");
-      const tb = (b.time || "");
-      return tb.localeCompare(ta);
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      location.href = `month.html?m=${monthKeyFromDate(prev)}`;
+    });
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      location.href = `month.html?m=${monthKeyFromDate(next)}`;
     });
 
-    let income = 0, expense = 0;
-    for(const tx of txs){
-      const amt = parseAmount(tx.amount);
-      if(tx.type === "income") income += amt;
-      else expense += amt;
+    // ===== helpers =====
+    function formatTime12h(hhmm){
+      if(!hhmm) return "";
+      const [hStr, mStr] = hhmm.split(":");
+      let h = parseInt(hStr,10);
+      const m = parseInt(mStr,10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12; if(h === 0) h = 12;
+      return `${h}:${String(m).padStart(2,"0")} ${ampm}`;
     }
-    const balance = income - expense;
-
-    document.getElementById("sum-income").textContent = String(income);
-    document.getElementById("sum-expense").textContent = String(expense);
-
-    const balEl = document.getElementById("sum-balance");
-    balEl.textContent = String(balance);
-    balEl.classList.remove("green","red");
-    balEl.classList.add(balance >= 0 ? "green" : "red");
-
-    if(txs.length === 0){
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
-      root.appendChild(empty);
-      return;
+    function ymdToDate(ymd){
+      if(!ymd) return null;
+      const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
+      if(!y || !m || !d) return null;
+      return new Date(y, m-1, d);
     }
-
-    const groups = new Map();
-    for(const tx of txs){
-      const key = tx.date || "unknown";
-      if(!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(tx);
+    function formatDayHeader(ymd){
+      const dt = ymdToDate(ymd);
+      if(!dt) return ymd || "";
+      const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
+      const mm = dt.getMonth() + 1;
+      const dd = dt.getDate();
+      return `${wd}, ${mm}/${dd}`;
+    }
+    function parseAmount(v){
+      const n = Number(String(v ?? "").replace(/,/g,""));
+      return (isFinite(n) ? n : 0);
     }
 
-    const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
-    for(const dateKey of dates){
-      const section = document.createElement("section");
-      section.className = "section";
+    // ===== rendering =====
+    function buildTxRow(tx){
+      const rawAmt = parseAmount(tx.amount);
+      const isIncome = tx.type === "income";
 
-      const list = groups.get(dateKey);
+      const a = document.createElement("a");
+      a.className = "tx";
+      a.dataset.id = tx.id;
 
-      const header = document.createElement("div");
-      header.className = "day-header";
+      const params = new URLSearchParams();
+      params.set("id", tx.id);
+      params.set("ref", currentRef);
+      if(tx.date) params.set("date", tx.date);
+      if(tx.time) params.set("time", tx.time);
+      params.set("type", tx.type || "expense");
+      params.set("amount", String(rawAmt));
+      params.set("cat", tx.category || "");
+      params.set("note", tx.note || "");
+      a.href = "edit.html?" + params.toString();
 
-      const leftTitle = document.createElement("div");
-      leftTitle.textContent = formatDayHeader(dateKey);
+      const left = document.createElement("div");
+      const cat = document.createElement("div");
+      cat.className = "cat";
+      cat.textContent = tx.category || "";
+      left.appendChild(cat);
 
-      let dayIncome = 0;
-      let dayExpense = 0;
-      for (const tx of list) {
-        const amt = parseAmount(tx.amount);
-        if (tx.type === "income") dayIncome += amt;
-        else dayExpense += amt;
+      const noteTxt = (tx.note || "").trim();
+      const note = document.createElement("div");
+      note.className = "note";
+      if(noteTxt){
+        note.textContent = noteTxt;
+      }else{
+        note.style.display = "none";
       }
-      const dayNet = dayIncome - dayExpense;
+      left.appendChild(note);
 
-      const rightTotal = document.createElement("div");
-      rightTotal.className = "day-total";
-      rightTotal.appendChild(document.createTextNode("總計 "));
+      const right = document.createElement("div");
+      right.className = "right";
 
-      const v = document.createElement("span");
-      v.className = "v " + (dayNet >= 0 ? "green" : "red");
-      v.textContent = String(dayNet);
-      rightTotal.appendChild(v);
+      const amt = document.createElement("div");
+      amt.className = "amt";
+      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
+      amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+      right.appendChild(amt);
 
-      header.appendChild(leftTitle);
-      header.appendChild(rightTotal);
-      section.appendChild(header);
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = formatTime12h(tx.time || "");
+      right.appendChild(time);
 
-      const card = document.createElement("div");
-      card.className = "day-card";
+      a.appendChild(left);
+      a.appendChild(right);
 
-      list.forEach((tx, idx) => {
-        card.appendChild(buildTxRow(tx));
-        if(idx !== list.length - 1){
-          const hr = document.createElement("hr");
-          hr.className = "divider";
-          card.appendChild(hr);
-        }
+      return a;
+    }
+
+    function renderWithTxs(txs){
+      const root = document.getElementById("list-root");
+      root.innerHTML = "";
+
+      txs.sort((a,b) => {
+        const da = (a.date || "");
+        const db = (b.date || "");
+        if(da !== db) return db.localeCompare(da);
+        const ta = (a.time || "");
+        const tb = (b.time || "");
+        return tb.localeCompare(ta);
       });
 
-      section.appendChild(card);
-      root.appendChild(section);
-    }
-  }
+      let income = 0, expense = 0;
+      for(const tx of txs){
+        const amt = parseAmount(tx.amount);
+        if(tx.type === "income") income += amt;
+        else expense += amt;
+      }
+      const balance = income - expense;
 
-  function nextMonthKey(ym){
-    const [y,m] = ym.split("-").map(n=>parseInt(n,10));
-    const d = new Date(y, m-1, 1);
-    const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
-    return monthKeyFromDate(next);
-  }
+      document.getElementById("sum-income").textContent = String(income);
+      document.getElementById("sum-expense").textContent = String(expense);
 
-  async function fetchMonthTxs(uid){
-    const root = document.getElementById("list-root");
-    root.innerHTML = "<div class='empty'>讀取中...</div>";
+      const balEl = document.getElementById("sum-balance");
+      balEl.textContent = String(balance);
+      balEl.classList.remove("green","red");
+      balEl.classList.add(balance >= 0 ? "green" : "red");
 
-    const db = window.db;
-    const txRef = collection(db, "users", uid, "transactions");
-
-    const start = `${currentKey}-01`;
-    const end = `${nextMonthKey(currentKey)}-01`;
-
-    const q = query(
-      txRef,
-      where("date", ">=", start),
-      where("date", "<", end),
-      orderBy("date", "desc"),
-      orderBy("time", "desc")
-    );
-
-    const snap = await getDocs(q);
-    const txs = [];
-    snap.forEach(doc => {
-      txs.push({ id: doc.id, ...doc.data() });
-    });
-    return txs;
-  }
-
-  // ✅ 等待 auth/db ready + 延後踢回登入（iOS 必要）
-  function waitForFirebaseReady(timeoutMs = 6000){
-    return new Promise((resolve, reject) => {
-      const t0 = Date.now();
-      const timer = setInterval(() => {
-        if (window.auth && window.db) {
-          clearInterval(timer);
-          resolve();
-        } else if (Date.now() - t0 > timeoutMs) {
-          clearInterval(timer);
-          reject(new Error("window.auth/window.db not ready"));
-        }
-      }, 50);
-    });
-  }
-
-  (async () => {
-    try {
-      await waitForFirebaseReady();
-    } catch (e) {
-      console.error(e);
-      document.getElementById("list-root").innerHTML =
-        "<div class='empty'>Firebase 尚未初始化完成（請確認 app.js 用 type=module 載入）</div>";
-      return;
-    }
-
-    onAuthStateChanged(window.auth, async (user) => {
-      if (!user) {
-        // ✅ 只有確認「真的沒登入」才回登入頁
-        location.replace("index.html");
+      if(txs.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
+        root.appendChild(empty);
         return;
       }
 
+      const groups = new Map();
+      for(const tx of txs){
+        const key = tx.date || "unknown";
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(tx);
+      }
+
+      const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
+      for(const dateKey of dates){
+        const section = document.createElement("section");
+        section.className = "section";
+
+        const list = groups.get(dateKey);
+
+        const header = document.createElement("div");
+        header.className = "day-header";
+
+        const leftTitle = document.createElement("div");
+        leftTitle.textContent = formatDayHeader(dateKey);
+
+        let dayIncome = 0;
+        let dayExpense = 0;
+        for (const tx of list) {
+          const amt = parseAmount(tx.amount);
+          if (tx.type === "income") dayIncome += amt;
+          else dayExpense += amt;
+        }
+        const dayNet = dayIncome - dayExpense;
+
+        const rightTotal = document.createElement("div");
+        rightTotal.className = "day-total";
+        rightTotal.appendChild(document.createTextNode("總計 "));
+
+        const v = document.createElement("span");
+        v.className = "v " + (dayNet >= 0 ? "green" : "red");
+        v.textContent = String(dayNet);
+        rightTotal.appendChild(v);
+
+        header.appendChild(leftTitle);
+        header.appendChild(rightTotal);
+        section.appendChild(header);
+
+        const card = document.createElement("div");
+        card.className = "day-card";
+
+        list.forEach((tx, idx) => {
+          card.appendChild(buildTxRow(tx));
+          if(idx !== list.length - 1){
+            const hr = document.createElement("hr");
+            hr.className = "divider";
+            card.appendChild(hr);
+          }
+        });
+
+        section.appendChild(card);
+        root.appendChild(section);
+      }
+    }
+
+    function nextMonthKey(ym){
+      const [y,m] = ym.split("-").map(n=>parseInt(n,10));
+      const d = new Date(y, m-1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      return monthKeyFromDate(next);
+    }
+
+    async function fetchMonthTxs(uid){
+      const root = document.getElementById("list-root");
+      root.innerHTML = "<div class='empty'>讀取中...</div>";
+
+      const db = window.db;
+      const txRef = collection(db, "users", uid, "transactions");
+
+      const start = `${currentKey}-01`;
+      const end = `${nextMonthKey(currentKey)}-01`;
+
+      const q = query(
+        txRef,
+        where("date", ">=", start),
+        where("date", "<", end),
+        orderBy("date", "desc"),
+        orderBy("time", "desc")
+      );
+
+      const snap = await getDocs(q);
+      const txs = [];
+      snap.forEach(doc => {
+        txs.push({ id: doc.id, ...doc.data() });
+      });
+      return txs;
+    }
+
+    // ✅ 只在 auth 確認沒登入時才回登入頁
+    onAuthStateChanged(window.auth, async (user) => {
+      if (!user) {
+        location.replace("index.html");
+        return;
+      }
       try {
         const txs = await fetchMonthTxs(user.uid);
         renderWithTxs(txs);
@@ -451,7 +423,6 @@
           "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
       }
     });
-  })();
-</script>
+  </script>
 </body>
 </html>
