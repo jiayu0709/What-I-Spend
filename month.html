@@ -82,11 +82,11 @@
       font-weight:900;
       color:var(--secondary);
       white-space:nowrap;
-      font-size: 14px; 
+      font-size: 14px;
     }
     .day-total .v{
       font-weight:900;
-      font-size: 14px; 
+      font-size: 14px;
     }
     .day-total .v.green{ color:var(--green); }
     .day-total .v.red{ color:var(--red); }
@@ -115,7 +115,6 @@
       color:var(--secondary);
       font-weight:800;
     }
-
   </style>
 </head>
 <body>
@@ -157,20 +156,13 @@
     </nav>
   </div>
 
-  <script>
-    // 在 month.html 中
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  <!-- 你原本就有的 app.js：裡面應該初始化 window.auth / window.db -->
+  <script src="app.js"></script>
 
-    onAuthStateChanged(window.auth, (user) => {
-      if (!user) {
-        // 如果發現沒登入，才跳回登入頁
-        location.replace("index.html");
-      } else {
-        // 登入成功，開始抓取雲端資料
-        console.log("登入成功，使用者 UID:", user.uid);
-        fetchDataFromFirestore(user.uid); 
-      }
-    });
+  <!-- ✅ 雲端讀取：只把資料來源改成 Firestore，其餘 UI/功能保持 -->
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
@@ -191,7 +183,7 @@
     function monthLabel(dateObj){
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
+      return `${y}-${m}`; // ✅ 你要的 2026-02
     }
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -209,7 +201,7 @@
       location.href = `month.html?m=${monthKeyFromDate(next)}`;
     });
 
-    // ===== helpers =====
+    // ===== helpers (保留你原本功能) =====
     function formatTime12h(hhmm){
       if(!hhmm) return "";
       const [hStr, mStr] = hhmm.split(":");
@@ -237,25 +229,8 @@
       const n = Number(String(v ?? "").replace(/,/g,""));
       return (isFinite(n) ? n : 0);
     }
-    function getTxIndex(){
-      try{
-        const raw = localStorage.getItem("tx:index");
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      }catch(e){
-        return [];
-      }
-    }
-    function readTx(id){
-      const raw = localStorage.getItem("tx:"+id);
-      if(!raw) return null;
-      try{ return JSON.parse(raw); }catch(e){ return null; }
-    }
-    function isDeleted(id){
-      return localStorage.getItem("tx:deleted:"+id) === "1";
-    }
 
-    // ===== rendering =====
+    // ===== rendering (保留你原本 UI DOM 生成方式) =====
     function buildTxRow(tx){
       const rawAmt = parseAmount(tx.amount);
       const isIncome = tx.type === "income";
@@ -296,7 +271,7 @@
 
       const amt = document.createElement("div");
       amt.className = "amt";
-      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
+      amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`; // ✅ 收入加 +
       amt.style.color = isIncome ? "var(--green)" : "var(--red)";
       right.appendChild(amt);
 
@@ -311,27 +286,11 @@
       return a;
     }
 
-    function render(){
+    function renderWithTxs(txs){
       const root = document.getElementById("list-root");
       root.innerHTML = "";
 
-      const ids = getTxIndex().filter(Boolean);
-
-      // ✅ 只顯示該月份
-      const txs = [];
-      for(const id of ids){
-        if(isDeleted(id)) continue;
-        const tx = readTx(id);
-        if(!tx) continue;
-        if(!tx.id) tx.id = id;
-
-        const d = (tx.date || "");
-        if(!d.startsWith(currentKey)) continue;
-
-        txs.push(tx);
-      }
-
-      // 排序：date desc, time desc
+      // 排序：date desc, time desc（保持原本功能）
       txs.sort((a,b) => {
         const da = (a.date || "");
         const db = (b.date || "");
@@ -431,8 +390,62 @@
       }
     }
 
-    render();
+    // ✅ Firestore 讀取：只替換資料來源，不動 UI
+    function nextMonthKey(ym){ // ym: YYYY-MM -> next YYYY-MM
+      const [y,m] = ym.split("-").map(n=>parseInt(n,10));
+      const d = new Date(y, m-1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      return monthKeyFromDate(next);
+    }
+
+    async function fetchMonthTxs(uid){
+      const root = document.getElementById("list-root");
+      root.innerHTML = "<div class='empty'>讀取中...</div>";
+
+      const db = window.db;
+      if(!db) {
+        root.innerHTML = "<div class='empty'>尚未初始化資料庫（db）。請確認 app.js 有建立 window.db</div>";
+        return [];
+      }
+
+      const txRef = collection(db, "users", uid, "transactions");
+
+      // 用「>= 本月第一天」且「< 下月第一天」避免 02 月被 31 卡住
+      const start = `${currentKey}-01`;
+      const end = `${nextMonthKey(currentKey)}-01`;
+
+      // Firestore range + orderBy 要一致：我們用 date 做範圍，然後 orderBy date/time
+      const q = query(
+        txRef,
+        where("date", ">=", start),
+        where("date", "<", end),
+        orderBy("date", "desc"),
+        orderBy("time", "desc")
+      );
+
+      const snap = await getDocs(q);
+      const txs = [];
+      snap.forEach(doc => {
+        txs.push({ id: doc.id, ...doc.data() });
+      });
+      return txs;
+    }
+
+    // ===== 登入狀態監聽：沒登入回 index，有登入抓雲端 =====
+    onAuthStateChanged(window.auth, async (user) => {
+      if (!user) {
+        location.replace("index.html");
+        return;
+      }
+      try{
+        const txs = await fetchMonthTxs(user.uid);
+        renderWithTxs(txs);
+      }catch(e){
+        console.error("讀取失敗:", e);
+        const root = document.getElementById("list-root");
+        root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+      }
+    });
   </script>
-  <script src="app.js"></script>
 </body>
 </html>
