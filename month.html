@@ -154,8 +154,27 @@
   <script src="app.js"></script>
 
   <script type="module">
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 1. 初始化 (直接寫在裡面最安全)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkj60hCKagiQijipxl3s6F5soN1YIKadE",
+      authDomain: "whatispend-3c060.firebaseapp.com",
+      projectId: "whatispend-3c060",
+      storageBucket: "whatispend-3c060.firebasestorage.app",
+      messagingSenderId: "740100624448",
+      appId: "1:740100624448:web:88c3298185bd163fba8fa5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 讓其他地方也能用到
+    window.auth = auth;
+    window.db = db;
 
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
