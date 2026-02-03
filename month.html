@@ -181,6 +181,7 @@
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
 
     // 1. 先等待 Firebase 核心初始化完成 (Persistence 設定)
     await window.firebaseReady;

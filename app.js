@@ -1,3 +1,4 @@
+// app.js
 import {
   setPersistence,
   indexedDBLocalPersistence,
@@ -6,14 +7,13 @@ import {
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { auth, db } from "./firebase-config.js";
+import { auth } from "./firebase-config.js";
 
-// 掛到 window，確保所有模組共用同一個 instance
+// 掛到 window，讓每個頁面都能用
 window.auth = auth;
-window.db = db;
 
 /* ---------------------------
-   1️⃣ Firebase Auth 初始化
+   1) Auth persistence
 ---------------------------- */
 window.firebaseReady = (async () => {
   try {
@@ -31,7 +31,7 @@ window.firebaseReady = (async () => {
 })();
 
 /* ---------------------------
-   2️⃣ 等待 Auth 狀態還原完成
+   2) 等待狀態還原
 ---------------------------- */
 window.waitForAuthReady = async () => {
   if (window.firebaseReady) await window.firebaseReady;
@@ -39,44 +39,36 @@ window.waitForAuthReady = async () => {
   return await new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, (user) => {
       unsub();
-      resolve(user); // user 可能是 null，但「狀態已完成」
+      resolve(user || null);
     });
   });
 };
 
 /* ---------------------------
-   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
+   3) 需要登入才可用
 ---------------------------- */
-window.requireAuth = async () => {
+window.requireAuth = async ({ redirectTo = "index.html" } = {}) => {
   const user = await window.waitForAuthReady();
+  if (user) return user;
 
-  if (!user) {
-    const next = encodeURIComponent(window.location.href);
-    window.location.replace(`login.html?next=${next}`);
-    return null;
-  }
-
-  return user;
+  const next = encodeURIComponent(location.href);
+  location.replace(`${redirectTo}?next=${next}`);
+  return null;
 };
 
 /* ---------------------------
-   4️⃣ UI（跟 Auth 無關）
+   UI（tab 高亮）
 ---------------------------- */
 function highlightTab() {
-  const currentPath =
-    window.location.pathname.split("/").pop() || "month.html";
+  const currentPath = window.location.pathname.split("/").pop() || "month.html";
 
   document.querySelectorAll(".tabbar .tab").forEach((tab) => {
     const href = tab.getAttribute("href");
     if (!href) return;
-
     const cleanHref = href.split("?")[0].split("#")[0];
-    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) {
-      tab.classList.add("active");
-    } else {
-      tab.classList.remove("active");
-    }
+
+    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) tab.classList.add("active");
+    else tab.classList.remove("active");
   });
 }
-
 document.addEventListener("DOMContentLoaded", highlightTab);

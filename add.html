@@ -149,14 +149,14 @@
   </div>
 
   <!-- ✅ module 版 app.js（只做 persistence） -->
-<script type="module"></script>
-
 <script type="module">
-  const user = await window.requireAuth();
-  if (!user) return; // ✅ 這行一定要有
-  const uid = user.uid;
   import { db } from "./firebase-config.js";
   import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // ✅ 先確認登入（未登入會導回 index.html?next=...）
+  const user = await window.requireAuth({ redirectTo: "index.html" });
+  if (!user) return;
+  const uid = user.uid;
 
   // ===== helpers =====
   function pad2(n){ return String(n).padStart(2,"0"); }
@@ -193,7 +193,6 @@
   function updateCategoryOptions(type){
     const list = (type === "income") ? incomeCategories : expenseCategories;
     const prev = categorySelect.value;
-
     categorySelect.innerHTML = "";
     list.forEach(name => {
       const opt = document.createElement("option");
@@ -201,7 +200,6 @@
       opt.textContent = name;
       categorySelect.appendChild(opt);
     });
-
     categorySelect.value = list.includes(prev) ? prev : list[0];
   }
 
@@ -215,10 +213,12 @@
     updateCategoryOptions(currentType);
   }
 
-  // ===== init =====
-  // 預設今天 + 預設支出
+  // init
   dateInput.value = todayYMD();
   setType("expense");
+
+  btnExpense.addEventListener("click", () => setType("expense"));
+  btnIncome.addEventListener("click", () => setType("income"));
 
   // ✅ 讀捷徑參數（預填）
   const qs = new URLSearchParams(location.search);
@@ -226,52 +226,28 @@
   const qsAmount = qs.get("amount");
   const qsCategory = qs.get("category");
   const qsNote = qs.get("note");
-  const qsDate = qs.get("date"); // 可選
+  const qsDate = qs.get("date");
+  const autoSave = qs.get("autosave") === "1";
 
   if(qsType === "income" || qsType === "expense") setType(qsType);
   if(qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
   if(qsAmount) amountInput.value = qsAmount;
   if(qsNote) noteInput.value = qsNote;
-
-  if(qsCategory){
-    // 確保 option 已生成後再選
-    if([...categorySelect.options].some(o => o.value === qsCategory)){
-      categorySelect.value = qsCategory;
-    }
+  if(qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)){
+    categorySelect.value = qsCategory;
   }
 
-  // ✅ 捷徑自動儲存開關：autosave=1
-  const autoSave = qs.get("autosave") === "1";
-
-  // ===== save to Firestore =====
   async function saveToFirestore({ redirectAfter = true } = {}){
-    const user = await requireAuth({ redirectTo: "index.html" });
-    const uid = user.uid;
-
     const date = dateInput.value || todayYMD();
     const time = nowHHMM();
     const category = (categorySelect.value || "").trim();
     const note = (noteInput.value || "").trim();
     const amount = parseAmount(amountInput.value);
 
-    if(!category){
-      alert("請選擇分類");
-      return;
-    }
-    if(!isFinite(amount) || amount <= 0){
-      alert("請輸入正確金額（> 0）");
-      return;
-    }
+    if(!category){ alert("請選擇分類"); return; }
+    if(!isFinite(amount) || amount <= 0){ alert("請輸入正確金額（> 0）"); return; }
 
-    const data = {
-      date,
-      time,
-      type: currentType,
-      amount,           // ✅ 建議存 number（之後統計更方便）
-      category,
-      note,
-      createdAt: serverTimestamp()
-    };
+    const data = { date, time, type: currentType, amount, category, note, createdAt: serverTimestamp() };
 
     await addDoc(collection(db, "users", uid, "transactions"), data);
 
@@ -281,38 +257,29 @@
     }
   }
 
-  // 手動儲存
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
-    try{
+    try {
       await saveToFirestore({ redirectAfter: true });
-    }catch(e){
-      console.error("儲存失敗:", e);
+    } catch (e) {
+      console.error(e);
       alert(e?.message || "儲存失敗");
       saveBtn.disabled = false;
     }
   });
 
-  // ✅ 捷徑自動儲存：參數完整才會自動存
+  // ✅ 捷徑自動儲存
   if(autoSave){
-    // autosave=1 時，我們要求至少 amount + category 存在
     const ok = qsAmount && qsCategory;
     if(ok){
-      try{
-        // 先把 category 強制設回捷徑給的（避免被預設覆蓋）
-        if([...categorySelect.options].some(o => o.value === qsCategory)){
-          categorySelect.value = qsCategory;
-        }
-        await saveToFirestore({ redirectAfter: true });
-      }catch(e){
+      try { await saveToFirestore({ redirectAfter: true }); }
+      catch(e){
         console.error("捷徑自動儲存失敗:", e);
-        // 自動儲存失敗就不要卡死，留在頁面讓你手動按
         alert(e?.message || "自動儲存失敗，請手動按儲存");
       }
     }
   }
 </script>
 
-  <script src="app.js"></script>
 </body>
 </html>
