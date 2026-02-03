@@ -9,8 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="What I Spend">
   <meta charset="utf-8" />
   <meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
   />
   <title>新增</title>
   <style>
@@ -149,169 +148,242 @@
   </div>
 
   <!-- ✅ module 版 app.js（只做 persistence） -->
+  <script type="module" src="app.js"></script>
 
-<script type="module" src="app.js"></script>
+  <script type="module">
+    // ✅ 只調整「寫入流程」：其餘 UI/功能完全保留
+    import { auth, db } from "./firebase-config.js";
+    import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script type="module">
-  import { db } from "./firebase-config.js";
-  import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  
-  
-  // ===== categories =====
-  const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
-  const incomeCategories  = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
+    // ===== categories =====
+    const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
+    const incomeCategories  = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
 
-  // ===== helpers =====
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function todayYMD(){
-    const d = new Date();
-    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-  }
-  function nowHHMM(){
-    const d = new Date();
-    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  }
-  function monthKeyFromDateStr(ymd){
-    return (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) ? ymd.slice(0,7) : "";
-  }
-  function parseAmount(v){
-    const n = Number(String(v ?? "").replace(/,/g,""));
-    return isFinite(n) ? n : NaN;
-  }
-
-  // ===== DOM =====
-  const btnExpense = document.getElementById("btn-expense");
-  const btnIncome  = document.getElementById("btn-income");
-  const categorySelect = document.getElementById("category");
-  const dateInput = document.getElementById("date");
-  const amountInput = document.getElementById("amount");
-  const noteInput = document.getElementById("note");
-  const saveBtn = document.getElementById("saveBtn");
-
-  let currentType = "expense";
-  let uid = null; // 登入成功後才會有
-
-  // ===== render categories =====
-  function updateCategoryOptions(type){
-    const list = (type === "income") ? incomeCategories : expenseCategories;
-    const prev = categorySelect.value;
-
-    categorySelect.innerHTML = "";
-    for (const name of list) {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      categorySelect.appendChild(opt);
+    // ===== helpers =====
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function todayYMD(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+    function nowHHMM(){
+      const d = new Date();
+      return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+    function monthKeyFromDateStr(ymd){
+      return (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) ? ymd.slice(0,7) : "";
+    }
+    function parseAmount(v){
+      const n = Number(String(v ?? "").replace(/,/g,""));
+      return isFinite(n) ? n : NaN;
     }
 
-    categorySelect.value = list.includes(prev) ? prev : list[0];
-  }
+    // ===== DOM =====
+    const btnExpense = document.getElementById("btn-expense");
+    const btnIncome  = document.getElementById("btn-income");
+    const categorySelect = document.getElementById("category");
+    const dateInput = document.getElementById("date");
+    const amountInput = document.getElementById("amount");
+    const noteInput = document.getElementById("note");
+    const saveBtn = document.getElementById("saveBtn");
 
-  function setType(t){
-    currentType = (t === "income") ? "income" : "expense";
-    const isExpense = currentType === "expense";
-    btnExpense.classList.toggle("active", isExpense);
-    btnIncome.classList.toggle("active", !isExpense);
-    btnExpense.setAttribute("aria-pressed", String(isExpense));
-    btnIncome.setAttribute("aria-pressed", String(!isExpense));
-    updateCategoryOptions(currentType);
-  }
+    let currentType = "expense";
+    let uid = null; // 登入成功後才會有
 
-  // ===== 先把 UI 填起來（不等登入）=====
-  dateInput.value = todayYMD();
-  setType("expense");
+    // ===== render categories =====
+    function updateCategoryOptions(type){
+      const list = (type === "income") ? incomeCategories : expenseCategories;
+      const prev = categorySelect.value;
 
-  btnExpense.addEventListener("click", () => setType("expense"));
-  btnIncome.addEventListener("click", () => setType("income"));
+      categorySelect.innerHTML = "";
+      for (const name of list) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        categorySelect.appendChild(opt);
+      }
 
-  // ===== 讀捷徑參數（預填）=====
-  const qs = new URLSearchParams(location.search);
-  const qsType = qs.get("type");
-  const qsAmount = qs.get("amount");
-  const qsCategory = qs.get("category");
-  const qsNote = qs.get("note");
-  const qsDate = qs.get("date");
-  const autoSave = qs.get("autosave") === "1";
+      categorySelect.value = list.includes(prev) ? prev : list[0];
+    }
 
-  if (qsType === "income" || qsType === "expense") setType(qsType);
-  if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
-  if (qsAmount) amountInput.value = qsAmount;
-  if (qsNote) noteInput.value = qsNote;
+    function setType(t){
+      currentType = (t === "income") ? "income" : "expense";
+      const isExpense = currentType === "expense";
+      btnExpense.classList.toggle("active", isExpense);
+      btnIncome.classList.toggle("active", !isExpense);
+      btnExpense.setAttribute("aria-pressed", String(isExpense));
+      btnIncome.setAttribute("aria-pressed", String(!isExpense));
+      updateCategoryOptions(currentType);
+    }
 
-  // category 必須在 options 生成後才選得到
-  if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
-    categorySelect.value = qsCategory;
-  }
+    // ===== 先把 UI 填起來（不等登入）=====
+    dateInput.value = todayYMD();
+    setType("expense");
 
-  // ===== 登入（只影響能不能寫入）=====
-  await window.firebaseReady;
-  const user = await window.waitForAuthReady();
+    btnExpense.addEventListener("click", () => setType("expense"));
+    btnIncome.addEventListener("click", () => setType("income"));
 
-  if (user) {
-    uid = user.uid;
-    saveBtn.disabled = false;
-  } else {
-    // 沒登入：按儲存就導去登入頁
-    saveBtn.disabled = false;
-  }
+    // ===== 讀捷徑參數（預填）=====
+    const qs = new URLSearchParams(location.search);
+    const qsType = qs.get("type");
+    const qsAmount = qs.get("amount");
+    const qsCategory = qs.get("category");
+    const qsNote = qs.get("note");
+    const qsDate = qs.get("date");
+    const autoSave = qs.get("autosave") === "1";
 
-  async function ensureLoginOrRedirect(){
+    if (qsType === "income" || qsType === "expense") setType(qsType);
+    if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
+    if (qsAmount) amountInput.value = qsAmount;
+    if (qsNote) noteInput.value = qsNote;
+
+    // category 必須在 options 生成後才選得到
+    if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
+      categorySelect.value = qsCategory;
+    }
+
+    // ===== 登入（只影響能不能寫入）=====
+    await window.firebaseReady;
     const user = await window.waitForAuthReady();
-    if (user) return user;
-    const next = encodeURIComponent(location.href);
-    location.replace(`index.html?next=${next}`); // 你登入頁叫 index.html
-    return null;
-  }
 
-  async function saveToFirestore({ redirectAfter = true } = {}){
-    console.log("firebaseReady:", !!window.firebaseReady);
-    console.log("currentUser:", window.auth?.currentUser?.uid || null);
-    const user = await ensureLoginOrRedirect();
-    if (!user) return; // 已跳轉
-
-    const date = dateInput.value || todayYMD();
-    const time = nowHHMM();
-    const category = (categorySelect.value || "").trim();
-    const note = (noteInput.value || "").trim();
-    const amount = parseAmount(amountInput.value);
-
-    if(!category){ alert("請選擇分類"); return; }
-    if(!isFinite(amount) || amount <= 0){ alert("請輸入正確金額（> 0）"); return; }
-
-    const data = { date, time, type: currentType, amount, category, note, createdAt: serverTimestamp() };
-
-    await addDoc(collection(db, "users", user.uid, "transactions"), data);
-
-    if(redirectAfter){
-      const ym = monthKeyFromDateStr(date);
-      location.replace(ym ? `month.html?m=${ym}` : "month.html");
-    }
-  }
-
-  saveBtn.addEventListener("click", async () => {
-    saveBtn.disabled = true;
-    try {
-      await saveToFirestore({ redirectAfter: true });
-    } catch (e) {
-      console.error("save failed:", e.code, e.message, e);
-      alert(`儲存失敗: ${e.code || e.message}`);
+    if (user) {
+      uid = user.uid;
+      saveBtn.disabled = false;
+    } else {
+      // 沒登入：按儲存就導去登入頁
       saveBtn.disabled = false;
     }
-  });
 
-  // ✅ 捷徑自動儲存：等 UI & auth 都 ready 後才做
-  if (autoSave) {
-    const ok = qsAmount && qsCategory;
-    if (ok) {
+    async function ensureLoginOrRedirect(){
+      const user = await window.waitForAuthReady();
+      if (user) return user;
+      const next = encodeURIComponent(location.href);
+      location.replace(`index.html?next=${next}`); // 你登入頁叫 index.html
+      return null;
+    }
+
+    // ============================
+    // ✅ 新增：兩用寫入（Function優先，失敗fallback前端直寫）
+    // ============================
+    function isLocalhost(){
+      return location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    }
+
+    async function addViaFunction(payload){
+      const u = auth.currentUser;
+      if (!u) throw new Error("Not logged in");
+
+      const token = await u.getIdToken();
+
+      const res = await fetch("/.netlify/functions/addTransaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        // 把錯誤完整保留在 console，方便你 debug
+        console.error("Function error status:", res.status, "body:", text);
+        throw new Error(text || `Function failed: ${res.status}`);
+      }
+
+      return res.json().catch(() => ({}));
+    }
+
+    async function addViaClientFirestore(payload){
+      const u = auth.currentUser;
+      if (!u) throw new Error("Not logged in");
+
+      await addDoc(
+        collection(db, "users", u.uid, "transactions"),
+        { ...payload, createdAt: serverTimestamp() }
+      );
+    }
+
+    async function writeTransaction(payload, { prefer = "function" } = {}){
+      // prefer: "function" 或 "client"
+      const u = auth.currentUser;
+      if (!u) throw new Error("Not logged in");
+
+      const tryFunctionFirst = (prefer === "function") && !isLocalhost();
+
+      if (tryFunctionFirst) {
+        try {
+          await addViaFunction(payload);
+          return { via: "function" };
+        } catch (e) {
+          console.warn("Function write failed; fallback to client Firestore:", e);
+          await addViaClientFirestore(payload);
+          return { via: "client_fallback" };
+        }
+      } else {
+        try {
+          await addViaClientFirestore(payload);
+          return { via: "client" };
+        } catch (e) {
+          console.warn("Client write failed; fallback to function:", e);
+          await addViaFunction(payload);
+          return { via: "function_fallback" };
+        }
+      }
+    }
+
+    async function saveToFirestore({ redirectAfter = true } = {}){
+      console.log("firebaseReady:", !!window.firebaseReady);
+      console.log("currentUser:", window.auth?.currentUser?.uid || null);
+
+      const user = await ensureLoginOrRedirect();
+      if (!user) return; // 已跳轉
+
+      const date = dateInput.value || todayYMD();
+      const time = nowHHMM();
+      const category = (categorySelect.value || "").trim();
+      const note = (noteInput.value || "").trim();
+      const amount = parseAmount(amountInput.value);
+
+      if(!category){ alert("請選擇分類"); return; }
+      if(!isFinite(amount) || amount <= 0){ alert("請輸入正確金額（> 0）"); return; }
+
+      // ✅ 注意：payload 不包含 createdAt（Function 由後端加；client 由 addViaClientFirestore 加）
+      const payload = { date, time, type: currentType, amount, category, note };
+
+      // ✅ 兩用寫入：優先 Function，失敗自動 fallback
+      const result = await writeTransaction(payload, { prefer: "function" });
+      console.log("writeTransaction via:", result.via);
+
+      if(redirectAfter){
+        const ym = monthKeyFromDateStr(date);
+        location.replace(ym ? `month.html?m=${ym}` : "month.html");
+      }
+    }
+
+    saveBtn.addEventListener("click", async () => {
+      saveBtn.disabled = true;
       try {
         await saveToFirestore({ redirectAfter: true });
       } catch (e) {
-        console.error("autosave failed:", e.code, e.message, e);
-        alert(`自動儲存失敗: ${e.code || e.message}`);
+        console.error("save failed:", e);
+        alert(`儲存失敗: ${e.message || e}`);
+        saveBtn.disabled = false;
+      }
+    });
+
+    // ✅ 捷徑自動儲存：等 UI & auth 都 ready 後才做（原有功能保留）
+    if (autoSave) {
+      const ok = qsAmount && qsCategory;
+      if (ok) {
+        try {
+          await saveToFirestore({ redirectAfter: true });
+        } catch (e) {
+          console.error("autosave failed:", e);
+          alert(`自動儲存失敗: ${e.message || e}`);
+        }
       }
     }
-  }
-</script>
+  </script>
 
 </body>
 </html>
