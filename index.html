@@ -105,8 +105,10 @@
   try { await getRedirectResult(auth); } catch (e) { console.warn(e); }
 
   onAuthStateChanged(auth, (user) => {
-    if (user) location.replace("month.html");
-    else {
+    if (user) {
+      console.log("已登入，跳轉至主頁");
+      location.replace("month.html");
+    } else {
       loginBtn.style.display = "flex";
       loader.style.display = "none";
     }
