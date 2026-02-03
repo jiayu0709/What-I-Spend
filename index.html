@@ -105,7 +105,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!loginBtn || !loader) return;
 
   await window.firebaseReady;
+  const user = await window.waitForAuthReady();  // 等狀態還原完成
 
+  const next = new URLSearchParams(location.search).get("next");
+  if (user && next) {
+    location.replace(decodeURIComponent(next));  // ✅ 已登入就回原頁
+  }
   onAuthStateChanged(auth, (user) => {
     console.log("auth state:", user?.uid || null);
     if (user) {
