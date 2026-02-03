@@ -99,7 +99,7 @@
   <div class="app">
     <main class="page">
       <div class="nav-title">新增</div>
-
+      <div id="debug" style="margin:8px 0 0; font-size:12px; opacity:.75; white-space:pre-wrap;"></div>
       <!-- 類型（segmented） -->
       <section class="section">
         <div class="label">類型</div>
@@ -152,6 +152,11 @@
 <script type="module"></script>
 
 <script type="module">
+  const debugEl = document.getElementById("debug");
+    function debug(msg){
+      if (debugEl) debugEl.textContent += msg + "\n";
+    }
+
   const user = await window.requireAuth();
   import { db } from "./firebase-config.js";
   import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -245,6 +250,12 @@
   async function saveToFirestore({ redirectAfter = true } = {}){
     const user = await requireAuth({ redirectTo: "index.html" });
     const uid = user.uid;
+    debug("auth user = " + (user ? user.uid : "null"));
+    if (!user) return;
+
+    debug("writing to firestore...");
+    await addDoc(collection(db, "users", user.uid, "transactions"), data);
+    debug("write success ✅");
 
     const date = dateInput.value || todayYMD();
     const time = nowHHMM();
