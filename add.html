@@ -155,7 +155,11 @@
 
   // ✅ 先確認登入（未登入會導回 index.html?next=...）
   const user = await window.requireAuth({ redirectTo: "index.html" });
-  if (!user) return;
+  if (!user) {
+    const next = encodeURIComponent(location.href);
+    location.replace(`index.html?next=${next}`);
+    return;
+  }
   const uid = user.uid;
 
   // ===== helpers =====
