@@ -5,7 +5,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkj60hCKagiQijipxl3s6F5soN1YIKadE",
-  authDomain: "whatispend.netlify.app",
+  authDomain: "whatispend-3c060.firebaseapp.com",
   projectId: "whatispend-3c060",
   storageBucket: "whatispend-3c060.firebasestorage.app",
   messagingSenderId: "740100624448",
