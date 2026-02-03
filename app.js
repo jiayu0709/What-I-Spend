@@ -8,12 +8,12 @@ import {
 
 import { auth, db } from "./firebase-config.js";
 
-// 掛到 window：讓你各頁面原本 window.auth / window.db 的用法不必改
+// 掛到 window，確保所有模組共用同一個 instance
 window.auth = auth;
 window.db = db;
 
 /* ---------------------------
-   1) Firebase Auth persistence
+   1️⃣ Firebase Auth 初始化
 ---------------------------- */
 window.firebaseReady = (async () => {
   try {
@@ -31,7 +31,7 @@ window.firebaseReady = (async () => {
 })();
 
 /* ---------------------------
-   2) 等待 Auth 狀態還原完成
+   2️⃣ 等待 Auth 狀態還原完成
 ---------------------------- */
 window.waitForAuthReady = async () => {
   if (window.firebaseReady) await window.firebaseReady;
@@ -39,40 +39,43 @@ window.waitForAuthReady = async () => {
   return await new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, (user) => {
       unsub();
-      resolve(user); // user 可能是 null，但狀態已完成
+      resolve(user); // user 可能是 null，但「狀態已完成」
     });
   });
 };
 
 /* ---------------------------
-   3) 登入保護
+   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
 ---------------------------- */
 window.requireAuth = async () => {
   const user = await window.waitForAuthReady();
 
   if (!user) {
     const next = encodeURIComponent(window.location.href);
-    window.location.replace(`index.html?next=${next}`);
+    window.location.replace(`login.html?next=${next}`);
     return null;
   }
+
   return user;
 };
 
 /* ---------------------------
-   4) UI：Tab 高亮（不影響任何功能）
+   4️⃣ UI（跟 Auth 無關）
 ---------------------------- */
 function highlightTab() {
-  const currentPath = window.location.pathname.split("/").pop() || "month.html";
+  const currentPath =
+    window.location.pathname.split("/").pop() || "month.html";
 
   document.querySelectorAll(".tabbar .tab").forEach((tab) => {
     const href = tab.getAttribute("href");
     if (!href) return;
 
     const cleanHref = href.split("?")[0].split("#")[0];
-
-    // ✅ 用完全一致比對（避免你之前提到的「不會變色」問題）
-    if (currentPath === cleanHref) tab.classList.add("active");
-    else tab.classList.remove("active");
+    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) {
+      tab.classList.add("active");
+    } else {
+      tab.classList.remove("active");
+    }
   });
 }
 
