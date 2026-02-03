@@ -15,8 +15,20 @@ window.db = db;
 /* ---------------------------
    1️⃣ Firebase Auth 初始化
 ---------------------------- */
+function isIOSSafari() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  return isIOS && isSafari;
+}
+
 window.firebaseReady = (async () => {
   try {
+    if (isIOSSafari()) {
+      await setPersistence(auth, browserLocalPersistence);
+      console.log("Auth persistence = localStorage (iOS Safari)");
+      return;
+    }
     await setPersistence(auth, indexedDBLocalPersistence);
     console.log("Auth persistence = indexedDB");
   } catch (e) {
