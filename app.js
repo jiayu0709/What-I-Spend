@@ -1,22 +1,32 @@
-// app.js (請確保在 HTML 中用 type="module" 載入)
+// app.js  (請用 type="module" 載入)
 
-// ✅ 修改：直接從你已經寫好的 firebase-config.js 匯入，避免重複初始化導致報錯
-import { auth, db } from './firebase-config.js'; 
-import { 
-  setPersistence, 
-  indexedDBLocalPersistence, 
-  browserLocalPersistence, 
-  browserSessionPersistence 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  setPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ✅ 修改：這裡不再定義 firebaseConfig，因為它會導致 API Key 被重複定義或覆蓋
+// ✅ 你的 Firebase 設定（照你貼的）
+const firebaseConfig = {
+  apiKey: "AIzaSyDkj60hCKagiQijipxl3s6F5soN1YIKadE",
+  authDomain: "whatispend-3c060.firebaseapp.com",
+  projectId: "whatispend-3c060",
+  storageBucket: "whatispend-3c060.firebasestorage.app",
+  messagingSenderId: "740100624448",
+  appId: "1:740100624448:web:88c3298185bd163fba8fa5",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 window.firebaseReady = (async () => {
   try {
-    // 確保 auth 物件存在後再設定持久化
-    if (auth) {
-      await setPersistence(auth, indexedDBLocalPersistence);
-    }
+    await setPersistence(auth, indexedDBLocalPersistence);
   } catch (e1) {
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -26,11 +36,11 @@ window.firebaseReady = (async () => {
   }
 })();
 
-// ✅ 修改：將從 config 匯入的 auth 掛載到 window，供全域使用
+// ✅ 給其他頁使用
 window.auth = auth;
 window.db = db;
 
-// ===== 你原本的 highlightTab / pageTransition 保留 (不做修改) =====
+// ===== 你原本的 highlightTab / pageTransition 保留 =====
 function highlightTab() {
   const currentPath = window.location.pathname.split("/").pop() || "month.html";
 
@@ -48,6 +58,7 @@ function highlightTab() {
   });
 }
 
+// 你原本有 pageTransition 就留著，沒有也不會壞
 function pageTransition() {}
 
 document.addEventListener("DOMContentLoaded", () => {
