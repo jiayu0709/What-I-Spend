@@ -1,6 +1,6 @@
 // app.js (請確保在 HTML 中用 type="module" 載入)
 
-// ✅ 修改：直接從你已經寫好的 firebase-config.js 匯入，避免重複初始化
+// ✅ 修改：直接從你已經寫好的 firebase-config.js 匯入，避免重複初始化導致報錯
 import { auth, db } from './firebase-config.js'; 
 import { 
   setPersistence, 
@@ -9,11 +9,14 @@ import {
   browserSessionPersistence 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ✅ 修改：移除這裡原本重複的 firebaseConfig 和 initializeApp 代碼
+// ✅ 修改：這裡不再定義 firebaseConfig，因為它會導致 API Key 被重複定義或覆蓋
 
 window.firebaseReady = (async () => {
   try {
-    await setPersistence(auth, indexedDBLocalPersistence);
+    // 確保 auth 物件存在後再設定持久化
+    if (auth) {
+      await setPersistence(auth, indexedDBLocalPersistence);
+    }
   } catch (e1) {
     try {
       await setPersistence(auth, browserLocalPersistence);
@@ -23,7 +26,7 @@ window.firebaseReady = (async () => {
   }
 })();
 
-// ✅ 修改：確保全域變數與 firebase-config.js 保持一致
+// ✅ 修改：將從 config 匯入的 auth 掛載到 window，供全域使用
 window.auth = auth;
 window.db = db;
 
