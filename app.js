@@ -60,14 +60,34 @@ window.waitForAuthReady = async () => {
    3️⃣ 登入保護（取代你原本的 currentUser 判斷）
 ---------------------------- */
 window.requireAuth = async () => {
-  const user = await window.waitForAuthReady();
+  // 1) 先等 persistence 設好
+  if (window.firebaseReady) await window.firebaseReady;
+
+  // 2) 等待狀態還原（多給 iOS 一點時間）
+  const user = await new Promise((resolve) => {
+    let done = false;
+
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (done) return;
+      done = true;
+      unsub();
+      resolve(u);
+    });
+
+    // iOS 偶爾需要多一點時間，避免還原前就被導走
+    setTimeout(() => {
+      if (done) return;
+      done = true;
+      unsub();
+      resolve(auth.currentUser); // 可能仍是 null，但至少不會「秒踢走」
+    }, 1200);
+  });
 
   if (!user) {
     const next = encodeURIComponent(window.location.href);
     window.location.replace(`index.html?next=${next}`);
     return null;
   }
-
   return user;
 };
 
