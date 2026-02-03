@@ -47,6 +47,9 @@ export const handler = async (event) => {
   let data;
   try {
     data = JSON.parse(event.body || "{}");
+    console.log("httpMethod:", event.httpMethod);
+    console.log("content-type:", event.headers["content-type"] || event.headers["Content-Type"]);
+    console.log("x-api-key:", event.headers["x-api-key"] || event.headers["X-API-Key"] || "(missing)");
     console.log("raw body:", event.body);
     console.log("parsed data:", data);
     console.log("keys:", Object.keys(data || {}));
