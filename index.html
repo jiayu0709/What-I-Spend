@@ -91,6 +91,8 @@
   import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -98,43 +100,61 @@ import { auth } from "./firebase-config.js";
 
 const provider = new GoogleAuthProvider();
 
+function isIOSSafari() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  return isIOS && isSafari;
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   const loginBtn = document.getElementById("loginBtn");
   const loader = document.getElementById("loader");
-
   if (!loginBtn || !loader) return;
 
   await window.firebaseReady;
-  const user = await window.waitForAuthReady();  // 等狀態還原完成
 
   const next = new URLSearchParams(location.search).get("next");
-  if (user && next) {
-    location.replace(decodeURIComponent(next));  // ✅ 已登入就回原頁
+  let redirected = false;
+
+  // ✅ 先處理 redirect 回來的結果（iOS 必要）
+  try {
+    await getRedirectResult(auth);
+  } catch (e) {
+    console.log("getRedirectResult:", e?.code || e);
   }
+
   onAuthStateChanged(auth, (user) => {
-    console.log("auth state:", user?.uid || null);
+    if (redirected) return;
+
     if (user) {
-      location.replace("month.html");
-    } else {
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
+      redirected = true;
+      const target = next ? decodeURIComponent(next) : "month.html";
+      location.replace(target);
+      return;
     }
+
+    loginBtn.style.display = "flex";
+    loader.style.display = "none";
   });
 
   loginBtn.addEventListener("click", async () => {
-    console.log("LOGIN METHOD = POPUP");
     loginBtn.style.display = "none";
     loader.style.display = "block";
     try {
-      await signInWithPopup(auth, provider); // 🔥 改這行
+      if (isIOSSafari()) {
+        await signInWithRedirect(auth, provider); // ✅ iOS 用 redirect
+      } else {
+        await signInWithPopup(auth, provider);    // ✅ 其他維持 popup
+      }
     } catch (e) {
       console.error(e);
       alert("登入失敗，請再試一次");
       loginBtn.style.display = "flex";
       loader.style.display = "none";
     }
-   });
   });
+});
 </script>
 </body>
 </html>
