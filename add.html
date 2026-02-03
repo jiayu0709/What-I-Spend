@@ -153,9 +153,34 @@
 <script type="module" src="app.js"></script>
 
 <script type="module">
-  import { db } from "./firebase-config.js";
-  import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { auth } from "./firebase-config.js";
 
+  async function addViaFunction(data) {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("尚未登入");
+      return;
+    }
+
+    const token = await user.getIdToken();
+
+    const res = await fetch("/.netlify/functions/addTransaction", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      console.error(await res.text());
+      alert("新增失敗");
+      return;
+    }
+  }
+  
+  
   // ===== categories =====
   const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
   const incomeCategories  = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
@@ -287,15 +312,15 @@
     }
   }
 
-  saveBtn.addEventListener("click", async () => {
-    saveBtn.disabled = true;
-    try {
-      await saveToFirestore({ redirectAfter: true });
-    } catch (e) {
-      console.error("save failed:", e.code, e.message, e);
-      alert(`儲存失敗: ${e.code || e.message}`);
-      saveBtn.disabled = false;
-    }
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    await addViaFunction({
+      amount,
+      category,
+      note,
+      date,
+    });
+
+    location.href = "month.html";
   });
 
   // ✅ 捷徑自動儲存：等 UI & auth 都 ready 後才做
