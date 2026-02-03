@@ -187,6 +187,26 @@
     // 等待 Persistence 初始化
     await window.firebaseReady;
 
+    // 2. 監聽登入狀態
+    onAuthStateChanged(window.auth, async (user) => {
+      if (user) {
+        // 登入成功，開始抓資料
+        try {
+          const txs = await fetchMonthTxs(user.uid);
+          renderWithTxs(txs);
+        } catch (e) {
+          console.error("讀取失敗:", e);
+          document.getElementById("list-root").innerHTML =
+            "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+        }
+      } else {
+        // 只有在確定真的沒有 user 時才跳轉
+        // 為了避免極短暫的狀態閃爍，可以加一個極小的延遲或檢查
+        console.log("No user detected, redirecting...");
+        location.replace("index.html");
+      }
+    });
+
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
 
@@ -439,22 +459,6 @@
       return txs;
     }
 
-    // 修正：使用匯入的 auth 變數，而不是 window.auth
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        // 如果確定未登入，才跳轉回首頁
-        location.replace("index.html");
-        return;
-      }
-      try {
-        const txs = await fetchMonthTxs(user.uid);
-        renderWithTxs(txs);
-      } catch (e) {
-        console.error("讀取失敗:", e);
-        document.getElementById("list-root").innerHTML =
-          "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
-      }
-    });
   </script>
 </body>
 </html>
