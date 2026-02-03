@@ -11,10 +11,10 @@ import { auth } from "./firebase-config.js";
 window.firebaseReady = (async () => {
   try {
     await setPersistence(auth, indexedDBLocalPersistence);
-  } catch (e1) {
+  } catch {
     try {
       await setPersistence(auth, browserLocalPersistence);
-    } catch (e2) {
+    } catch {
       await setPersistence(auth, browserSessionPersistence);
     }
   }

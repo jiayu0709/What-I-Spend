@@ -1,91 +1,5 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>What I Spend - 登入</title>
-
-  <style>
-    :root {
-      --app-bg: #f2ede9;
-      --text: #3c3c3c;
-      --accent: #d61c68;
-    }
-    body {
-      margin: 0;
-      background: var(--app-bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .login-card {
-      text-align: center;
-      padding: 40px 20px;
-      max-width: 320px;
-      width: 90%;
-    }
-    .logo {
-      font-size: 64px;
-      margin-bottom: 20px;
-    }
-    h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #8e8e93;
-      margin-bottom: 30px;
-      font-weight: 500;
-    }
-    .btn-google {
-      background: #ffffff;
-      color: #000;
-      border: none;
-      padding: 14px 24px;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .btn-google:active {
-      transform: scale(0.98);
-    }
-    .loading {
-      display: none;
-      color: var(--accent);
-      font-weight: 700;
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="login-card">
-    <div class="logo">💰</div>
-    <h1>What I Spend</h1>
-    <p>同步你的雲端記帳明細</p>
-
-    <button class="btn-google" id="loginBtn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
-      使用 Google 帳號登入
-    </button>
-
-    <div class="loading" id="loader">登入中，請稍候…</div>
-  </div>
-
-  <script type="module" src="app.js"></script>
-
 <script type="module">
+  import { auth } from "./firebase-config.js";
   import {
     GoogleAuthProvider,
     signInWithRedirect,
@@ -93,18 +7,17 @@
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  import { auth } from "./firebase-config.js";
-
   const loginBtn = document.getElementById("loginBtn");
   const loader = document.getElementById("loader");
   const provider = new GoogleAuthProvider();
 
   await window.firebaseReady;
 
-  // 先吃掉 redirect 回來的結果（避免某些裝置卡住）
+  // 先處理 redirect 回來的結果（讓 Firebase 把 state/code 吃掉）
   try { await getRedirectResult(auth); } catch (e) { console.warn(e); }
 
   onAuthStateChanged(auth, (user) => {
+    console.log("auth state:", user?.uid || null);
     if (user) location.replace("month.html");
     else {
       loginBtn.style.display = "flex";
@@ -118,5 +31,3 @@
     await signInWithRedirect(auth, provider);
   });
 </script>
-</body>
-</html>
