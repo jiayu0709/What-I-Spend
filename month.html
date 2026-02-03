@@ -12,8 +12,19 @@
   <style>
     *{box-sizing:border-box}
     body{
-      margin:0;background:var(--app-bg);color:var(--text);
+      margin:0;background:var(--app-bg, #f2ede9);color:var(--text, #3c3c3c);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    :root {
+      --app-bg: #f2ede9;
+      --card-bg: #ffffff;
+      --text: #3c3c3c;
+      --secondary: #8e8e93;
+      --green: #34c759;
+      --red: #ff3b30;
+      --divider: #e5e5ea;
+      --radius: 16px;
+      --tab-height: 80px;
     }
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
@@ -36,7 +47,7 @@
       padding:10px 12px;
       border-radius: 12px;
       font-weight:900;
-      color: var(--accent-text, var(--accent));
+      color: var(--accent-text, #007aff);
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
@@ -110,6 +121,24 @@
       color:var(--secondary);
       font-weight:800;
     }
+
+    /* Tabbar CSS */
+    .tabbar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--tab-height); background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: center;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tabbar-inner {
+      width: 100%; max-width: 520px; display: grid; grid-template-columns: 1fr 1fr 1fr;
+    }
+    .tab {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-decoration: none; color: #999; font-size: 10px; font-weight: 600; gap: 4px;
+    }
+    .tab.active { color: #007aff; }
+    .tab .icon { font-size: 24px; line-height: 1; margin-bottom: 2px; }
   </style>
 </head>
 <body>
@@ -120,7 +149,7 @@
       <div class="monthbar" aria-label="月份切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
         <div class="m-title">
-          <span id="monthLabel">January</span>
+          <span id="monthLabel">Loading...</span>
         </div>
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
@@ -147,14 +176,15 @@
     </nav>
   </div>
 
-  <!-- ✅ 只載入一次，且一定是 module -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // 修正：直接匯入 auth 與 db
+    import { auth, db } from "./firebase-config.js";
 
-    // ✅ 等 persistence + firebase 初始化穩定（iOS/PWA）
+    // 等待 Persistence 初始化
     await window.firebaseReady;
 
     // ===== month state (from ?m=YYYY-MM) =====
@@ -241,6 +271,7 @@
       params.set("amount", String(rawAmt));
       params.set("cat", tx.category || "");
       params.set("note", tx.note || "");
+      // 保持原始邏輯，連結到 edit.html
       a.href = "edit.html?" + params.toString();
 
       const left = document.createElement("div");
@@ -386,7 +417,7 @@
       const root = document.getElementById("list-root");
       root.innerHTML = "<div class='empty'>讀取中...</div>";
 
-      const db = window.db;
+      // 修正：使用匯入的 db 變數，而不是 window.db
       const txRef = collection(db, "users", uid, "transactions");
 
       const start = `${currentKey}-01`;
@@ -408,9 +439,10 @@
       return txs;
     }
 
-    // ✅ 只在 auth 確認沒登入時才回登入頁
-    onAuthStateChanged(window.auth, async (user) => {
+    // 修正：使用匯入的 auth 變數，而不是 window.auth
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        // 如果確定未登入，才跳轉回首頁
         location.replace("index.html");
         return;
       }
