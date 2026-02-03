@@ -153,6 +153,8 @@
 
 <script type="module">
   const user = await window.requireAuth();
+  if (!user) return; // ✅ 這行一定要有
+  const uid = user.uid;
   import { db } from "./firebase-config.js";
   import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
