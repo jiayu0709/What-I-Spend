@@ -83,55 +83,40 @@
     <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
-  <!-- ✅ 只用 module 載入 app.js（不要再自己 initializeApp） -->
   <script type="module" src="app.js"></script>
 
-  <!-- ✅ 登入流程 -->
-  <script type="module">
-    import {
-      GoogleAuthProvider,
-      signInWithRedirect,
-      getRedirectResult,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<script type="module">
+  import {
+    GoogleAuthProvider,
+    signInWithRedirect,
+    getRedirectResult,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    const loginBtn = document.getElementById("loginBtn");
-    const loader = document.getElementById("loader");
-    const provider = new GoogleAuthProvider();
+  import { auth } from "./firebase-config.js";
 
-    // ✅ iOS/PWA：先等 persistence 設好
-    await window.firebaseReady;
+  const loginBtn = document.getElementById("loginBtn");
+  const loader = document.getElementById("loader");
+  const provider = new GoogleAuthProvider();
 
-    // ✅ 處理 redirect 回來（不一定要用結果，但建議保留避免 iOS 卡住）
-    try {
-      await getRedirectResult(window.auth);
-    } catch (err) {
-      console.error("Redirect error:", err);
+  await window.firebaseReady;
+
+  // 先吃掉 redirect 回來的結果（避免某些裝置卡住）
+  try { await getRedirectResult(auth); } catch (e) { console.warn(e); }
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) location.replace("month.html");
+    else {
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
     }
+  });
 
-    // ✅ 監聽登入狀態
-    onAuthStateChanged(window.auth, (user) => {
-      if (user) {
-        location.replace("month.html");
-      } else {
-        loginBtn.style.display = "flex";
-        loader.style.display = "none";
-      }
-    });
-
-    // ✅ 點擊登入
-    loginBtn.addEventListener("click", async () => {
-      loginBtn.style.display = "none";
-      loader.style.display = "block";
-      try {
-        await signInWithRedirect(window.auth, provider);
-      } catch (err) {
-        console.error("登入失敗:", err);
-        alert("登入失敗，請再試一次");
-        loginBtn.style.display = "flex";
-        loader.style.display = "none";
-      }
-    });
-  </script>
+  loginBtn.addEventListener("click", async () => {
+    loginBtn.style.display = "none";
+    loader.style.display = "block";
+    await signInWithRedirect(auth, provider);
+  });
+</script>
 </body>
 </html>
