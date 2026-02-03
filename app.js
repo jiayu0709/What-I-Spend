@@ -1,28 +1,15 @@
-// app.js  (請用 type="module" 載入)
+// app.js (請確保在 HTML 中用 type="module" 載入)
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getAuth,
-  setPersistence,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
+// ✅ 修改：直接從你已經寫好的 firebase-config.js 匯入，避免重複初始化
+import { auth, db } from './firebase-config.js'; 
+import { 
+  setPersistence, 
+  indexedDBLocalPersistence, 
+  browserLocalPersistence, 
+  browserSessionPersistence 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ✅ 你的 Firebase 設定（照你貼的）
-const firebaseConfig = {
-  apiKey: "AIzaSyDkj60hCKagiQijipxl3s6F5soN1YIKadE",
-  authDomain: "whatispend-3c060.firebaseapp.com",
-  projectId: "whatispend-3c060",
-  storageBucket: "whatispend-3c060.firebasestorage.app",
-  messagingSenderId: "740100624448",
-  appId: "1:740100624448:web:88c3298185bd163fba8fa5",
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// ✅ 修改：移除這裡原本重複的 firebaseConfig 和 initializeApp 代碼
 
 window.firebaseReady = (async () => {
   try {
@@ -36,11 +23,11 @@ window.firebaseReady = (async () => {
   }
 })();
 
-// ✅ 給其他頁使用
+// ✅ 修改：確保全域變數與 firebase-config.js 保持一致
 window.auth = auth;
 window.db = db;
 
-// ===== 你原本的 highlightTab / pageTransition 保留 =====
+// ===== 你原本的 highlightTab / pageTransition 保留 (不做修改) =====
 function highlightTab() {
   const currentPath = window.location.pathname.split("/").pop() || "month.html";
 
@@ -58,7 +45,6 @@ function highlightTab() {
   });
 }
 
-// 你原本有 pageTransition 就留著，沒有也不會壞
 function pageTransition() {}
 
 document.addEventListener("DOMContentLoaded", () => {
