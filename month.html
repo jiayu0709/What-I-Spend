@@ -181,15 +181,16 @@
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    // 修正：直接匯入 auth 與 db
-    import { auth, db } from "./firebase-config.js";
 
-    // 等待 Persistence 初始化
+    // 1. 先等待 Firebase 核心初始化完成 (Persistence 設定)
     await window.firebaseReady;
+
+    let isInitialCheck = true;
 
     // 2. 監聽登入狀態
     onAuthStateChanged(window.auth, async (user) => {
       if (user) {
+        isInitialCheck = false;
         // 登入成功，開始抓資料
         try {
           const txs = await fetchMonthTxs(user.uid);
@@ -200,10 +201,21 @@
             "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
       } else {
-        // 只有在確定真的沒有 user 時才跳轉
-        // 為了避免極短暫的狀態閃爍，可以加一個極小的延遲或檢查
-        console.log("No user detected, redirecting...");
-        location.replace("index.html");
+        // 這裡是最關鍵的修改：
+        // 如果是剛重新整理頁面 (isInitialCheck)，先等個 1.5 秒確認是不是真的沒登入
+        // 避免 Firebase 還在從 IndexedDB 恢復 session 時就被 replace 掉
+        if (isInitialCheck) {
+          setTimeout(() => {
+            if (!window.auth.currentUser) {
+              console.log("確定無使用者資訊，跳轉至登入頁");
+              location.replace("index.html");
+            }
+          }, 1500); 
+          isInitialCheck = false;
+        } else {
+          // 如果不是初始狀態（例如使用者手動登出），則直接跳轉
+          location.replace("index.html");
+        }
       }
     });
 
