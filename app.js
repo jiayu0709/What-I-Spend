@@ -3,38 +3,79 @@ import {
   indexedDBLocalPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import { auth, db } from "./firebase-config.js";
 
-// 將實例掛載到 window 確保其他模組抓到的是同一個
+// 掛到 window，確保所有模組共用同一個 instance
 window.auth = auth;
 window.db = db;
 
-// 優化初始化順序
+/* ---------------------------
+   1️⃣ Firebase Auth 初始化
+---------------------------- */
 window.firebaseReady = (async () => {
   try {
-    // 優先順序：indexedDB -> local -> session
     await setPersistence(auth, indexedDBLocalPersistence);
+    console.log("Auth persistence = indexedDB");
   } catch (e) {
-    console.warn("IndexedDB persistence failed, trying local storage", e);
     try {
       await setPersistence(auth, browserLocalPersistence);
-    } catch (e2) {
+      console.log("Auth persistence = localStorage");
+    } catch {
       await setPersistence(auth, browserSessionPersistence);
+      console.log("Auth persistence = session");
     }
   }
-  return auth;
 })();
 
+/* ---------------------------
+   2️⃣ 等待 Auth 狀態還原完成
+---------------------------- */
+window.waitForAuthReady = async () => {
+  if (window.firebaseReady) await window.firebaseReady;
+
+  return await new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
+      resolve(user); // user 可能是 null，但「狀態已完成」
+    });
+  });
+};
+
+/* ---------------------------
+   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
+---------------------------- */
+window.requireAuth = async () => {
+  const user = await window.waitForAuthReady();
+
+  if (!user) {
+    const next = encodeURIComponent(window.location.href);
+    window.location.replace(`login.html?next=${next}`);
+    return null;
+  }
+
+  return user;
+};
+
+/* ---------------------------
+   4️⃣ UI（跟 Auth 無關）
+---------------------------- */
 function highlightTab() {
-  const currentPath = window.location.pathname.split("/").pop() || "month.html";
+  const currentPath =
+    window.location.pathname.split("/").pop() || "month.html";
+
   document.querySelectorAll(".tabbar .tab").forEach((tab) => {
     const href = tab.getAttribute("href");
     if (!href) return;
+
     const cleanHref = href.split("?")[0].split("#")[0];
-    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) tab.classList.add("active");
-    else tab.classList.remove("active");
+    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) {
+      tab.classList.add("active");
+    } else {
+      tab.classList.remove("active");
+    }
   });
 }
 
