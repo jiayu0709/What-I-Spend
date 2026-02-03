@@ -47,6 +47,9 @@ export const handler = async (event) => {
   let data;
   try {
     data = JSON.parse(event.body || "{}");
+    console.log("raw body:", event.body);
+    console.log("parsed data:", data);
+    console.log("keys:", Object.keys(data || {}));
   } catch {
     return json(400, { ok: false, error: "Invalid JSON body" });
   }
