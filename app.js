@@ -1,66 +1,15 @@
-import {
-  setPersistence,
-  indexedDBLocalPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// ✅ URL auth 方案：全站共用這兩個常數
+export const DB = "https://xxx.asia-southeast1.firebasedatabase.app";
+export const AUTH = "12345678";
 
-import { auth, db } from "./firebase-config.js";
-
-// 掛到 window，確保所有模組共用同一個 instance
-window.auth = auth;
-window.db = db;
+// ✅ 統一產生帶 auth 的 Realtime DB REST URL
+export function rtdbUrl(path) {
+  // path 例： "records/list" 或 `records/list/${id}`
+  return `${DB}/${path}.json?auth=${encodeURIComponent(AUTH)}`;
+}
 
 /* ---------------------------
-   1️⃣ Firebase Auth 初始化
----------------------------- */
-window.firebaseReady = (async () => {
-  try {
-    await setPersistence(auth, indexedDBLocalPersistence);
-    console.log("Auth persistence = indexedDB");
-  } catch (e) {
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      console.log("Auth persistence = localStorage");
-    } catch {
-      await setPersistence(auth, browserSessionPersistence);
-      console.log("Auth persistence = session");
-    }
-  }
-})();
-
-/* ---------------------------
-   2️⃣ 等待 Auth 狀態還原完成
----------------------------- */
-window.waitForAuthReady = async () => {
-  if (window.firebaseReady) await window.firebaseReady;
-
-  return await new Promise((resolve) => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      unsub();
-      resolve(user); // user 可能是 null，但「狀態已完成」
-    });
-  });
-};
-
-/* ---------------------------
-   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
----------------------------- */
-window.requireAuth = async () => {
-  const user = await window.waitForAuthReady();
-
-  if (!user) {
-    const next = encodeURIComponent(window.location.href);
-    window.location.replace(`index.html?next=${next}`);
-    return null;
-  }
-
-  return user;
-};
-
-/* ---------------------------
-   4️⃣ UI（跟 Auth 無關）
+   UI（跟 Auth 無關）
 ---------------------------- */
 function highlightTab() {
   const currentPath =
