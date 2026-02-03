@@ -246,13 +246,12 @@
   await window.firebaseReady;
   const user = await window.waitForAuthReady();
 
-  if (!user) {
-    if (autoSave) {
-      alert("Safari 需要先登入一次，之後捷徑就不用再登入了。請按確定跳到登入頁。");
-    }
-    const next = encodeURIComponent(location.href);
-    location.replace(`index.html?next=${next}`);
-    return;
+  if (user) {
+    uid = user.uid;
+    saveBtn.disabled = false;
+  } else {
+    // 沒登入：按儲存就導去登入頁
+    saveBtn.disabled = false;
   }
 
   async function ensureLoginOrRedirect(){
