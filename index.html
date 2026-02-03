@@ -87,26 +87,26 @@
 
 <script type="module">
   import {
-    GoogleAuthProvider,
-    signInWithRedirect,
-    getRedirectResult,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  import { auth } from "./firebase-config.js";
+import { auth } from "./firebase-config.js";
 
+const provider = new GoogleAuthProvider();
+
+window.addEventListener("DOMContentLoaded", async () => {
   const loginBtn = document.getElementById("loginBtn");
   const loader = document.getElementById("loader");
-  const provider = new GoogleAuthProvider();
+
+  if (!loginBtn || !loader) return;
 
   await window.firebaseReady;
 
-  // 先吃掉 redirect 回來的結果（避免某些裝置卡住）
-  try { await getRedirectResult(auth); } catch (e) { console.warn(e); }
-
   onAuthStateChanged(auth, (user) => {
+    console.log("auth state:", user?.uid || null);
     if (user) {
-      console.log("已登入，跳轉至主頁");
       location.replace("month.html");
     } else {
       loginBtn.style.display = "flex";
@@ -117,7 +117,15 @@
   loginBtn.addEventListener("click", async () => {
     loginBtn.style.display = "none";
     loader.style.display = "block";
-    await signInWithRedirect(auth, provider);
+    try {
+      await signInWithPopup(auth, provider); // 🔥 改這行
+    } catch (e) {
+      console.error(e);
+      alert("登入失敗，請再試一次");
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
+    }
+   });
   });
 </script>
 </body>
