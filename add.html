@@ -260,6 +260,8 @@
   }
 
   async function saveToFirestore({ redirectAfter = true } = {}){
+    console.log("firebaseReady:", !!window.firebaseReady);
+    console.log("currentUser:", window.auth?.currentUser?.uid || null);
     const user = await ensureLoginOrRedirect();
     if (!user) return; // 已跳轉
 
