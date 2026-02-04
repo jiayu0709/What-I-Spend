@@ -240,43 +240,76 @@ button:active{ opacity:.65; transform:scale(.98); }
   text-decoration:none;
 }
 
-/* ===== Drawer Overlay ===== */
+/* =========================
+   Drawer polish (iOS card)
+   只影響抽屜，不動其他版面
+   ========================= */
+
+/* 背景遮罩更像原生 */
 .drawer-overlay{
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  background: rgba(0,0,0,0.18);
-  z-index: 9999;
+  background: rgba(0,0,0,0.22);
 }
 
-/* ===== Drawer Panel ===== */
+/* 抽屜改成「卡片面板」：上方留白變成設計 */
 .drawer-panel{
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-
-  width: min(320px, 86vw);
+  /* 保持貼齊左側與上下填滿 */
   height: 100dvh;
-  background: var(--card-bg);
-  border-right: 1px solid rgba(0,0,0,0.06);
 
-  /* ✅ 背景填滿上下，但內容只避開 safe-area，不額外 +14px 推下去 */
-  padding-top: 0 ;
+  /* ✅ 讓它像卡片：右側圓角 */
+  border-top-right-radius: 26px;
+  border-bottom-right-radius: 26px;
+
+  /* ✅ 更像 iOS 的層次 */
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.18),
+    0 2px 10px rgba(0,0,0,0.08);
+
+  /* ✅ 上方保留 safe-area，但讓它看起來不是空白 */
+  padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 
-  /* ✅ 左右內距維持你原本設計 */
-  padding-left: 16px;
-  padding-right: 16px;
+  /* ✅ 在 safe-area 區做一個很淡的漸層，視覺上像 header */
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.0) 56px),
+    var(--card-bg);
 
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* ✅ 硬體加速，滑動更順 */
+  transform: translateZ(0);
 }
 
-/* ✅ 把你想要的「14px 內容內距」放到內容本體，不影響 safe-area */
+/* 內容區：把 14px 內距放在這裡，讓標題不要貼到最上 */
 .drawer-panel .drawer-inner{
-  padding-top: 0;
+  padding-top: 12px;
   padding-bottom: 14px;
+  display: grid;
+  gap: 10px;
 }
 
+/* 標題做成「小膠囊標籤」→ 看起來像有 Header */
+.drawer-title{
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+
+  padding: 8px 12px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.06);
+
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+}
+
+/* 每個項目更像卡片，邊界更乾淨 */
+.drawer-item{
+  border-radius: 16px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* danger 按鈕保持紅，但更像 iOS */
+.drawer-item.danger{
+  background: rgba(217,74,74,0.12);
+  border: 1px solid rgba(217,74,74,0.16);
+  color: #b33b3b;
+}
