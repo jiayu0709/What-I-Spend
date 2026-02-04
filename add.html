@@ -169,12 +169,7 @@
       const d = new Date();
       return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
     }
-    function timeToMinutesFromHHmm(hhmm){
-      if(!hhmm) return null;
-      const [h,m] = hhmm.split(":").map(n => parseInt(n,10));
-      if(!Number.isFinite(h) || !Number.isFinite(m)) return null;
-      return h * 60 + m; // 0~1439
-    }
+    
     function monthKeyFromDateStr(ymd){
       return (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) ? ymd.slice(0,7) : "";
     }
@@ -346,7 +341,6 @@
 
       const date = dateInput.value || todayYMD();
       const time = nowHHMM();
-      const timeSort = timeToMinutesFromHHmm(time);
       const category = (categorySelect.value || "").trim();
       const note = (noteInput.value || "").trim();
       const amount = parseAmount(amountInput.value);
@@ -355,7 +349,7 @@
       if(!isFinite(amount) || amount <= 0){ alert("請輸入正確金額（> 0）"); return; }
 
       // ✅ 注意：payload 不包含 createdAt（Function 由後端加；client 由 addViaClientFirestore 加）
-      const payload = { date, timeSort, type: currentType, amount, category, note };
+      const payload = { date, time, type: currentType, amount, category, note };
 
       // ✅ 兩用寫入：優先 Function，失敗自動 fallback
       const result = await writeTransaction(payload, { prefer: "function" });
