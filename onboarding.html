@@ -352,7 +352,20 @@
       }
     });
 
+    import { auth, db } from "./firebase-config.js";
+    import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
     finishBtn.addEventListener("click", async () => {
+      try {
+        await window.firebaseReady;
+        const u = await window.requireAuth();
+        if (u) {
+          await updateDoc(doc(db, "users", u.uid), { onboardingDone: true });
+        }
+      } catch (e) {
+        console.error("set onboardingDone failed:", e);
+        // 失敗也不要卡住使用者
+      }
       location.replace("month.html");
     });
 

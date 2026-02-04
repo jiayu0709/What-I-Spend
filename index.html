@@ -94,27 +94,68 @@
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { auth } from "./firebase-config.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import { auth, db } from "./firebase-config.js";
 
 const provider = new GoogleAuthProvider();
+
+async function routeAfterLogin(user){
+  const next = new URLSearchParams(location.search).get("next");
+
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+
+  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      createdAt: serverTimestamp(),
+      onboardingDone: false,
+    });
+    location.replace("onboarding.html");
+    return;
+  }
+
+  const data = snap.data() || {};
+
+  // ✅ 尚未完成 onboarding
+  if (data.onboardingDone === false) {
+    location.replace("onboarding.html");
+    return;
+  }
+
+  // ✅ 已完成 onboarding：回 next 或 month
+  if (next) {
+    location.replace(decodeURIComponent(next));
+  } else {
+    location.replace("month.html");
+  }
+}
 
 window.addEventListener("DOMContentLoaded", async () => {
   const loginBtn = document.getElementById("loginBtn");
   const loader = document.getElementById("loader");
-
   if (!loginBtn || !loader) return;
 
   await window.firebaseReady;
-  const user = await window.waitForAuthReady();  // 等狀態還原完成
+  await window.waitForAuthReady(); // 等 session 還原
 
-  const next = new URLSearchParams(location.search).get("next");
-  if (user && next) {
-    location.replace(decodeURIComponent(next));  // ✅ 已登入就回原頁
-  }
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     console.log("auth state:", user?.uid || null);
+
     if (user) {
-      location.replace("month.html");
+      try {
+        await routeAfterLogin(user);
+      } catch (e) {
+        console.error("routeAfterLogin failed:", e);
+        alert("登入後導頁失敗，請稍後再試");
+        location.replace("month.html");
+      }
     } else {
       loginBtn.style.display = "flex";
       loader.style.display = "none";
@@ -122,19 +163,19 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   loginBtn.addEventListener("click", async () => {
-    console.log("LOGIN METHOD = POPUP");
     loginBtn.style.display = "none";
     loader.style.display = "block";
     try {
-      await signInWithPopup(auth, provider); // 🔥 改這行
+      await signInWithPopup(auth, provider);
+      // 導頁交給 onAuthStateChanged
     } catch (e) {
       console.error(e);
       alert("登入失敗，請再試一次");
       loginBtn.style.display = "flex";
       loader.style.display = "none";
     }
-   });
   });
+});
 </script>
 </body>
 </html>
