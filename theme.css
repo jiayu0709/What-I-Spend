@@ -239,3 +239,34 @@ button:active{ opacity:.65; transform:scale(.98); }
   display:block;
   text-decoration:none;
 }
+
+/* ===== Drawer Overlay ===== */
+.drawer-overlay{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: rgba(0,0,0,0.18);
+  z-index: 9999;
+}
+
+/* ===== Drawer Panel ===== */
+.drawer-panel{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: min(320px, 86vw);
+  background: var(--card-bg);
+  border-right: 1px solid rgba(0,0,0,0.06);
+
+  /* 內容才避開瀏海 */
+  padding-top: calc(env(safe-area-inset-top) + 14px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+  padding-left: 16px;
+  padding-right: 16px;
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
