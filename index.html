@@ -91,88 +91,55 @@
   import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-import { auth, db } from "./firebase-config.js";
+import { auth } from "./firebase-config.js";
 
 const provider = new GoogleAuthProvider();
 
-async function routeAfterLogin(user){
-  const next = new URLSearchParams(location.search).get("next");
-
-  const userRef = doc(db, "users", user.uid);
-  const snap = await getDoc(userRef);
-
-  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      createdAt: serverTimestamp(),
-      onboardingDone: false,
-    });
-    location.replace("onboarding.html");
-    return;
-  }
-
-  const data = snap.data() || {};
-
-  // ✅ 尚未完成 onboarding
-  if (data.onboardingDone === false) {
-    location.replace("onboarding.html");
-    return;
-  }
-
-  // ✅ 已完成 onboarding：回 next 或 month
-  if (next) {
-    location.replace(decodeURIComponent(next));
-  } else {
-    location.replace("month.html");
-  }
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+function isStandalonePWA() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const loginBtn = document.getElementById("loginBtn");
-  const loader = document.getElementById("loader");
-  if (!loginBtn || !loader) return;
-
   await window.firebaseReady;
-  await window.waitForAuthReady(); // 等 session 還原
 
-  onAuthStateChanged(auth, async (user) => {
-    console.log("auth state:", user?.uid || null);
+  // ✅ 必做：吃掉 redirect 回來的結果（不吃會卡或顯示 missing state）
+  try { await getRedirectResult(auth); } catch (e) { console.warn(e); }
 
-    if (user) {
-      try {
-        await routeAfterLogin(user);
-      } catch (e) {
-        console.error("routeAfterLogin failed:", e);
-        alert("登入後導頁失敗，請稍後再試");
-        location.replace("month.html");
-      }
-    } else {
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
-    }
+  onAuthStateChanged(auth, (user) => {
+    if (user) location.replace("onboarding.html"); // 或你要的 next
   });
 
   loginBtn.addEventListener("click", async () => {
     loginBtn.style.display = "none";
     loader.style.display = "block";
     try {
+      // ✅ iOS / PWA：redirect 最穩（含雙重驗證）
+      if (isIOS() || isStandalonePWA()) {
+        await signInWithRedirect(auth, provider);
+        return; // redirect 會離開頁面
+      }
+
+      // ✅ 其他平台：popup
       await signInWithPopup(auth, provider);
-      // 導頁交給 onAuthStateChanged
     } catch (e) {
-      console.error(e);
-      alert("登入失敗，請再試一次");
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
+      console.warn("login failed:", e);
+
+      // popup 失敗就 fallback redirect
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (e2) {
+        alert("登入失敗，請改用 Safari 開啟網站再試一次");
+        loginBtn.style.display = "flex";
+        loader.style.display = "none";
+      }
     }
   });
 });
