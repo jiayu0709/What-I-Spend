@@ -280,10 +280,3 @@ button:active{ opacity:.65; transform:scale(.98); }
   padding-bottom: 14px;
 }
 
-/* ===== DEBUG（暫時用）===== */
-.drawer, .drawer-overlay, .drawer-panel, .drawer-inner{
-  outline: 2px solid rgba(255,0,0,0.45) !important;
-}
-.drawer-title{
-  outline: 2px solid rgba(0,0,255,0.45) !important;
-}
