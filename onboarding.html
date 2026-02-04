@@ -269,6 +269,7 @@
 
       <section class="section">
         <div class="btnbar">
+          <button class="btn" type="button" id="addToHomeBtn">➕ 新增至主畫面</button>
           <button class="btn primary" type="button" id="finishBtn">開始使用 → 進入記帳</button>
           <a class="btn" href="month.html">先跳過（仍可之後再設定）</a>
         </div>
@@ -277,6 +278,48 @@
   </div>
 
   <div class="overlay" id="overlay">
+    <!-- ✅ Add to Home Screen 教學 Overlay（新） -->
+    <div class="overlay" id="a2hsOverlay" aria-hidden="true">
+      <div class="panel a2hs-panel" role="dialog" aria-modal="true" aria-label="新增至主畫面教學">
+        <div class="a2hs-head">
+          <div class="a2hs-icon">➕</div>
+          <div class="a2hs-titlewrap">
+            <p class="ttl" style="margin:0;">新增至主畫面</p>
+            <p class="sub" style="margin:2px 0 0;">像 App 一樣一鍵打開</p>
+          </div>
+        </div>
+
+        <div class="a2hs-steps">
+          <div class="a2hs-step">
+            <div class="a2hs-num">1</div>
+            <div class="a2hs-tx">
+              <div class="a2hs-t">點 Safari 的「分享」</div>
+              <div class="a2hs-d">畫面底部的 <span class="a2hs-chip">□↑</span> 按鈕</div>
+            </div>
+          </div>
+
+          <div class="a2hs-step">
+            <div class="a2hs-num">2</div>
+            <div class="a2hs-tx">
+              <div class="a2hs-t">選「加入主畫面」</div>
+              <div class="a2hs-d">往下滑就會看到</div>
+            </div>
+          </div>
+
+          <div class="a2hs-step">
+            <div class="a2hs-num">3</div>
+            <div class="a2hs-tx">
+              <div class="a2hs-t">按「加入」完成</div>
+              <div class="a2hs-d">之後從桌面點圖示就能快速記帳</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="a2hs-actions">
+          <button class="btn primary" type="button" id="a2hsOkBtn">知道了</button>
+        </div>
+      </div>
+    </div>
     <div class="panel">
       <p class="ttl">讀取中…</p>
       <p class="sub">正在產生你的 Setup Code，請稍候</p>
