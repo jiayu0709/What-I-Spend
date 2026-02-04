@@ -287,13 +287,14 @@
   <script type="module" src="app.js"></script>
 
   <script type="module">
-    import { auth } from "./firebase-config.js";
+    import { auth as fbAuth, db } from "./firebase-config.js";
+    import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ✅ 你的 iCloud 捷徑分享連結
     const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/a674cbc87dc546ea955f95b883130641";
 
     async function createSetupCodeViaFunction(){
-      const u = auth.currentUser;
+      const u = fbAuth.currentUser;
       if (!u) throw new Error("Not logged in");
 
       const idToken = await u.getIdToken();
@@ -351,9 +352,6 @@
         setStatus("狀態：已複製到剪貼簿 ✅", "ok");
       }
     });
-
-    import { auth, db } from "./firebase-config.js";
-    import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     finishBtn.addEventListener("click", async () => {
       try {
