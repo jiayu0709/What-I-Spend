@@ -463,55 +463,5 @@
     }
 
   </script>
-  <script>
-  (function () {
-    // 建立一個小面板顯示資訊（不影響互動）
-    const box = document.createElement('div');
-    box.id = 'debugSafeArea';
-    box.style.cssText = `
-      position: fixed;
-      right: 10px;
-      top: 10px;
-      z-index: 2147483647;
-      font: 12px/1.3 -apple-system, system-ui;
-      background: rgba(0,0,0,.65);
-      color: white;
-      padding: 10px 12px;
-      border-radius: 10px;
-      pointer-events: none;
-      white-space: pre;
-    `;
-    document.body.appendChild(box);
-
-    function getPx(varName){
-      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '(empty)';
-    }
-    function padTop(sel){
-      const el = document.querySelector(sel);
-      if(!el) return `${sel}: (not found)`;
-      const cs = getComputedStyle(el);
-      return `${sel}: paddingTop=${cs.paddingTop}, marginTop=${cs.marginTop}, top=${cs.top}, transform=${cs.transform}`;
-    }
-
-    function render(){
-      box.textContent =
-  `safeTop: ${getPx('--sat')}
-  ${padTop('.drawer')}
-  ${padTop('.drawer-panel')}
-  ${padTop('.drawer-inner')}
-  orientation: ${screen.orientation?.type || '(unknown)'}
-  innerHeight: ${window.innerHeight}`;
-    }
-
-    // 把 safe-area-inset-top 放進 CSS 變數 --sat
-    const style = document.createElement('style');
-    style.textContent = `:root{ --sat: env(safe-area-inset-top); }`;
-    document.head.appendChild(style);
-
-    render();
-    window.addEventListener('resize', render);
-    window.addEventListener('orientationchange', render);
-  })();
-</script>
 </body>
 </html>
