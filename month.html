@@ -15,17 +15,7 @@
       margin:0;background:var(--app-bg, #f2ede9);color:var(--text, #3c3c3c);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
-    :root {
-      --app-bg: #f2ede9;
-      --card-bg: #ffffff;
-      --text: #3c3c3c;
-      --secondary: #8e8e93;
-      --green: #34c759;
-      --red: #ff3b30;
-      --divider: #e5e5ea;
-      --radius: 16px;
-      --tab-height: 80px;
-    }
+    
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
 
@@ -182,7 +172,7 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
-
+    
     // 1. 先等待 Firebase 核心初始化完成 (Persistence 設定)
     await window.firebaseReady;
 
