@@ -200,7 +200,7 @@ button:active{ opacity:.65; transform:scale(.98); }
   transform: translateX(-105%);
   transition: transform .22s ease;
   padding: 14px;
-  padding-top: 0;
+  padding-top: calc(14px + env(safe-area-inset-top));
 }
 
 .drawer.open { transform: translateX(0); }
@@ -276,7 +276,7 @@ button:active{ opacity:.65; transform:scale(.98); }
 
 /* ✅ 把你想要的「14px 內容內距」放到內容本體，不影響 safe-area */
 .drawer-panel .drawer-inner{
-  padding-top: 14px;
+  padding-top: 0;
   padding-bottom: 14px;
 }
 
