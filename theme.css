@@ -263,7 +263,7 @@ button:active{ opacity:.65; transform:scale(.98); }
   border-right: 1px solid rgba(0,0,0,0.06);
 
   /* ✅ 背景填滿上下，但內容只避開 safe-area，不額外 +14px 推下去 */
-  padding-top: 0;
+  padding-top: 0 !important;
   padding-bottom: env(safe-area-inset-bottom);
 
   /* ✅ 左右內距維持你原本設計 */
