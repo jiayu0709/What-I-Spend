@@ -274,11 +274,22 @@
       location.href = ref;
     }
 
-    function removeTx(){
-      localStorage.removeItem("tx:"+id);
-      localStorage.setItem("tx:deleted:"+id, "1");
-      location.href = ref;
+    async function removeTx(){
+  // 先刪本機（保留原本行為）
+  localStorage.removeItem("tx:"+id);
+  localStorage.setItem("tx:deleted:"+id, "1");
+
+  try {
+      // ✅ 刪雲端
+      await window.deleteFromCloud(id);
+    } catch (e) {
+      console.error("deleteFromCloud failed:", e);
+      alert("刪除失敗（雲端）：" + (e.message || e));
+      return;
     }
+
+    location.href = ref;
+  }
 
     init();
   </script>
