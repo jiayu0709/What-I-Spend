@@ -269,7 +269,7 @@
         await window.saveToCloud(id, data);
       } catch (e) {
         console.error("saveToCloud failed:", e);
-        alert("儲存失敗（雲端）：" + (e.message || e));
+        alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
         return;
       }
 
