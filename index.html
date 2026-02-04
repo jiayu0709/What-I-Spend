@@ -224,7 +224,7 @@
 </script>
 
 <script type="module">
-  // ===== 判斷：只有「真正 Safari + 非主畫面」才自動去 login =====
+  // ===== 判斷：只有「真正 Safari + 非主畫面」才自動離開導覽頁 =====
   function isRealSafari(){
     const ua = navigator.userAgent || "";
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
@@ -238,49 +238,56 @@
     window.navigator.standalone === true ||
     window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-  // ✅ 如果是在 Safari 且不是主畫面模式 → 檢查是否已登入，已登入就直接導頁（第一次→a2hs；已完成→month），沒登入才去 login
   if (isRealSafari() && !isStandalone) {
-    // 你原本的 firebase 初始化都在 app.js
-    await window.firebaseReady;
-    const user = await window.waitForAuthReady();
+    // ✅ 防止卡住：如果 firebaseReady 一直沒起來，直接去 a2hs
+    const fallback = setTimeout(() => {
+      location.replace("a2hs.html");
+    }, 1200);
 
-    if (!user) {
-      location.replace("login.html");
-    } else {
-      // 已登入：判斷第一次 or 已完成
-      try{
-        const { db } = await import("./firebase-config.js");
-        const { doc, getDoc, setDoc, serverTimestamp } =
-          await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    try{
+      await window.firebaseReady;
+      clearTimeout(fallback);
 
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
+      const user = await window.waitForAuthReady?.();
 
-        // 第一次登入：users/{uid} 不存在 → 建立，導去 a2hs
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            createdAt: serverTimestamp(),
-            a2hsDone: false,
-          });
-          location.replace("a2hs.html");
-        } else {
-          const data = snap.data() || {};
-          // 尚未完成 a2hs
-          if (data.a2hsDone === false) {
+      // ✅ 重點改這裡：Safari 內「未登入」也先去 a2hs
+      if (!user) {
+        location.replace("a2hs.html");
+      } else {
+        try{
+          const { db } = await import("./firebase-config.js");
+          const { doc, getDoc, setDoc, serverTimestamp } =
+            await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+          const userRef = doc(db, "users", user.uid);
+          const snap = await getDoc(userRef);
+
+          if (!snap.exists()) {
+            await setDoc(userRef, {
+              createdAt: serverTimestamp(),
+              a2hsDone: false,
+            });
             location.replace("a2hs.html");
           } else {
-            location.replace("month.html");
+            const data = snap.data() || {};
+            if (data.a2hsDone === false) {
+              location.replace("a2hs.html");
+            } else {
+              location.replace("month.html");
+            }
           }
+        }catch(e){
+          console.error("index route failed:", e);
+          location.replace("month.html");
         }
-      }catch(e){
-        console.error("index route failed:", e);
-        // 保守：出錯先去 month
-        location.replace("month.html");
       }
+    }catch(e){
+      console.error("firebaseReady failed:", e);
+      // 任何錯誤都不要停在導覽頁
+      location.replace("a2hs.html");
     }
   }
 </script>
-
 <!-- 你原本的 app.js（保留） -->
 <script type="module" src="app.js"></script>
 
