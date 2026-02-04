@@ -181,6 +181,34 @@
 
     </main>
   </div>
+  
+  <script type="module">
+  import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { auth, db } from "./firebase-config.js";
+
+  // 給非-module 的 <script> 呼叫
+  window.saveToCloud = async (id, data) => {
+    const user = await window.requireAuth();
+    if (!user) throw new Error("Not logged in");
+
+    const ref = doc(db, "users", user.uid, "transactions", id);
+    await updateDoc(ref, {
+      date: data.date,
+      time: data.time,
+      category: data.category,
+      note: data.note,
+      amount: Number(String(data.amount).replace(/,/g, "")),
+    });
+  };
+
+  window.deleteFromCloud = async (id) => {
+    const user = await window.requireAuth();
+    if (!user) throw new Error("Not logged in");
+
+    const ref = doc(db, "users", user.uid, "transactions", id);
+    await deleteDoc(ref);
+  };
+</script>
 
   <script>
     const qs = new URLSearchParams(location.search);
@@ -215,7 +243,7 @@
       document.getElementById("amount").value = data.amount || "";
     }
 
-    function save(){
+    async function save(){
       const data = {
         id,
         date: document.getElementById("date").value,
@@ -225,16 +253,24 @@
         amount: document.getElementById("amount").value
       };
 
-      // 基本驗證
       const amt = Number(String(data.amount).replace(/,/g,""));
       if(!isFinite(amt) || amt <= 0){
         alert("請輸入正確金額（> 0）");
         return;
       }
 
+      // 先存本機（保留你原本邏輯，避免你覺得功能被拿掉）
       localStorage.setItem("tx:"+id, JSON.stringify(data));
 
-      // 回到來源頁
+      try {
+        // ✅ 存雲端（真正讓 month.html 變更）
+        await window.saveToCloud(id, data);
+      } catch (e) {
+        console.error("saveToCloud failed:", e);
+        alert("儲存失敗（雲端）：" + (e.message || e));
+        return;
+      }
+
       location.href = ref;
     }
 
