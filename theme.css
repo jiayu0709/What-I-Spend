@@ -200,7 +200,7 @@ button:active{ opacity:.65; transform:scale(.98); }
   transform: translateX(-105%);
   transition: transform .22s ease;
   padding: 14px;
-  padding-top: calc(14px + env(safe-area-inset-top));
+  padding-top: 0;
 }
 
 .drawer.open { transform: translateX(0); }
