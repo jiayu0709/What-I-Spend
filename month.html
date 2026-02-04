@@ -451,7 +451,7 @@
         where("date", ">=", start),
         where("date", "<", end),
         orderBy("date", "desc"),
-        orderBy("timeSort", "desc")
+        orderBy("time", "desc")
       );
 
       const snap = await getDocs(q);
