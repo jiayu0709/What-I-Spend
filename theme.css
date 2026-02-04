@@ -53,11 +53,9 @@ input[type="time"]{
   color: var(--accent-text);
   -webkit-text-fill-color: var(--accent-text);
 }
-
 input[type="time"]::-webkit-datetime-edit{
   color: var(--accent-text);
 }
-
 input[type="time"]::-webkit-datetime-edit-text,
 input[type="time"]::-webkit-datetime-edit-hour-field,
 input[type="time"]::-webkit-datetime-edit-minute-field,
@@ -67,18 +65,17 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 
 /* ===============================
    Page transition (iOS style)
+   ✅ 重要：不要對頁面做 transform，避免 fixed 抽屜被影響
    =============================== */
 main.page{
-  animation: page-enter .22s ease-out;
-  will-change: opacity;
+  animation: page-enter .18s ease-out;
 }
 @keyframes page-enter{
   from{ opacity:0; }
   to  { opacity:1; }
 }
 main.page.leaving{
-  animation: page-leave .18s ease-in forwards;
-  will-change: opacity;
+  animation: page-leave .15s ease-in forwards;
 }
 @keyframes page-leave{
   from{ opacity:1; }
@@ -121,10 +118,10 @@ main.page.leaving{
 .tabbar .tab .icon{
   font-size:24px;
   line-height:1;
-  color: inherit;            /* ⭐ icon 跟著文字 */
+  color: inherit;
 }
 
-/* ✅ Active 紅色 */
+/* ✅ Active */
 .tabbar .tab.active{
   color: var(--tabcolor);
 }
@@ -150,9 +147,9 @@ button:active{ opacity:.65; transform:scale(.98); }
 /* 左上角按鈕容器 */
 .topbar {
   position: fixed;
-  top: calc(10px + env(safe-area-inset-top));
+  top: calc(env(safe-area-inset-top) + 10px);
   left: 10px;
-  z-index: 50;
+  z-index: 10000;
 }
 
 /* 三條線按鈕 */
@@ -169,7 +166,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   gap: 4px;
   padding: 0;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .hamburger span{
@@ -181,44 +177,52 @@ button:active{ opacity:.65; transform:scale(.98); }
   opacity: .9;
 }
 
-/* 背景遮罩 */
-.drawer-backdrop {
+/* ===== Drawer Overlay（滿版遮罩） ===== */
+.drawer-overlay{
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.20);
-  z-index: 80;
   width: 100vw;
   height: 100dvh;
+  background: rgba(0,0,0,0.18);
+  z-index: 9999;
 }
 
-/* 左側抽屜 */
-.drawer {
-  position: fixed;
+/* ===== Drawer Panel（滿版高度） ===== */
+.drawer-panel{
+  position: absolute;
   top: 0;
+  bottom: 0;
   left: 0;
-  height: 100dvh;
+
   width: min(320px, 86vw);
+  height: 100dvh;
+
   background: var(--card-bg);
-  border-right: 1px solid rgba(0,0,0,0.08);
-  z-index: 90;
-  transform: translateX(-105%);
-  transition: transform .22s ease;
-  padding: 14px;
-  padding-top: calc(14px + env(safe-area-inset-top));
+  border-right: 1px solid rgba(0,0,0,0.06);
+
+  /* ✅ 只保留 safe-area（不要再 +14，避免上面看起來空一大段） */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.drawer.open { transform: translateX(0); }
+/* ✅ 抽屜頂部區（放登出） */
+.drawer-header{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--card-bg);
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
 
-.drawer-inner{
-  display:grid;
+/* ✅ 抽屜內容區 */
+.drawer-body{
+  padding: 12px 16px 16px;
+  display: grid;
   gap: 10px;
-}
-
-.drawer-title{
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--text);
-  margin-bottom: 2px;
 }
 
 .drawer-item{
@@ -242,35 +246,4 @@ button:active{ opacity:.65; transform:scale(.98); }
 .drawer-link{
   display:block;
   text-decoration:none;
-}
-
-/* ===== Drawer Overlay ===== */
-.drawer-overlay{
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  background: rgba(0,0,0,0.18);
-  z-index: 9999;
-}
-
-/* ===== Drawer Panel ===== */
-.drawer-panel{
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-
-  width: min(320px, 86vw);
-  background: var(--card-bg);
-  border-right: 1px solid rgba(0,0,0,0.06);
-
-  /* 內容才避開瀏海 */
-  padding-top: calc(env(safe-area-inset-top) + 14px);
-  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
-  padding-left: 16px;
-  padding-right: 16px;
-
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
