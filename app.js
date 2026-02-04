@@ -112,3 +112,124 @@ function highlightTab() {
 }
 
 document.addEventListener("DOMContentLoaded", highlightTab);
+
+// ================================
+// Global Drawer UI (exclude pages)
+// ================================
+import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// 你可以在這裡調整哪些頁面不要顯示（登入/歡迎頁不用）
+const DRAWER_EXCLUDE = new Set([
+  "index.html",
+  "onboarding.html",
+  "welcome.html",     // 如果你有
+]);
+
+function currentPageName(){
+  const p = location.pathname.split("/").pop() || "";
+  // Netlify 有時 root 可能是 "/"，你可視情況改成 index.html
+  return p || "index.html";
+}
+
+function shouldShowDrawer(){
+  const page = currentPageName();
+  return !DRAWER_EXCLUDE.has(page);
+}
+
+function injectDrawer(){
+  if (!shouldShowDrawer()) return;
+  if (document.getElementById("menuBtn")) return; // 避免重複注入
+
+  // topbar (left hamburger)
+  const topbar = document.createElement("div");
+  topbar.className = "topbar";
+  topbar.innerHTML = `
+    <button class="hamburger" type="button" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  `;
+
+  // backdrop
+  const backdrop = document.createElement("div");
+  backdrop.className = "drawer-backdrop";
+  backdrop.id = "drawerBackdrop";
+  backdrop.hidden = true;
+
+  // drawer
+  const drawer = document.createElement("aside");
+  drawer.className = "drawer";
+  drawer.id = "drawer";
+  drawer.setAttribute("aria-hidden","true");
+
+  // ✅ 你可以在這裡放「其他功能欄位」
+  drawer.innerHTML = `
+    <div class="drawer-inner">
+      <div class="drawer-title">功能</div>
+
+      <!-- 登出一定放最上面 -->
+      <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
+
+      <a class="drawer-link" href="month.html"><div class="drawer-item">本月</div></a>
+      <a class="drawer-link" href="add.html"><div class="drawer-item">新增</div></a>
+      <a class="drawer-link" href="year.html"><div class="drawer-item">統計</div></a>
+
+      <!-- 你想加的頁面 -->
+      <!-- <a class="drawer-link" href="settings.html"><div class="drawer-item">設定</div></a> -->
+    </div>
+  `;
+
+  document.body.appendChild(topbar);
+  document.body.appendChild(backdrop);
+  document.body.appendChild(drawer);
+
+  const menuBtn = document.getElementById("menuBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  function openDrawer(){
+    drawer.classList.add("open");
+    backdrop.hidden = false;
+    drawer.setAttribute("aria-hidden","false");
+    menuBtn.setAttribute("aria-expanded","true");
+  }
+  function closeDrawer(){
+    drawer.classList.remove("open");
+    backdrop.hidden = true;
+    drawer.setAttribute("aria-hidden","true");
+    menuBtn.setAttribute("aria-expanded","false");
+  }
+
+  menuBtn.addEventListener("click", () => {
+    if (drawer.classList.contains("open")) closeDrawer();
+    else openDrawer();
+  });
+
+  backdrop.addEventListener("click", closeDrawer);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+  });
+
+  // ✅ 登出：Firebase signOut → 回登入頁
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await signOut(window.auth);
+    } catch (e) {
+      console.error("signOut failed:", e);
+    }
+    closeDrawer();
+    location.replace("index.html");
+  });
+
+  // 點選 drawer 裡連結後自動關閉
+  drawer.addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (a) closeDrawer();
+  });
+}
+
+// 等 DOM 好了再注入
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", injectDrawer);
+} else {
+  injectDrawer();
+}

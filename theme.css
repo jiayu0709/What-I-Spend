@@ -140,3 +140,102 @@ a, button, .tx, .tab{
 .tab:active{ opacity:.6; transform:scale(.98); }
 button:active{ opacity:.65; transform:scale(.98); }
 .tx:focus, .tab:focus, button:focus{ outline:none; }
+
+/* =========================
+   Global Drawer (Hamburger)
+   ========================= */
+
+/* 左上角按鈕容器 */
+.topbar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 50;
+}
+
+/* 三條線按鈕 */
+.hamburger {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger span{
+  display:block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 999px;
+  opacity: .9;
+}
+
+/* 背景遮罩 */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.20);
+  z-index: 80;
+}
+
+/* 左側抽屜 */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: min(320px, 86vw);
+  background: var(--card-bg);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  z-index: 90;
+  transform: translateX(-105%);
+  transition: transform .22s ease;
+  padding: 14px;
+  padding-top: calc(14px + env(safe-area-inset-top));
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-inner{
+  display:grid;
+  gap: 10px;
+}
+
+.drawer-title{
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.drawer-item{
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.55);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 900;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.drawer-item.danger{
+  background: rgba(217,74,74,0.10);
+  border: 1px solid rgba(217,74,74,0.18);
+  color: #b33b3b;
+}
+
+.drawer-link{
+  display:block;
+  text-decoration:none;
+}
