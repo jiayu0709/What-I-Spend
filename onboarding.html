@@ -201,6 +201,90 @@
       font-size:13px;
       line-height:1.4;
     }
+    /* =========================
+   A2HS overlay (pretty card)
+   ========================= */
+    #a2hsOverlay .a2hs-panel{
+      width: min(440px, 92vw);
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .a2hs-head{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .a2hs-icon{
+      width:44px;height:44px;
+      border-radius:14px;
+      display:grid;place-items:center;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size:20px;
+    }
+    .a2hs-titlewrap .ttl{
+      font-weight:900;
+      font-size:16px;
+      color: var(--text);
+    }
+    #a2hsOverlay .sub{
+      color: var(--secondary);
+      font-weight:800;
+      font-size:13px;
+      line-height:1.35;
+    }
+
+    .a2hs-steps{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .a2hs-step{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:14px;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .a2hs-num{
+      width:26px;height:26px;
+      border-radius:9px;
+      display:grid;place-items:center;
+      font-weight:900;
+      background: rgba(0,0,0,0.06);
+      color: var(--text);
+      flex:0 0 auto;
+    }
+    .a2hs-tx{display:grid; gap:2px;}
+    .a2hs-t{
+      font-weight:900;
+      color: var(--text);
+      font-size:14px;
+    }
+    .a2hs-d{
+      font-weight:800;
+      color: var(--secondary);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .a2hs-chip{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(0,0,0,0.08);
+      font-weight:900;
+      color: var(--text);
+    }
+
+    .a2hs-actions{
+      margin-top:12px;
+    }
   </style>
 </head>
 
@@ -429,7 +513,47 @@
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
         hideOverlay();
       }
-    })();
+
+      // ===== A2HS (Add to Home Screen) pretty overlay =====
+  const addToHomeBtn = document.getElementById("addToHomeBtn");
+  const a2hsOverlay = document.getElementById("a2hsOverlay");
+  const a2hsOkBtn = document.getElementById("a2hsOkBtn");
+
+  function isRealSafari(){
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    return (
+      isIOS &&
+      /Safari/i.test(ua) &&
+      !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua)
+    );
+  }
+  const isStandalone =
+    window.navigator.standalone === true ||
+    window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+  // 只在「真 Safari + 非主畫面模式」顯示按鈕
+  if (!isRealSafari() || isStandalone) {
+    if (addToHomeBtn) addToHomeBtn.style.display = "none";
+  }
+
+  function openA2HS(){
+    a2hsOverlay.classList.add("show");
+    a2hsOverlay.setAttribute("aria-hidden","false");
+  }
+  function closeA2HS(){
+    a2hsOverlay.classList.remove("show");
+    a2hsOverlay.setAttribute("aria-hidden","true");
+  }
+
+  addToHomeBtn?.addEventListener("click", openA2HS);
+  a2hsOkBtn?.addEventListener("click", closeA2HS);
+
+  // 點遮罩空白處關閉
+  a2hsOverlay?.addEventListener("click", (e) => {
+    if (e.target === a2hsOverlay) closeA2HS();
+  });
+      })();
   </script>
 </body>
 </html>
