@@ -122,7 +122,7 @@ import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 const DRAWER_EXCLUDE = new Set([
   "index.html",
   "onboarding.html",
-  "welcome.html",     // 如果你有
+  "login.html",     // 如果你有
 ]);
 
 function currentPageName(){
