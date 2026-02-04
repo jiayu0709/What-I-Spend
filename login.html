@@ -103,6 +103,21 @@ import {
 
 import { auth, db } from "./firebase-config.js";
 
+const isStandalone =
+  window.navigator.standalone === true ||
+  window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    loginBtn.style.display = "flex";
+    loader.style.display = "none";
+    return; // ✅ 未登入：永遠停在登入頁
+  }
+
+  // ✅ 已登入：照原本流程
+  await routeAfterLogin(user);
+});
+
 const provider = new GoogleAuthProvider();
 
 async function routeAfterLogin(user){

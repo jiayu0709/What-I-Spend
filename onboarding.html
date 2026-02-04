@@ -289,6 +289,20 @@
   <!-- ✅ 你原本的 persistence / requireAuth 都在 app.js -->
   <script type="module" src="app.js"></script>
 
+  <script>
+  (function () {
+    const isStandalone =
+      window.navigator.standalone === true ||
+      window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+    if (isStandalone) {
+      // standalone 打開 onboarding 一律送回 login
+      // （避免主畫面 icon 被記到 onboarding 的 URL）
+      location.replace("login.html");
+    }
+  })();
+</script>
+
   <script type="module">
     import { auth as fbAuth, db } from "./firebase-config.js";
     import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
