@@ -285,6 +285,17 @@
     .a2hs-actions{
       margin-top:12px;
     }
+
+    /* 新增至主畫面 專用按鈕 */
+    .btn-a2hs{
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.12);
+      color: var(--text);
+    }
+    .btn-a2hs:active{
+      opacity:.7;
+      transform:scale(.99);
+    }
   </style>
 </head>
 
@@ -332,7 +343,7 @@
           <p class="p">把 What I Spend 加到主畫面，之後就能像 App 一樣一鍵打開。</p>
 
           <div class="btnbar" style="margin-top:12px">
-            <button class="btn" type="button" id="addToHomeBtn">➕ 新增至主畫面</button>
+            <button class="btn btn-a2hs" type="button" id="addToHomeBtn">➕ 新增至主畫面</button>
           </div>
         </div>
       </section>
