@@ -6,6 +6,19 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>What I Spend</title>
 
+  <!-- ✅ 1) 超早期：主畫面(standalone)一進來就直接去 login，避免任何閃跳 -->
+  <script>
+    (function () {
+      const isStandalone =
+        window.navigator.standalone === true ||
+        window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+      if (isStandalone) {
+        location.replace("login.html");
+      }
+    })();
+  </script>
+
   <style>
     :root{
       --app-bg:#f2ede9;
@@ -195,7 +208,7 @@
   </div>
 
   <div class="note">
-    若你是從「加入主畫面」開啟，請改用 Safari 登入一次即可。
+    若你是從「加入主畫面」開啟，會直接進登入頁。
   </div>
 </div>
 
@@ -224,41 +237,44 @@
 </script>
 
 <script type="module">
-  // ===== 判斷：只有「真正 Safari + 非主畫面」才自動離開導覽頁 =====
-  function isRealSafari(){
-    const ua = navigator.userAgent || "";
-    const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    return (
-      isIOS &&
-      /Safari/i.test(ua) &&
-      !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua)
-    );
-  }
+  // ✅ 2) 非主畫面才載入 app.js（避免 standalone 閃跳）
   const isStandalone =
     window.navigator.standalone === true ||
     window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    // ✅ 從主畫面 icon 開啟（standalone）→ 直接去登入頁
-  if (isStandalone) {
-    location.replace("login.html");
-  }
+  if (!isStandalone) {
+    await import("./app.js"); // 原本的 app.js 保留，但只在非 standalone 載入
 
-  if (isRealSafari() && !isStandalone) {
-    // ✅ 防止卡住：如果 firebaseReady 一直沒起來，直接去 a2hs
-    const fallback = setTimeout(() => {
-      location.replace("a2hs.html");
-    }, 1200);
+    function isRealSafari(){
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPhone|iPad|iPod/i.test(ua);
+      return (
+        isIOS &&
+        /Safari/i.test(ua) &&
+        !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua)
+      );
+    }
 
-    try{
-      await window.firebaseReady;
-      clearTimeout(fallback);
-
-      const user = await window.waitForAuthReady?.();
-
-      // ✅ 重點改這裡：Safari 內「未登入」也先去 a2hs
-      if (!user) {
+    // ✅ 只有「真正 Safari + 非主畫面」才自動離開導覽頁
+    if (isRealSafari()) {
+      // 若 firebaseReady 沒起來：保守不要卡導覽頁，直接去 a2hs
+      const fallback = setTimeout(() => {
         location.replace("a2hs.html");
-      } else {
+      }, 1200);
+
+      try{
+        await window.firebaseReady;
+        clearTimeout(fallback);
+
+        const user = await window.waitForAuthReady?.();
+
+        // Safari 內未登入 → 先去 a2hs
+        if (!user) {
+          location.replace("a2hs.html");
+          return;
+        }
+
+        // 已登入：照你原規則去 a2hs / month
         try{
           const { db } = await import("./firebase-config.js");
           const { doc, getDoc, setDoc, serverTimestamp } =
@@ -268,33 +284,24 @@
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            await setDoc(userRef, {
-              createdAt: serverTimestamp(),
-              a2hsDone: false,
-            });
+            await setDoc(userRef, { createdAt: serverTimestamp(), a2hsDone: false });
             location.replace("a2hs.html");
           } else {
             const data = snap.data() || {};
-            if (data.a2hsDone === false) {
-              location.replace("a2hs.html");
-            } else {
-              location.replace("month.html");
-            }
+            if (data.a2hsDone === false) location.replace("a2hs.html");
+            else location.replace("month.html");
           }
         }catch(e){
           console.error("index route failed:", e);
           location.replace("month.html");
         }
+      }catch(e){
+        console.error("firebaseReady failed:", e);
+        location.replace("a2hs.html");
       }
-    }catch(e){
-      console.error("firebaseReady failed:", e);
-      // 任何錯誤都不要停在導覽頁
-      location.replace("a2hs.html");
     }
   }
 </script>
-<!-- 你原本的 app.js（保留） -->
-<script type="module" src="app.js"></script>
 
 </body>
 </html>
