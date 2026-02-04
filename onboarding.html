@@ -144,11 +144,6 @@
       color:#fff;
       border:0;
     }
-    .btn.danger{
-      background: rgba(217,74,74,0.12);
-      color: #b33b3b;
-      border:1px solid rgba(217,74,74,0.18);
-    }
 
     .muted{
       margin-top:10px;
@@ -171,7 +166,6 @@
     .status.ok{ color: var(--green); }
     .status.err{ color: var(--red); }
 
-    /* iOS tap feedback */
     a, button { -webkit-tap-highlight-color: transparent; }
     .btn{
       user-select:none; -webkit-user-select:none;
@@ -179,7 +173,6 @@
     }
     .btn:active{ opacity:.7; transform:scale(.99); }
 
-    /* loading overlay */
     .overlay{
       position:fixed; inset:0;
       background:rgba(0,0,0,0.08);
@@ -250,12 +243,12 @@
 
       <section class="section">
         <div class="card">
-          <div class="h2">你的捷徑專用 Token</div>
-          <p class="p">這是你的「捷徑鑰匙」。捷徑會用它把明細寫進你的雲端帳戶。</p>
+          <div class="h2">你的 Setup Code</div>
+          <p class="p">請把這組 Code 貼到「Setup / Spend」捷徑裡（第一次設定用）。</p>
 
           <div class="tokenBox">
             <div class="tokenRow">
-              <div class="token" id="tokenText">讀取中…</div>
+              <div class="token" id="codeText">讀取中…</div>
               <button class="btn" type="button" id="copyBtn" style="width:auto; padding:0 14px;">
                 📋 複製
               </button>
@@ -265,16 +258,8 @@
               🚀 安裝 iPhone 快速記帳捷徑
             </a>
 
-            <a class="btn" id="applyBtn" href="#" rel="noopener">
-              ⚡ 一鍵把 Token 套用到捷徑
-            </a>
-
-            <button class="btn danger" type="button" id="resetBtn">
-              ♻️ 重置 Token（讓舊捷徑失效）
-            </button>
-
             <div class="muted">
-              小提醒：重置後，你需要重新安裝或更新捷徑裡的使用者代碼。安裝完成後，請點「一鍵把 Token 套用到捷徑」。
+              安裝捷徑後，打開捷徑執行一次，貼上上面的 Code 完成初始化。
             </div>
 
             <div class="status" id="statusBox">狀態：準備中…</div>
@@ -294,7 +279,7 @@
   <div class="overlay" id="overlay">
     <div class="panel">
       <p class="ttl">讀取中…</p>
-      <p class="sub">正在取得你的 Token，請稍候</p>
+      <p class="sub">正在產生你的 Setup Code，請稍候</p>
     </div>
   </div>
 
@@ -302,40 +287,36 @@
   <script type="module" src="app.js"></script>
 
   <script type="module">
-    import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { db } from "./firebase-config.js";
     import { auth } from "./firebase-config.js";
 
-    async function createSetupCodeViaFunction(){
-    const u = auth.currentUser;
-    if (!u) throw new Error("Not logged in");
+    // ✅ 你的 iCloud 捷徑分享連結
+    const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/a674cbc87dc546ea955f95b883130641";
 
-    const idToken = await u.getIdToken();
-    const res = await fetch("/.netlify/functions/createSetupCode", {
+    async function createSetupCodeViaFunction(){
+      const u = auth.currentUser;
+      if (!u) throw new Error("Not logged in");
+
+      const idToken = await u.getIdToken();
+      const res = await fetch("/.netlify/functions/createSetupCode", {
         method: "POST",
         headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({}), // 不用內容
-    });
+        body: JSON.stringify({}),
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `createSetupCode failed: ${res.status}`);
+      }
+
+      return res.json(); // { code }
     }
 
-    return res.json(); // { code }
-    }
-    // ✅ 你要換成你自己的 iCloud 捷徑分享連結
-    const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/a674cbc87dc546ea955f95b883130641";
-    const RUN_SHORTCUT_NAME = "Spend";
-
-    const tokenText = document.getElementById("tokenText");
+    const codeText = document.getElementById("codeText");
     const copyBtn = document.getElementById("copyBtn");
     const installBtn = document.getElementById("installBtn");
-    const applyBtn = document.getElementById("applyBtn");
-    const resetBtn = document.getElementById("resetBtn");
     const finishBtn = document.getElementById("finishBtn");
     const statusBox = document.getElementById("statusBox");
     const overlay = document.getElementById("overlay");
@@ -352,102 +333,16 @@
       statusBox.textContent = text;
     }
 
-    function newToken(){
-      // iOS 16+ / modern browsers ok
-      return (crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)));
-    }
-
-    function buildInstallLink(){
-      // iCloud 安裝頁不可靠接收 query，僅提供純安裝連結
-      return SHORTCUT_ICLOUD_URL;
-    }
-
-    function buildRunShortcutLink(token){
-      const name = encodeURIComponent(RUN_SHORTCUT_NAME);
-      const text = encodeURIComponent(token);
-      return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`;
-    }
-
-    (async () => {
-        try {
-            await window.firebaseReady;
-            const user = await window.requireAuth();
-            if (!user) throw new Error("Not logged in");
-
-            const { code } = await createSetupCodeViaFunction();
-
-            // 顯示 setup code 給使用者
-            tokenText.textContent = code; // 你原本 tokenText 可改名叫 codeText 但不改也行
-            setStatus("狀態：請打開 Setup 捷徑並輸入這組 Code ✅", "ok");
-
-            // 安裝捷徑的 iCloud link（你原本就有）
-            installBtn.href = SHORTCUT_ICLOUD_URL;
-
-            // 一鍵開捷徑（不帶 token、不帶 input）
-            applyBtn.href = `shortcuts://run-shortcut?name=${encodeURIComponent("Setup")}`;
-            applyBtn.style.pointerEvents = "";
-            applyBtn.removeAttribute("aria-disabled");
-
-        } catch (e) {
-            console.error(e);
-            setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
-            hideOverlay();
-        }
-        })();
-
-    async function resetToken(){
-      showOverlay("重置 Token…");
-      setStatus("狀態：正在重置 Token…");
-
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-
-      const ref = doc(db, "users", user.uid);
-      const token = newToken();
-
-      await updateDoc(ref, {
-        shortcutToken: token,
-        shortcutTokenResetAt: serverTimestamp(),
-      });
-
-      tokenText.textContent = token;
-      installBtn.href = buildInstallLink();
-      applyBtn.href = buildRunShortcutLink(token);
-      applyBtn.removeAttribute("aria-disabled");
-      applyBtn.style.pointerEvents = "";
-
-      setStatus("狀態：已重置 ✅ 請重新安裝捷徑", "ok");
-      hideOverlay();
-    }
-
-    async function finishOnboarding(){
-      showOverlay("完成設定…");
-      setStatus("狀態：正在完成設定…");
-
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-
-      const ref = doc(db, "users", user.uid);
-      await updateDoc(ref, {
-        onboardingDone: true,
-        onboardingDoneAt: serverTimestamp(),
-      });
-
-      hideOverlay();
-      location.replace("month.html");
-    }
-
     copyBtn.addEventListener("click", async () => {
-      const token = (tokenText.textContent || "").trim();
-      if (!token || token === "讀取中…") return;
+      const code = (codeText.textContent || "").trim();
+      if (!code || code === "讀取中…") return;
 
       try {
-        await navigator.clipboard.writeText(token);
+        await navigator.clipboard.writeText(code);
         setStatus("狀態：已複製到剪貼簿 ✅", "ok");
       } catch (e) {
-        // iOS 有時 clipboard API 會失敗 → fallback
         const r = document.createRange();
-        r.selectNodeContents(tokenText);
+        r.selectNodeContents(codeText);
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(r);
@@ -457,33 +352,24 @@
       }
     });
 
-    resetBtn.addEventListener("click", async () => {
-      const ok = confirm("確定要重置 Token 嗎？\n重置後舊捷徑會失效，需要重新安裝。");
-      if (!ok) return;
-      try { await resetToken(); }
-      catch (e) {
-        console.error(e);
-        setStatus("狀態：重置失敗 ❌ " + (e.message || e), "err");
-        hideOverlay();
-      }
-    });
-
     finishBtn.addEventListener("click", async () => {
-      try { await finishOnboarding(); }
-      catch (e) {
-        console.error(e);
-        setStatus("狀態：完成失敗 ❌ " + (e.message || e), "err");
-        hideOverlay();
-      }
+      location.replace("month.html");
     });
 
     // init
-    applyBtn.setAttribute("aria-disabled","true");
-    applyBtn.style.pointerEvents = "none";
-
     (async () => {
       try {
-        await loadOrCreateToken();
+        showOverlay("產生 Setup Code…");
+        await window.firebaseReady;
+        const user = await window.requireAuth();
+        if (!user) throw new Error("Not logged in");
+
+        const { code } = await createSetupCodeViaFunction();
+
+        codeText.textContent = code;
+        installBtn.href = SHORTCUT_ICLOUD_URL;
+        setStatus("狀態：請安裝捷徑並貼上這組 Code ✅", "ok");
+        hideOverlay();
       } catch (e) {
         console.error(e);
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
