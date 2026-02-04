@@ -258,15 +258,24 @@ button:active{ opacity:.65; transform:scale(.98); }
   left: 0;
 
   width: min(320px, 86vw);
+  height: 100dvh;
   background: var(--card-bg);
   border-right: 1px solid rgba(0,0,0,0.06);
 
-  /* 內容才避開瀏海 */
-  padding-top: calc(env(safe-area-inset-top) + 14px);
-  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+  /* ✅ 背景填滿上下，但內容只避開 safe-area，不額外 +14px 推下去 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  /* ✅ 左右內距維持你原本設計 */
   padding-left: 16px;
   padding-right: 16px;
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ 把你想要的「14px 內容內距」放到內容本體，不影響 safe-area */
+.drawer-panel .drawer-inner{
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
