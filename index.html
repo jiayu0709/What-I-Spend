@@ -2,180 +2,324 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>What I Spend - 登入</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>What I Spend</title>
 
   <style>
-    :root {
-      --app-bg: #f2ede9;
-      --text: #3c3c3c;
-      --accent: #d61c68;
+    :root{
+      --bg: #f2ede9;
+      --card: rgba(255,255,255,0.78);
+      --card2: rgba(255,255,255,0.62);
+      --text: #2f2f2f;
+      --sub: rgba(0,0,0,0.55);
+      --line: rgba(0,0,0,0.08);
+      --blue: #007aff;
+      --shadow: 0 18px 40px rgba(0,0,0,0.10);
+      --radius: 22px;
     }
-    body {
-      margin: 0;
-      background: var(--app-bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 700px at 50% -150px, rgba(255,255,255,0.9), transparent 55%),
+                  linear-gradient(#f6f1ee, var(--bg));
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      min-height:100vh;
+      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
+      display:grid;
+      place-items:center;
     }
-    .login-card {
-      text-align: center;
-      padding: 40px 20px;
-      max-width: 320px;
-      width: 90%;
+
+    .wrap{
+      width:min(520px, 100%);
+      display:grid;
+      gap:14px;
+      align-items:center;
     }
-    .logo {
-      font-size: 64px;
-      margin-bottom: 20px;
+
+    /* iOS-like modal card */
+    .modal{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
-    h1 {
+
+    .header{
+      padding: 18px 18px 14px;
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+    }
+    .appicon{
+      width:52px;height:52px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(0,0,0,0.06);
+      display:grid;
+      place-items:center;
       font-size: 28px;
+      flex:0 0 auto;
+    }
+    .ttl{
+      display:grid;
+      gap:4px;
+      padding-top:2px;
+      min-width:0;
+    }
+    .ttl h1{
+      margin:0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -.2px;
+    }
+    .ttl p{
+      margin:0;
+      font-size: 13px;
       font-weight: 800;
-      margin-bottom: 10px;
+      color: var(--sub);
+      line-height: 1.35;
     }
-    p {
-      color: #8e8e93;
-      margin-bottom: 30px;
-      font-weight: 500;
+
+    .body{
+      padding: 0 18px 16px;
+      display:grid;
+      gap:12px;
     }
-    .btn-google {
-      background: #ffffff;
-      color: #000;
-      border: none;
-      padding: 14px 24px;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    .note{
+      background: var(--card2);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 12px 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
     }
-    .btn-google:active {
-      transform: scale(0.98);
+    .note .ic{ font-size:18px; line-height:1.2; margin-top:1px; }
+    .note .tx{
+      display:grid; gap:4px; min-width:0;
     }
-    .loading {
-      display: none;
-      color: var(--accent);
-      font-weight: 700;
-      margin-top: 20px;
+    .note .tx .t{
+      font-size: 14px;
+      font-weight: 900;
     }
+    .note .tx .d{
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--sub);
+      line-height: 1.4;
+    }
+
+    .steps{
+      display:grid;
+      gap:10px;
+    }
+    .step{
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 12px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .badge{
+      width:26px;height:26px;
+      border-radius: 9px;
+      background: rgba(0,0,0,0.06);
+      display:grid;
+      place-items:center;
+      font-weight: 900;
+      font-size: 13px;
+      flex: 0 0 auto;
+    }
+    .step .s{
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .step .s small{
+      display:block;
+      font-weight: 800;
+      color: var(--sub);
+      margin-top:2px;
+      font-size: 12px;
+    }
+
+    .actions{
+      display:grid;
+      gap:10px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.50);
+    }
+    .btn{
+      width:100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 14px;
+      font-weight: 900;
+      font-size: 15px;
+      cursor:pointer;
+      background: rgba(255,255,255,0.70);
+      border: 1px solid rgba(0,0,0,0.08);
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+      -webkit-user-select:none;
+      transition: transform .10s ease, opacity .15s ease;
+    }
+    .btn:active{ transform: scale(.99); opacity: .85; }
+
+    .btn.primary{
+      background: var(--blue);
+      color:#fff;
+      border: 0;
+    }
+
+    .tiny{
+      text-align:center;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.5;
+      padding: 0 12px;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: calc(env(safe-area-inset-bottom) + 18px);
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.82);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .hide{ display:none !important; }
   </style>
 </head>
 <body>
 
-  <div class="login-card">
-    <div class="logo">💰</div>
-    <h1>What I Spend</h1>
-    <p>同步你的雲端記帳明細</p>
+<div class="wrap">
+  <div class="modal" id="guideCard">
+    <div class="header">
+      <div class="appicon">💰</div>
+      <div class="ttl">
+        <h1>需要用 Safari 開啟</h1>
+        <p>為了順利完成 Google 登入（含雙重驗證/Passkey）<br>請用 Safari 開啟這個連結。</p>
+      </div>
+    </div>
 
-    <button class="btn-google" id="loginBtn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
-      使用 Google 帳號登入
-    </button>
+    <div class="body">
+      <div class="note">
+        <div class="ic">🔒</div>
+        <div class="tx">
+          <div class="t">目前的瀏覽器環境會被 Google 擋掉</div>
+          <div class="d">像 LINE / IG / Facebook 內建瀏覽器或主畫面 App（PWA）常出現 403 disallowed_useragent。</div>
+        </div>
+      </div>
 
-    <div class="loading" id="loader">登入中，請稍候…</div>
+      <div class="steps">
+        <div class="step">
+          <div class="badge">1</div>
+          <div class="s">
+            在右上角點「⋯」或「分享」按鈕
+            <small>（LINE / IG 裡通常在右上角）</small>
+          </div>
+        </div>
+        <div class="step">
+          <div class="badge">2</div>
+          <div class="s">
+            選「在 Safari 中開啟」
+            <small>開啟後就能正常登入與同步</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="tiny">
+        你也可以先複製連結，打開 Safari 後貼上前往。
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="copyBtn">📋 複製 Safari 連結</button>
+      <a class="btn" id="tryBtn" href="onboarding.html">我已在 Safari，繼續 →</a>
+    </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <div class="tiny" id="footHint">
+    若你已用 Safari 打開，會自動進入開始使用頁。
+  </div>
+</div>
 
-<script type="module">
-  console.log("URL NOW =", location.href);
-  import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<div class="toast" id="toast">已複製 ✅ 請打開 Safari 貼上前往</div>
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script>
+  const ua = navigator.userAgent || "";
 
-import { auth, db } from "./firebase-config.js";
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari = isIOS && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
 
-const provider = new GoogleAuthProvider();
+  // iOS PWA（加到主畫面）判斷
+  const isStandalone =
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.navigator.standalone === true;
 
-async function routeAfterLogin(user){
-  const next = new URLSearchParams(location.search).get("next");
+  // 內嵌瀏覽器粗判（LINE/IG/FB 等）
+  const isInApp =
+    /FBAN|FBAV|Instagram|Line|LIFF|Messenger|Twitter|TikTok|MicroMessenger/i.test(ua);
 
-  const userRef = doc(db, "users", user.uid);
-  const snap = await getDoc(userRef);
-
-  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      createdAt: serverTimestamp(),
-      onboardingDone: false,
-    });
+  // 若是 Safari（且不是 standalone），直接進 onboarding
+  // （standalone/PWA 會因 Google OAuth 403，比較建議回 Safari）
+  if (isSafari && !isStandalone) {
     location.replace("onboarding.html");
-    return;
   }
 
-  const data = snap.data() || {};
+  const copyBtn = document.getElementById("copyBtn");
+  const toast = document.getElementById("toast");
 
-  // ✅ 尚未完成 onboarding
-  if (data.onboardingDone === false) {
-    location.replace("onboarding.html");
-    return;
+  function showToast(){
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1600);
   }
 
-  // ✅ 已完成 onboarding：回 next 或 month
-  if (next) {
-    location.replace(decodeURIComponent(next));
-  } else {
-    location.replace("month.html");
-  }
-}
-
-window.addEventListener("DOMContentLoaded", async () => {
-  const loginBtn = document.getElementById("loginBtn");
-  const loader = document.getElementById("loader");
-  if (!loginBtn || !loader) return;
-
-  await window.firebaseReady;
-  await window.waitForAuthReady(); // 等 session 還原
-
-  onAuthStateChanged(auth, async (user) => {
-    console.log("auth state:", user?.uid || null);
-
-    if (user) {
-      try {
-        await routeAfterLogin(user);
-      } catch (e) {
-        console.error("routeAfterLogin failed:", e);
-        alert("登入後導頁失敗，請稍後再試");
-        location.replace("month.html");
-      }
-    } else {
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
-    }
-  });
-
-  loginBtn.addEventListener("click", async () => {
-    loginBtn.style.display = "none";
-    loader.style.display = "block";
+  copyBtn.addEventListener("click", async () => {
+    const url = (location.origin + location.pathname).replace(/\/$/, "/") + "onboarding.html";
     try {
-      await signInWithPopup(auth, provider);
-      // 導頁交給 onAuthStateChanged
+      await navigator.clipboard.writeText(url);
+      showToast();
     } catch (e) {
-      console.error(e);
-      alert("登入失敗，請再試一次");
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
+      // fallback：讓使用者手動複製
+      prompt("請複製這個連結，並用 Safari 開啟：", url);
     }
   });
-});
+
+  // 如果不是 iOS，也可以直接讓他進 onboarding（桌機/Android）
+  if (!isIOS) {
+    location.replace("onboarding.html");
+  }
 </script>
+
 </body>
 </html>
