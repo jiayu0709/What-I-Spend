@@ -362,7 +362,13 @@
   </div>
 
   <div class="overlay" id="overlay">
-    <!-- ✅ Add to Home Screen 教學 Overlay（新） -->
+    <div class="panel">
+      <p class="ttl">讀取中…</p>
+      <p class="sub">正在產生你的 Setup Code，請稍候</p>
+    </div>
+  </div>
+
+  <!-- ✅ Add to Home Screen 教學 Overlay（新） -->
     <div class="overlay" id="a2hsOverlay" aria-hidden="true">
       <div class="panel a2hs-panel" role="dialog" aria-modal="true" aria-label="新增至主畫面教學">
         <div class="a2hs-head">
@@ -404,11 +410,6 @@
         </div>
       </div>
     </div>
-    <div class="panel">
-      <p class="ttl">讀取中…</p>
-      <p class="sub">正在產生你的 Setup Code，請稍候</p>
-    </div>
-  </div>
 
   <!-- ✅ 你原本的 persistence / requireAuth 都在 app.js -->
   <script type="module" src="app.js"></script>
@@ -513,7 +514,7 @@
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
         hideOverlay();
       }
-
+})();
       // ===== A2HS (Add to Home Screen) pretty overlay =====
   const addToHomeBtn = document.getElementById("addToHomeBtn");
   const a2hsOverlay = document.getElementById("a2hsOverlay");
@@ -553,7 +554,6 @@
   a2hsOverlay?.addEventListener("click", (e) => {
     if (e.target === a2hsOverlay) closeA2HS();
   });
-      })();
   </script>
 </body>
 </html>
