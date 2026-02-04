@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="theme.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="What I Spend">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>開始使用</title>
+
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--app-bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+
+    .app{min-height:100vh;padding-bottom:28px}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+
+    .hero{
+      margin-top:10px;
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:18px 16px;
+    }
+    .hero-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .logo{
+      font-size:44px; line-height:1;
+      width:56px;height:56px;border-radius:18px;
+      background:rgba(255,255,255,0.55);
+      display:grid;place-items:center;
+      flex:0 0 auto;
+    }
+    .hero-title{
+      font-size:34px;
+      font-weight:900;
+      letter-spacing:-.5px;
+      margin:8px 0 2px;
+    }
+    .hero-sub{
+      color:var(--secondary);
+      font-weight:800;
+      margin:0;
+      line-height:1.4;
+    }
+
+    .section{margin-top:16px}
+    .card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:16px;
+    }
+    .h2{
+      font-size:18px;
+      font-weight:900;
+      margin:0 0 10px;
+      letter-spacing:-.2px;
+    }
+    .p{
+      margin:0;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.5;
+      font-size:14px;
+    }
+
+    .features{
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+    .feat{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.55);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+    .feat .ic{font-size:18px; line-height:1.2; margin-top:1px;}
+    .feat .tx{display:grid; gap:2px;}
+    .feat .t{font-weight:900; color:var(--text); font-size:14px;}
+    .feat .d{font-weight:800; color:var(--secondary); font-size:12px; line-height:1.4;}
+
+    .tokenBox{
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+    .tokenRow{
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+    }
+    .token{
+      flex:1;
+      border-radius:14px;
+      padding:12px 12px;
+      border:1px solid rgba(0,0,0,0.10);
+      background:#fff;
+      font-weight:900;
+      color:var(--text);
+      font-size:14px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
+    }
+
+    .btnbar{display:grid; gap:10px; margin-top:12px;}
+    .btn{
+      width:100%;
+      padding:14px 16px;
+      border:0;
+      border-radius:var(--radius);
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      background:rgba(255,255,255,0.55);
+      border:1px solid rgba(0,0,0,0.06);
+      color:var(--accent-text);
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+    .btn.primary{
+      background: var(--accent-text);
+      color:#fff;
+      border:0;
+    }
+    .btn.danger{
+      background: rgba(217,74,74,0.12);
+      color: #b33b3b;
+      border:1px solid rgba(217,74,74,0.18);
+    }
+
+    .muted{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.5;
+    }
+
+    .status{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.55);
+      border:1px solid rgba(0,0,0,0.06);
+      color:var(--secondary);
+      font-weight:900;
+      font-size:13px;
+    }
+    .status.ok{ color: var(--green); }
+    .status.err{ color: var(--red); }
+
+    /* iOS tap feedback */
+    a, button { -webkit-tap-highlight-color: transparent; }
+    .btn{
+      user-select:none; -webkit-user-select:none;
+      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
+    }
+    .btn:active{ opacity:.7; transform:scale(.99); }
+
+    /* loading overlay */
+    .overlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.08);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .overlay.show{ display:flex; }
+    .overlay .panel{
+      width:min(420px, 92vw);
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:16px;
+      border:1px solid rgba(0,0,0,0.08);
+    }
+    .overlay .panel .ttl{
+      font-weight:900;
+      font-size:16px;
+      margin:0 0 6px;
+    }
+    .overlay .panel .sub{
+      margin:0;
+      color:var(--secondary);
+      font-weight:800;
+      font-size:13px;
+      line-height:1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <main class="page">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="hero-title">開始使用</div>
+            <p class="hero-sub">把「捷徑 × 雲端同步」設定好<br>之後就能背景快速記帳</p>
+          </div>
+          <div class="logo">💰</div>
+        </div>
+
+        <div class="features">
+          <div class="feat">
+            <div class="ic">✅</div>
+            <div class="tx">
+              <div class="t">捷徑一鍵記帳</div>
+              <div class="d">不用開網頁、輸入更快</div>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="ic">☁️</div>
+            <div class="tx">
+              <div class="t">自動同步雲端</div>
+              <div class="d">手機 / 電腦都能查看與編輯</div>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="ic">🔒</div>
+            <div class="tx">
+              <div class="t">每個人獨立 Token</div>
+              <div class="d">你的捷徑只會寫到你自己的帳戶</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="h2">你的捷徑專用 Token</div>
+          <p class="p">這是你的「捷徑鑰匙」。捷徑會用它把明細寫進你的雲端帳戶。</p>
+
+          <div class="tokenBox">
+            <div class="tokenRow">
+              <div class="token" id="tokenText">讀取中…</div>
+              <button class="btn" type="button" id="copyBtn" style="width:auto; padding:0 14px;">
+                📋 複製
+              </button>
+            </div>
+
+            <a class="btn primary" id="installBtn" href="#" rel="noopener">
+              🚀 安裝 iPhone 快速記帳捷徑
+            </a>
+
+            <a class="btn" id="applyBtn" href="#" rel="noopener">
+              ⚡ 一鍵把 Token 套用到捷徑
+            </a>
+
+            <button class="btn danger" type="button" id="resetBtn">
+              ♻️ 重置 Token（讓舊捷徑失效）
+            </button>
+
+            <div class="muted">
+              小提醒：重置後，你需要重新安裝或更新捷徑裡的 Token。安裝完成後，請點「一鍵把 Token 套用到捷徑」。
+            </div>
+
+            <div class="status" id="statusBox">狀態：準備中…</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="btnbar">
+          <button class="btn primary" type="button" id="finishBtn">開始使用 → 進入本月</button>
+          <a class="btn" href="month.html">先跳過（仍可之後再設定）</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <p class="ttl">讀取中…</p>
+      <p class="sub">正在取得你的 Token，請稍候</p>
+    </div>
+  </div>
+
+  <!-- ✅ 你原本的 persistence / requireAuth 都在 app.js -->
+  <script type="module" src="app.js"></script>
+
+  <script type="module">
+    import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
+
+    // ✅ 你要換成你自己的 iCloud 捷徑分享連結
+    const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/c6c962cc018a481188bb45a9f6e6bc84";
+    const RUN_SHORTCUT_NAME = "請填入你的捷徑名稱（需與 iPhone 中顯示完全一致）";
+
+    const tokenText = document.getElementById("tokenText");
+    const copyBtn = document.getElementById("copyBtn");
+    const installBtn = document.getElementById("installBtn");
+    const applyBtn = document.getElementById("applyBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const finishBtn = document.getElementById("finishBtn");
+    const statusBox = document.getElementById("statusBox");
+    const overlay = document.getElementById("overlay");
+
+    function showOverlay(msg="讀取中…"){
+      overlay.querySelector(".ttl").textContent = msg;
+      overlay.classList.add("show");
+    }
+    function hideOverlay(){ overlay.classList.remove("show"); }
+
+    function setStatus(text, type=""){
+      statusBox.classList.remove("ok","err");
+      if(type) statusBox.classList.add(type);
+      statusBox.textContent = text;
+    }
+
+    function newToken(){
+      // iOS 16+ / modern browsers ok
+      return (crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+    }
+
+    function buildInstallLink(){
+      // iCloud 安裝頁不可靠接收 query，僅提供純安裝連結
+      return SHORTCUT_ICLOUD_URL;
+    }
+
+    function buildRunShortcutLink(token){
+      const name = encodeURIComponent(RUN_SHORTCUT_NAME);
+      const text = encodeURIComponent(token);
+      return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`;
+    }
+
+    async function loadOrCreateToken(){
+      showOverlay("讀取 Token…");
+      setStatus("狀態：讀取 Token 中…");
+
+      await window.firebaseReady;
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      // users/{uid} 不存在就先建立（保險）
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      const data = (snap.exists() ? snap.data() : {});
+      let token = data?.shortcutToken;
+
+      if (!token) {
+        token = newToken();
+        await updateDoc(ref, {
+          shortcutToken: token,
+          shortcutTokenCreatedAt: serverTimestamp(),
+        });
+      }
+
+      tokenText.textContent = token;
+      installBtn.href = buildInstallLink();
+      applyBtn.href = buildRunShortcutLink(token);
+      applyBtn.removeAttribute("aria-disabled");
+      applyBtn.style.pointerEvents = "";
+
+      setStatus("狀態：Token 已準備好 ✅", "ok");
+      hideOverlay();
+      return { user, token, ref };
+    }
+
+    async function resetToken(){
+      showOverlay("重置 Token…");
+      setStatus("狀態：正在重置 Token…");
+
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid);
+      const token = newToken();
+
+      await updateDoc(ref, {
+        shortcutToken: token,
+        shortcutTokenResetAt: serverTimestamp(),
+      });
+
+      tokenText.textContent = token;
+      installBtn.href = buildInstallLink();
+      applyBtn.href = buildRunShortcutLink(token);
+      applyBtn.removeAttribute("aria-disabled");
+      applyBtn.style.pointerEvents = "";
+
+      setStatus("狀態：已重置 ✅ 請重新安裝捷徑", "ok");
+      hideOverlay();
+    }
+
+    async function finishOnboarding(){
+      showOverlay("完成設定…");
+      setStatus("狀態：正在完成設定…");
+
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid);
+      await updateDoc(ref, {
+        onboardingDone: true,
+        onboardingDoneAt: serverTimestamp(),
+      });
+
+      hideOverlay();
+      location.replace("month.html");
+    }
+
+    copyBtn.addEventListener("click", async () => {
+      const token = (tokenText.textContent || "").trim();
+      if (!token || token === "讀取中…") return;
+
+      try {
+        await navigator.clipboard.writeText(token);
+        setStatus("狀態：已複製到剪貼簿 ✅", "ok");
+      } catch (e) {
+        // iOS 有時 clipboard API 會失敗 → fallback
+        const r = document.createRange();
+        r.selectNodeContents(tokenText);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        document.execCommand("copy");
+        sel.removeAllRanges();
+        setStatus("狀態：已複製到剪貼簿 ✅", "ok");
+      }
+    });
+
+    resetBtn.addEventListener("click", async () => {
+      const ok = confirm("確定要重置 Token 嗎？\n重置後舊捷徑會失效，需要重新安裝。");
+      if (!ok) return;
+      try { await resetToken(); }
+      catch (e) {
+        console.error(e);
+        setStatus("狀態：重置失敗 ❌ " + (e.message || e), "err");
+        hideOverlay();
+      }
+    });
+
+    finishBtn.addEventListener("click", async () => {
+      try { await finishOnboarding(); }
+      catch (e) {
+        console.error(e);
+        setStatus("狀態：完成失敗 ❌ " + (e.message || e), "err");
+        hideOverlay();
+      }
+    });
+
+    // init
+    applyBtn.setAttribute("aria-disabled","true");
+    applyBtn.style.pointerEvents = "none";
+
+    (async () => {
+      try {
+        await loadOrCreateToken();
+      } catch (e) {
+        console.error(e);
+        setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
+        hideOverlay();
+      }
+    })();
+  </script>
+</body>
+</html>
