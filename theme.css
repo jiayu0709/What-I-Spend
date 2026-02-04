@@ -240,76 +240,135 @@ button:active{ opacity:.65; transform:scale(.98); }
   text-decoration:none;
 }
 
-/* =========================
-   Drawer polish (iOS card)
-   只影響抽屜，不動其他版面
-   ========================= */
+/* =========================================================
+   Drawer — Final polish (iOS premium)
+   只影響抽屜：.drawer-overlay .drawer-panel .drawer-inner ...
+   ========================================================= */
 
-/* 背景遮罩更像原生 */
+/* 1) 背景遮罩：更像原生 sheet */
 .drawer-overlay{
-  background: rgba(0,0,0,0.22);
+  background: rgba(0,0,0,0.24) !important;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
-/* 抽屜改成「卡片面板」：上方留白變成設計 */
+/* 2) 抽屜面板：玻璃 + 層次 + 右側大圓角 + 邊緣高光 */
 .drawer-panel{
-  /* 保持貼齊左側與上下填滿 */
-  height: 100dvh;
+  height: 100dvh !important;
 
-  /* ✅ 讓它像卡片：右側圓角 */
-  border-top-right-radius: 26px;
-  border-bottom-right-radius: 26px;
+  /* 右側圓角讓它像卡片抽屜 */
+  border-top-right-radius: 28px !important;
+  border-bottom-right-radius: 28px !important;
 
-  /* ✅ 更像 iOS 的層次 */
+  /* 真正的「外層感」：陰影 + 內高光 */
   box-shadow:
-    0 18px 50px rgba(0,0,0,0.18),
-    0 2px 10px rgba(0,0,0,0.08);
+    0 24px 70px rgba(0,0,0,0.18),
+    0 8px 18px rgba(0,0,0,0.10),
+    inset -1px 0 0 rgba(255,255,255,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.55) !important;
 
-  /* ✅ 上方保留 safe-area，但讓它看起來不是空白 */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* 外框線更精緻 */
+  border-right: 1px solid rgba(0,0,0,0.06) !important;
 
-  /* ✅ 在 safe-area 區做一個很淡的漸層，視覺上像 header */
+  /* 保留 safe-area，但把它設計成「header 區」而不是空白 */
+  padding-top: env(safe-area-inset-top) !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+
+  /* 玻璃感底色：上方亮、下方回到 card-bg */
   background:
-    linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.0) 56px),
-    var(--card-bg);
+    radial-gradient(120% 60% at 18% 0%,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.16) 45%,
+      rgba(255,255,255,0.00) 70%),
+    linear-gradient(to bottom,
+      rgba(255,255,255,0.26) 0px,
+      rgba(255,255,255,0.10) 70px,
+      rgba(255,255,255,0.00) 140px),
+    var(--card-bg) !important;
 
-  /* ✅ 硬體加速，滑動更順 */
   transform: translateZ(0);
+  -webkit-overflow-scrolling: touch;
 }
 
-/* 內容區：把 14px 內距放在這裡，讓標題不要貼到最上 */
-.drawer-panel .drawer-inner{
-  padding-top: 12px;
-  padding-bottom: 14px;
-  display: grid;
-  gap: 10px;
-}
-
-/* 標題做成「小膠囊標籤」→ 看起來像有 Header */
-.drawer-title{
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-
-  padding: 8px 12px;
+/* 3) 在 safe-area 下方加「把手」：瞬間像原生 drawer */
+.drawer-panel::after{
+  content:"";
+  position:absolute;
+  left: 18px;
+  top: calc(env(safe-area-inset-top) + 10px);
+  width: 44px;
+  height: 5px;
   border-radius: 999px;
-
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(0,0,0,0.06);
-
-  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+  background: rgba(0,0,0,0.10);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.60) inset,
+    0 1px 2px rgba(0,0,0,0.08);
+  pointer-events:none;
 }
 
-/* 每個項目更像卡片，邊界更乾淨 */
+/* 4) 內容容器：間距、群組感 */
+.drawer-panel .drawer-inner{
+  padding-top: 26px !important;   /* 給把手 + header 呼吸空間 */
+  padding-bottom: 14px !important;
+  display: grid !important;
+  gap: 12px !important;
+}
+
+/* 5) 標題：改成精緻「Header Title」(不像貼牆) */
+.drawer-title{
+  margin: 0 0 2px 0 !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.2px !important;
+  color: var(--text) !important;
+
+  /* 讓它像標題區塊 */
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.38) !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.55) inset !important;
+}
+
+/* 6) 按鈕：一致、厚實、像 iOS 設定列表 */
 .drawer-item{
-  border-radius: 16px;
-  background: rgba(255,255,255,0.62);
-  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 18px !important;
+  padding: 14px 14px !important;
+
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.2px !important;
+
+  background: rgba(255,255,255,0.62) !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.06),
+    0 1px 0 rgba(255,255,255,0.55) inset !important;
+
+  transition: transform .12s ease, opacity .15s ease, background-color .15s ease !important;
 }
 
-/* danger 按鈕保持紅，但更像 iOS */
+/* 7) 按下手感 */
+.drawer-item:active{
+  transform: scale(.99) !important;
+  opacity: .75 !important;
+}
+
+/* 8) Danger（登出）：更像「重要操作」 */
 .drawer-item.danger{
-  background: rgba(217,74,74,0.12);
-  border: 1px solid rgba(217,74,74,0.16);
-  color: #b33b3b;
+  background: rgba(217,74,74,0.10) !important;
+  border: 1px solid rgba(217,74,74,0.18) !important;
+  color: #b33b3b !important;
+
+  box-shadow:
+    0 10px 22px rgba(217,74,74,0.06),
+    0 1px 0 rgba(255,255,255,0.45) inset !important;
+}
+
+/* 9) 讓抽屜右側邊緣更乾淨（跟背景分離） */
+.drawer-panel{
+  outline: 1px solid rgba(255,255,255,0.18);
+  outline-offset: -1px;
 }
