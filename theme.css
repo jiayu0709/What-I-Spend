@@ -1,5 +1,5 @@
 /* theme.css — 全站統一色彩（Design Tokens） */
-:root {
+:root{
   /* Backgrounds */
   --app-bg: #f0e6e6;
   --card-bg: #e0cdcc;
@@ -18,34 +18,144 @@
   /* Accent */
   --accent: #4f55d8;
   --accent-text: #7b6a6c;
-   
+
   /* spacing / layout tokens */
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
 
-  --tabcolor: #503d32;
+  --tabcolor:#503d32;
 }
 
 /* 全頁統一背景與預設文字色 */
-body {
+body{
   background: var(--app-bg);
   color: var(--text);
-  margin: 0;
+}
+
+/* iOS 日期 input 文字顏色（避免系統藍） */
+input[type="date"]{
+  color: var(--accent-text);
+  -webkit-text-fill-color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit{
+  color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field{
+  color: var(--accent-text);
+}
+
+/* iOS 時間 input 文字顏色（與日期一致） */
+input[type="time"]{
+  color: var(--accent-text);
+  -webkit-text-fill-color: var(--accent-text);
+}
+
+input[type="time"]::-webkit-datetime-edit{
+  color: var(--accent-text);
+}
+
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="time"]::-webkit-datetime-edit-ampm-field{
+  color: var(--accent-text);
 }
 
 /* ===============================
-   Global Drawer (Hamburger)
+   Page transition (iOS style)
    =============================== */
+main.page{
+  animation: page-enter .22s ease-out;
+  will-change: opacity;
+}
+@keyframes page-enter{
+  from{ opacity:0; }
+  to  { opacity:1; }
+}
+main.page.leaving{
+  animation: page-leave .18s ease-in forwards;
+  will-change: opacity;
+}
+@keyframes page-leave{
+  from{ opacity:1; }
+  to  { opacity:0; }
+}
+
+/* ===============================
+   Tabbar (GLOBAL)
+   =============================== */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0;
+  height: var(--tab-height);
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display:flex;
+  justify-content:center;
+}
+
+.tabbar-inner{
+  max-width:520px;
+  width:100%;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding:10px 18px 18px;
+  gap:6px;
+  align-items:center;
+}
+
+.tabbar .tab{
+  text-decoration:none;
+  color: var(--secondary);
+  display:grid;
+  place-items:center;
+  gap:6px;
+  font-weight:800;
+  padding:8px 0;
+}
+
+.tabbar .tab .icon{
+  font-size:24px;
+  line-height:1;
+  color: inherit;            /* ⭐ icon 跟著文字 */
+}
+
+/* ✅ Active 紅色 */
+.tabbar .tab.active{
+  color: var(--tabcolor);
+}
+
+/* iOS-style tap feedback（全站） */
+a, button, .tx, .tab{
+  -webkit-tap-highlight-color: transparent;
+}
+.tx, .tab, button{
+  user-select:none;
+  -webkit-user-select:none;
+  transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
+}
+.tx:active{ opacity:.6; transform:scale(.995); }
+.tab:active{ opacity:.6; transform:scale(.98); }
+button:active{ opacity:.65; transform:scale(.98); }
+.tx:focus, .tab:focus, button:focus{ outline:none; }
+
+/* =========================
+   Global Drawer (Hamburger)
+   ========================= */
 
 /* 左上角按鈕容器 */
 .topbar {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 10px);
+  top: calc(10px + env(safe-area-inset-top));
   left: 10px;
-  z-index: 10000;
+  z-index: 50;
 }
 
+/* 三條線按鈕 */
 .hamburger {
   width: 44px;
   height: 44px;
@@ -59,10 +169,11 @@ body {
   gap: 4px;
   padding: 0;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.hamburger span {
-  display: block;
+.hamburger span{
+  display:block;
   width: 18px;
   height: 2px;
   background: var(--text);
@@ -70,8 +181,71 @@ body {
   opacity: .9;
 }
 
+/* 背景遮罩 */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.20);
+  z-index: 80;
+  width: 100vw;
+  height: 100dvh;
+}
+
+/* 左側抽屜 */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  width: min(320px, 86vw);
+  background: var(--card-bg);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  z-index: 90;
+  transform: translateX(-105%);
+  transition: transform .22s ease;
+  padding: 14px;
+  padding-top: calc(14px + env(safe-area-inset-top));
+}
+
+.drawer.open { transform: translateX(0); }
+
+.drawer-inner{
+  display:grid;
+  gap: 10px;
+}
+
+.drawer-title{
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.drawer-item{
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.55);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 900;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.drawer-item.danger{
+  background: rgba(217,74,74,0.10);
+  border: 1px solid rgba(217,74,74,0.18);
+  color: #b33b3b;
+}
+
+.drawer-link{
+  display:block;
+  text-decoration:none;
+}
+
 /* ===== Drawer Overlay ===== */
-.drawer-overlay {
+.drawer-overlay{
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -80,73 +254,23 @@ body {
   z-index: 9999;
 }
 
-/* ===== Drawer Panel (修正後：完全滿版) ===== */
-.drawer-panel {
+/* ===== Drawer Panel ===== */
+.drawer-panel{
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
 
-  /* 確保寬度並讓背景填滿整個高度 */
   width: min(320px, 86vw);
-  height: 100%; 
-  
   background: var(--card-bg);
   border-right: 1px solid rgba(0,0,0,0.06);
 
-  /* 移除原本可能導致偏移的 margin，改用 flex 布局或精確的 padding */
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
-}
-
-/* ✅ 抽屜標題（功能區）- 包含安全區域，確保文字不被遮擋 */
-.drawer-header {
-  padding-top: max(20px, env(safe-area-inset-top)); /* 至少 20px 或安全區高度 */
-  padding-bottom: 12px;
+  /* 內容才避開瀏海 */
+  padding-top: calc(env(safe-area-inset-top) + 14px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
   padding-left: 16px;
   padding-right: 16px;
-  background: var(--card-bg);
-  
-  /* 標題文字樣式 */
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: var(--text);
-}
 
-/* ✅ 抽屜滾動內容區 */
-.drawer-body {
-  flex: 1;
-  padding: 0 16px calc(env(safe-area-inset-bottom) + 20px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-}
-
-.drawer-item {
-  width: 100%;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.55);
-  border-radius: 14px;
-  padding: 14px 16px;
-  font-weight: 800;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.drawer-item.danger {
-  background: rgba(217,74,74,0.10);
-  border: 1px solid rgba(217,74,74,0.18);
-  color: #b33b3b;
-}
-
-/* iOS-style tap feedback */
-.drawer-item:active {
-  opacity: .6;
-  transform: scale(.98);
 }
