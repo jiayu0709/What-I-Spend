@@ -98,6 +98,8 @@
   import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -167,6 +169,13 @@ window.addEventListener("DOMContentLoaded", async () => {
   await window.firebaseReady;
   await window.waitForAuthReady(); // 等 session 還原
 
+  // ✅ 若剛從 redirect 回來，先把結果吃掉（避免跳來跳去）
+    try {
+    await getRedirectResult(auth);
+    } catch (e) {
+    console.warn("getRedirectResult:", e);
+    }
+
   onAuthStateChanged(auth, async (user) => {
     console.log("auth state:", user?.uid || null);
 
@@ -188,7 +197,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     loginBtn.style.display = "none";
     loader.style.display = "block";
     try {
-      await signInWithPopup(auth, provider);
+      const isStandalone =
+        window.navigator.standalone === true ||
+        window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+        // ✅ PWA / 主畫面模式：用 redirect，比較不會被系統「包 Safari」
+        if (isStandalone) {
+        await signInWithRedirect(auth, provider);
+        } else {
+        await signInWithPopup(auth, provider);
+        }
       // 導頁交給 onAuthStateChanged
     } catch (e) {
       console.error(e);
@@ -196,14 +214,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       loginBtn.style.display = "flex";
       loader.style.display = "none";
     }
+
   });
 });
-</script>
-<script>
-  alert("standalone = " + (
-    (window.navigator.standalone === true) ||
-    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
-  ));
 </script>
 </body>
 </html>
