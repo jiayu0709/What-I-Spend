@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>What I Spend - 登入</title>
+
+  <style>
+    :root {
+      --app-bg: #f2ede9;
+      --text: #3c3c3c;
+      --accent: #d61c68;
+    }
+    body {
+      margin: 0;
+      background: var(--app-bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .login-card {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 320px;
+      width: 90%;
+    }
+    .logo {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #8e8e93;
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+    .btn-google {
+      background: #ffffff;
+      color: #000;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-google:active {
+      transform: scale(0.98);
+    }
+    .loading {
+      display: none;
+      color: var(--accent);
+      font-weight: 700;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="logo">💰</div>
+    <h1>What I Spend</h1>
+    <p>同步你的雲端記帳明細</p>
+
+    <button class="btn-google" id="loginBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
+      使用 Google 帳號登入
+    </button>
+
+    <div class="loading" id="loader">登入中，請稍候…</div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+<script type="module">
+  console.log("URL NOW =", location.href);
+  import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import { auth, db } from "./firebase-config.js";
+
+const provider = new GoogleAuthProvider();
+
+async function routeAfterLogin(user){
+  const next = new URLSearchParams(location.search).get("next");
+
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
+
+  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      createdAt: serverTimestamp(),
+      onboardingDone: false,
+    });
+    location.replace("onboarding.html");
+    return;
+  }
+
+  const data = snap.data() || {};
+
+  // ✅ 尚未完成 onboarding
+  if (data.onboardingDone === false) {
+    location.replace("onboarding.html");
+    return;
+  }
+
+  // ✅ 已完成 onboarding：回 next 或 month
+  if (next) {
+    location.replace(decodeURIComponent(next));
+  } else {
+    location.replace("month.html");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const loginBtn = document.getElementById("loginBtn");
+  const loader = document.getElementById("loader");
+  if (!loginBtn || !loader) return;
+
+  await window.firebaseReady;
+  await window.waitForAuthReady(); // 等 session 還原
+
+  onAuthStateChanged(auth, async (user) => {
+    console.log("auth state:", user?.uid || null);
+
+    if (user) {
+      try {
+        await routeAfterLogin(user);
+      } catch (e) {
+        console.error("routeAfterLogin failed:", e);
+        alert("登入後導頁失敗，請稍後再試");
+        location.replace("month.html");
+      }
+    } else {
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
+    }
+  });
+
+  loginBtn.addEventListener("click", async () => {
+    loginBtn.style.display = "none";
+    loader.style.display = "block";
+    try {
+      await signInWithPopup(auth, provider);
+      // 導頁交給 onAuthStateChanged
+    } catch (e) {
+      console.error(e);
+      alert("登入失敗，請再試一次");
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
+    }
+  });
+});
+</script>
+</body>
+</html>

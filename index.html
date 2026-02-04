@@ -2,180 +2,246 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>What I Spend - 登入</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>What I Spend</title>
 
   <style>
-    :root {
-      --app-bg: #f2ede9;
-      --text: #3c3c3c;
-      --accent: #d61c68;
+    :root{
+      --app-bg:#f2ede9;
+      --card-bg:rgba(255,255,255,0.72);
+      --text:#3c3c3c;
+      --secondary:#8e8e93;
+      --accent:#d61c68;
+      --green:#2fbf71;
+      --radius:22px;
+      --line:rgba(0,0,0,0.08);
     }
-    body {
-      margin: 0;
-      background: var(--app-bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      display:grid;
+      place-items:center;
+      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
     }
-    .login-card {
-      text-align: center;
-      padding: 40px 20px;
-      max-width: 320px;
-      width: 90%;
+
+    .card{
+      width:min(520px, 100%);
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      border:1px solid var(--line);
+      padding:18px 16px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
     }
-    .logo {
-      font-size: 64px;
-      margin-bottom: 20px;
+
+    .hero{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 10px;
+    .logo{
+      font-size:44px;
+      width:56px;height:56px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.6);
+      display:grid;place-items:center;
+      flex:0 0 auto;
     }
-    p {
-      color: #8e8e93;
-      margin-bottom: 30px;
-      font-weight: 500;
+    .title{
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:-.5px;
+      margin:6px 0 4px;
     }
-    .btn-google {
-      background: #ffffff;
-      color: #000;
-      border: none;
-      padding: 14px 24px;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .subtitle{
+      margin:0;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.4;
+      font-size:14px;
     }
-    .btn-google:active {
-      transform: scale(0.98);
+
+    .section{margin-top:14px}
+    .step{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.6);
+      border:1px solid var(--line);
     }
-    .loading {
-      display: none;
-      color: var(--accent);
-      font-weight: 700;
-      margin-top: 20px;
+    .badge{
+      width:26px;height:26px;
+      border-radius:9px;
+      background:rgba(0,0,0,0.06);
+      display:grid;place-items:center;
+      font-weight:900;
+      font-size:13px;
+      flex:0 0 auto;
     }
+    .step .t{
+      font-weight:900;
+      font-size:14px;
+    }
+    .step .d{
+      font-weight:800;
+      color:var(--secondary);
+      font-size:12px;
+      margin-top:2px;
+      line-height:1.4;
+    }
+
+    .actions{
+      margin-top:14px;
+      display:grid;
+      gap:10px;
+    }
+    .btn{
+      width:100%;
+      padding:14px 16px;
+      border-radius:var(--radius);
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.6);
+      color:var(--text);
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    .btn.primary{
+      background:var(--accent);
+      color:#fff;
+      border:0;
+    }
+    .btn:active{ transform:scale(.99); opacity:.85 }
+
+    .note{
+      margin-top:10px;
+      font-size:12px;
+      font-weight:800;
+      color:var(--secondary);
+      line-height:1.5;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:calc(env(safe-area-inset-bottom) + 18px);
+      transform:translateX(-50%);
+      background:rgba(0,0,0,0.82);
+      color:#fff;
+      padding:10px 14px;
+      border-radius:999px;
+      font-size:13px;
+      font-weight:800;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease;
+    }
+    .toast.show{ opacity:1 }
   </style>
 </head>
+
 <body>
 
-  <div class="login-card">
+<div class="card">
+  <div class="hero">
+    <div>
+      <div class="title">開始使用</div>
+      <p class="subtitle">
+        為了順利登入（Google / 雙重驗證）<br>
+        請使用 <b>Safari</b> 開啟
+      </p>
+    </div>
     <div class="logo">💰</div>
-    <h1>What I Spend</h1>
-    <p>同步你的雲端記帳明細</p>
-
-    <button class="btn-google" id="loginBtn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
-      使用 Google 帳號登入
-    </button>
-
-    <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <div class="section">
+    <div class="step">
+      <div class="badge">1</div>
+      <div>
+        <div class="t">點右上角「⋯ / 分享」</div>
+        <div class="d">LINE、IG、FB 內建瀏覽器都可以</div>
+      </div>
+    </div>
+  </div>
 
-<script type="module">
-  console.log("URL NOW =", location.href);
-  import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  <div class="section">
+    <div class="step">
+      <div class="badge">2</div>
+      <div>
+        <div class="t">選擇「在 Safari 中開啟」</div>
+        <div class="d">避免 Google 登入被系統阻擋</div>
+      </div>
+    </div>
+  </div>
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  <div class="actions">
+    <button class="btn primary" id="copyBtn">📋 複製 Safari 登入連結</button>
+    <a class="btn" href="login.html">我已在 Safari，前往登入 →</a>
+  </div>
 
-import { auth, db } from "./firebase-config.js";
+  <div class="note">
+    若你是「加入主畫面」開啟，請改用 Safari 登入一次即可。
+  </div>
+</div>
 
-const provider = new GoogleAuthProvider();
+<div class="toast" id="toast">已複製連結，請貼到 Safari 開啟 ✅</div>
 
-async function routeAfterLogin(user){
-  const next = new URLSearchParams(location.search).get("next");
+<script>
+  const loginUrl = new URL("login.html", location.href).toString();
+  const copyBtn = document.getElementById("copyBtn");
+  const toast = document.getElementById("toast");
 
-  const userRef = doc(db, "users", user.uid);
-  const snap = await getDoc(userRef);
-
-  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      createdAt: serverTimestamp(),
-      onboardingDone: false,
-    });
-    location.replace("onboarding.html");
-    return;
-  }
-
-  const data = snap.data() || {};
-
-  // ✅ 尚未完成 onboarding
-  if (data.onboardingDone === false) {
-    location.replace("onboarding.html");
-    return;
-  }
-
-  // ✅ 已完成 onboarding：回 next 或 month
-  if (next) {
-    location.replace(decodeURIComponent(next));
-  } else {
-    location.replace("month.html");
-  }
-}
-
-window.addEventListener("DOMContentLoaded", async () => {
-  const loginBtn = document.getElementById("loginBtn");
-  const loader = document.getElementById("loader");
-  if (!loginBtn || !loader) return;
-
-  await window.firebaseReady;
-  await window.waitForAuthReady(); // 等 session 還原
-
-  onAuthStateChanged(auth, async (user) => {
-    console.log("auth state:", user?.uid || null);
-
-    if (user) {
-      try {
-        await routeAfterLogin(user);
-      } catch (e) {
-        console.error("routeAfterLogin failed:", e);
-        alert("登入後導頁失敗，請稍後再試");
-        location.replace("month.html");
-      }
-    } else {
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
-    }
-  });
-
-  loginBtn.addEventListener("click", async () => {
-    loginBtn.style.display = "none";
-    loader.style.display = "block";
+  copyBtn.addEventListener("click", async () => {
     try {
-      await signInWithPopup(auth, provider);
-      // 導頁交給 onAuthStateChanged
-    } catch (e) {
-      console.error(e);
-      alert("登入失敗，請再試一次");
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
+      await navigator.clipboard.writeText(loginUrl);
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = loginUrl;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      document.body.removeChild(t);
     }
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
   });
-});
+</script>
+<script>
+  const ua = navigator.userAgent || "";
+
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari =
+    isIOS &&
+    /Safari/i.test(ua) &&
+    !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua); // 排除 Chrome / Firefox / Edge
+
+  const isStandalone =
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.navigator.standalone === true; // iOS PWA
+
+  // ✅ 已在 Safari（而且不是主畫面模式）→ 直接去登入
+  if (isSafari && !isStandalone) {
+    location.replace("login.html");
+  }
 </script>
 </body>
 </html>
