@@ -229,17 +229,25 @@
   const ua = navigator.userAgent || "";
 
   const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  const isSafari =
+
+  const isRealSafari =
     isIOS &&
     /Safari/i.test(ua) &&
-    !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua); // 排除 Chrome / Firefox / Edge
+    !/CriOS/i.test(ua) &&      // Chrome
+    !/FxiOS/i.test(ua) &&      // Firefox
+    !/EdgiOS/i.test(ua) &&     // Edge
+    !/OPiOS/i.test(ua) &&      // Opera
+    !/DuckDuckGo/i.test(ua) && // DuckDuckGo
+    !/Line/i.test(ua) &&       // LINE
+    !/FBAN|FBAV/i.test(ua) &&  // Facebook / Instagram
+    !/Instagram/i.test(ua);
 
   const isStandalone =
-    window.matchMedia?.("(display-mode: standalone)")?.matches ||
-    window.navigator.standalone === true; // iOS PWA
+    window.navigator.standalone === true ||
+    window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-  // ✅ 已在 Safari（而且不是主畫面模式）→ 直接去登入
-  if (isSafari && !isStandalone) {
+  // ✅ 只有「真正 Safari + 非桌面模式」才跳登入
+  if (isRealSafari && !isStandalone) {
     location.replace("login.html");
   }
 </script>
