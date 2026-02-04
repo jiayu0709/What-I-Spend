@@ -304,7 +304,29 @@
   <script type="module">
     import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
+    import { auth } from "./firebase-config.js";
 
+    async function createSetupCodeViaFunction(){
+    const u = auth.currentUser;
+    if (!u) throw new Error("Not logged in");
+
+    const idToken = await u.getIdToken();
+    const res = await fetch("/.netlify/functions/createSetupCode", {
+        method: "POST",
+        headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({}), // 不用內容
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `createSetupCode failed: ${res.status}`);
+    }
+
+    return res.json(); // { code }
+    }
     // ✅ 你要換成你自己的 iCloud 捷徑分享連結
     const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/21c81e5e7eae49da9c1f2597e8f42a02";
     const RUN_SHORTCUT_NAME = "Setup";
@@ -346,45 +368,32 @@
       return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`;
     }
 
-    async function loadOrCreateToken(){
-      showOverlay("讀取 Token…");
-      setStatus("狀態：讀取 Token 中…");
+    (async () => {
+        try {
+            await window.firebaseReady;
+            const user = await window.requireAuth();
+            if (!user) throw new Error("Not logged in");
 
-      await window.firebaseReady;
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
+            const { code } = await createSetupCodeViaFunction();
 
-      const ref = doc(db, "users", user.uid);
-      const snap = await getDoc(ref);
+            // 顯示 setup code 給使用者
+            tokenText.textContent = code; // 你原本 tokenText 可改名叫 codeText 但不改也行
+            setStatus("狀態：請打開 Setup 捷徑並輸入這組 Code ✅", "ok");
 
-      // users/{uid} 不存在就先建立（保險）
-      if (!snap.exists()) {
-        await setDoc(ref, {
-          createdAt: serverTimestamp(),
-        }, { merge: true });
-      }
+            // 安裝捷徑的 iCloud link（你原本就有）
+            installBtn.href = SHORTCUT_ICLOUD_URL;
 
-      const data = (snap.exists() ? snap.data() : {});
-      let token = data?.shortcutToken;
+            // 一鍵開捷徑（不帶 token、不帶 input）
+            applyBtn.href = `shortcuts://run-shortcut?name=${encodeURIComponent("Setup")}`;
+            applyBtn.style.pointerEvents = "";
+            applyBtn.removeAttribute("aria-disabled");
 
-      if (!token) {
-        token = newToken();
-        await updateDoc(ref, {
-          shortcutToken: token,
-          shortcutTokenCreatedAt: serverTimestamp(),
-        });
-      }
-
-      tokenText.textContent = token;
-      installBtn.href = buildInstallLink();
-      applyBtn.href = buildRunShortcutLink(token);
-      applyBtn.removeAttribute("aria-disabled");
-      applyBtn.style.pointerEvents = "";
-
-      setStatus("狀態：Token 已準備好 ✅", "ok");
-      hideOverlay();
-      return { user, token, ref };
-    }
+        } catch (e) {
+            console.error(e);
+            setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
+            hideOverlay();
+        }
+        })();
 
     async function resetToken(){
       showOverlay("重置 Token…");
