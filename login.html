@@ -131,14 +131,14 @@
           createdAt: serverTimestamp(),
           onboardingDone: false,
         });
-        location.replace("onboarding.html?from=login");
+        location.replace("onboarding.html");
         return;
       }
 
       const data = snap.data() || {};
 
       if (data.onboardingDone === false) {
-        location.replace("onboarding.html?from=login");
+        location.replace("onboarding.html");
         return;
       }
 
