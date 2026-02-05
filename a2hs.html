@@ -241,5 +241,23 @@
     alert("已複製網址，請貼到 Safari 開啟");
   }
 </script>
+<script>
+(function () {
+  // iOS standalone 判斷
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  // ✅ 如果是從主畫面打開（standalone），不要顯示提示頁，直接進入口
+  if (isStandalone) {
+    // 用 replace 避免返回鍵回到 a2hs.html
+    location.replace('/login.html'); // ←改成你真正入口頁
+    return;
+  }
+
+  // ✅ 如果是在 Safari 裡，才顯示「加入主畫面」提示內容
+  // （你原本的 UI 照常顯示即可）
+})();
+</script>
 </body>
 </html>
