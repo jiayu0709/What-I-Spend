@@ -84,6 +84,7 @@
     <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
+  <!-- 先載入 app.js，讓它去做 persistence 與 firebaseReady -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
@@ -93,8 +94,6 @@
       signInWithRedirect,
       getRedirectResult,
       onAuthStateChanged,
-      setPersistence,
-      browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     import {
@@ -113,6 +112,8 @@
     const isStandalone =
       window.navigator.standalone === true ||
       window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+    const REDIRECT_FLAG = "redirectPending";
 
     function setLoading(on){
       if (!loginBtn || !loader) return;
@@ -149,46 +150,83 @@
       }
     }
 
-    (async () => {
-  await window.firebaseReady;
-  // 不要在這裡 setPersistence
+    async function settleRedirectIfAny(){
+      // ✅ 不管是不是 standalone，都先試著收 redirect result（iOS 判斷有時不準）
+      const pending = localStorage.getItem(REDIRECT_FLAG) === "1";
+      if (!pending && !isStandalone) return false;
 
-  // ✅ PWA 先處理 redirect result
-  if (isStandalone) {
-    setLoading(true);
-    try {
-      const result = await getRedirectResult(auth);
-      if (result && result.user) {
-        await routeAfterLogin(result.user);
-        return;
+      setLoading(true);
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          localStorage.removeItem(REDIRECT_FLAG);
+          await routeAfterLogin(result.user);
+          return true;
+        }
+      } catch (e) {
+        console.error("getRedirectResult error:", e);
       }
-    } catch (e) {
-      console.error("Redirect Error:", e);
-      setLoading(false);
-    }
-  }
 
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      setLoading(false);
-      return;
+      // result 可能拿不到，但 auth 狀態有機會晚點回來：先不要判死刑
+      return false;
     }
-    setLoading(true);
-    await routeAfterLogin(user);
-  });
 
-  loginBtn?.addEventListener("click", async () => {
-    setLoading(true);
-    try {
-      if (isStandalone) await signInWithRedirect(auth, provider);
-      else await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error(e);
-      alert("登入失敗，請再試一次");
+    (async () => {
+      // ✅ 等 app.js 完成 persistence / firebaseReady
+      await window.firebaseReady;
+      await window.waitForAuthReady?.();
+
+      // ✅ 先處理 redirect 回來的結果
+      const handled = await settleRedirectIfAny();
+      if (handled) return;
+
+      // ✅ 監聽登入狀態：如果剛 redirect 回來（pending=1），不要一開始就顯示未登入
+      onAuthStateChanged(auth, async (user) => {
+        const pending = localStorage.getItem(REDIRECT_FLAG) === "1";
+
+        if (!user) {
+          // redirect pending 時，先保持 loading，等一下（iOS 常會晚一點才還原）
+          if (pending) {
+            setLoading(true);
+            // 給 iOS 多一點時間還原
+            setTimeout(() => setLoading(false), 1500);
+            return;
+          }
+          setLoading(false);
+          return;
+        }
+
+        try {
+          setLoading(true);
+          localStorage.removeItem(REDIRECT_FLAG);
+          await routeAfterLogin(user);
+        } catch (e) {
+          console.error("Route failed:", e);
+          location.replace("month.html");
+        }
+      });
+
+      loginBtn?.addEventListener("click", async () => {
+        setLoading(true);
+        try {
+          if (isStandalone) {
+            // ✅ iOS PWA 用 redirect，並加旗標避免回來被踢走
+            localStorage.setItem(REDIRECT_FLAG, "1");
+            await signInWithRedirect(auth, provider);
+          } else {
+            await signInWithPopup(auth, provider);
+          }
+        } catch (e) {
+          console.error(e);
+          alert("登入失敗，請再試一次");
+          localStorage.removeItem(REDIRECT_FLAG);
+          setLoading(false);
+        }
+      });
+
+      // 初始 UI
       setLoading(false);
-    }
-  });
-})();
+    })();
   </script>
 
 </body>
