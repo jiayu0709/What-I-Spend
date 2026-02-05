@@ -84,7 +84,6 @@
     <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
-  <!-- 你原本的 firebase 初始化、persistence、firebaseReady / requireAuth / waitForAuthReady 都在 app.js -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
@@ -93,7 +92,9 @@
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
-      onAuthStateChanged
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     import {
@@ -125,7 +126,6 @@
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
 
-      // ✅ 第一次登入：建立 users/{uid}，導 onboarding
       if (!snap.exists()) {
         await setDoc(userRef, {
           createdAt: serverTimestamp(),
@@ -137,13 +137,11 @@
 
       const data = snap.data() || {};
 
-      // ✅ 尚未完成 onboarding
       if (data.onboardingDone === false) {
         location.replace("onboarding.html");
         return;
       }
 
-      // ✅ 已完成 onboarding：回 next 或 month
       if (next) {
         location.replace(decodeURIComponent(next));
       } else {
@@ -151,53 +149,59 @@
       }
     }
 
-    // ✅ 只做一次初始化，避免「亂跳」
     (async () => {
-      // 等 firebase 初始化 & session 還原
+      // 確保 Firebase Auth 狀態是持久化的
+      await setPersistence(auth, browserLocalPersistence);
+      
       await window.firebaseReady;
       await window.waitForAuthReady?.();
 
-      // ✅ 如果是主畫面模式走 redirect，回來時要先把結果吃掉（不做會偶發跳回登入）
+      // 在 PWA 模式下，必須先執行並等待 getRedirectResult，這能讓 Auth 抓回跳轉後的狀態
       if (isStandalone) {
-        try { await getRedirectResult(auth); } catch(e) { /* ignore */ }
+        setLoading(true);
+        try {
+          const result = await getRedirectResult(auth);
+          if (result && result.user) {
+            await routeAfterLogin(result.user);
+            return; // 已經處理完畢，中止後續邏輯
+          }
+        } catch (e) {
+          console.error("Redirect Error:", e);
+          // 如果出錯，通常是憑證過期或取消，恢復 UI 讓用戶重試
+          setLoading(false);
+        }
       }
 
-      // ✅ 只綁一次監聽
+      // 註冊監聽器處理已登入或 Popup 登入的情況
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
-          setLoading(false);     // 沒登入：就停在登入頁（不導頁）
+          setLoading(false);
           return;
         }
         try {
           setLoading(true);
           await routeAfterLogin(user);
         } catch (e) {
-          console.error("routeAfterLogin failed:", e);
-          alert("登入後導頁失敗，請稍後再試");
+          console.error("Route failed:", e);
           location.replace("month.html");
         }
       });
 
-      // 點登入
       loginBtn?.addEventListener("click", async () => {
         setLoading(true);
         try {
-          // ✅ 關鍵：主畫面模式用 redirect（最穩），Safari 用 popup（保留你原本體驗）
           if (isStandalone) {
+            // iOS PWA 必須使用 Redirect，Popup 會在獨立視窗開啟導致 Session 無法傳回
             await signInWithRedirect(auth, provider);
           } else {
             await signInWithPopup(auth, provider);
           }
-          // 導頁交給 onAuthStateChanged
         } catch (e) {
           console.error(e);
           alert("登入失敗，請再試一次");
           setLoading(false);
         }
       });
-
-      // 初始畫面
-      setLoading(false);
     })();
   </script>
 
