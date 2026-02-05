@@ -285,23 +285,13 @@
     </div>
   </div>
 
+  <!-- 
+    註：已移除原本頂部強行跳轉 login.html 的 script 塊，
+    因為該判斷導致 PWA 模式下無法完成 onboarding。
+  -->
 
   <!-- ✅ 你原本的 persistence / requireAuth 都在 app.js -->
   <script type="module" src="app.js"></script>
-
-  <script>
-  (function () {
-    const isStandalone =
-      window.navigator.standalone === true ||
-      window.matchMedia?.("(display-mode: standalone)")?.matches;
-
-    if (isStandalone) {
-      // standalone 打開 onboarding 一律送回 login
-      // （避免主畫面 icon 被記到 onboarding 的 URL）
-      location.replace("login.html");
-    }
-  })();
-</script>
 
   <script type="module">
     import { auth as fbAuth, db } from "./firebase-config.js";
@@ -379,7 +369,6 @@
         }
       } catch (e) {
         console.error("set onboardingDone failed:", e);
-        // 失敗也不要卡住使用者
       }
       location.replace("month.html");
     });
@@ -389,8 +378,9 @@
       try {
         showOverlay("產生 Setup Code…");
         await window.firebaseReady;
+        // requireAuth 會自動處理未登入狀態，不用另外判斷 isStandalone
         const user = await window.requireAuth();
-        if (!user) throw new Error("Not logged in");
+        if (!user) return; // app.js 會處理導頁
 
         const { code } = await createSetupCodeViaFunction();
 
@@ -403,7 +393,7 @@
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
         hideOverlay();
       }
-})();
+    })();
   </script>
 </body>
 </html>
