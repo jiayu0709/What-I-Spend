@@ -3,12 +3,18 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="theme.css">
+  
+  <!-- ✅ 1. 確保 iOS PWA 全螢幕關鍵標籤 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
+  <!-- 設定狀態列樣式：default 為白色底黑字, black 為黑底白字, black-translucent 為透明覆蓋 -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
+  
+  <!-- ✅ 2. 針對安卓與其他環境的標籤 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>開始使用</title>
 
   <style>
@@ -18,6 +24,9 @@
       background:var(--app-bg);
       color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      /* ✅ 3. 處理劉海屏/靈動島的安全區域偏移 */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .app{min-height:100vh;padding-bottom:28px}
@@ -315,7 +324,6 @@
     }
 
     async function createSetupCodeViaFunction(){
-      // 確保此時 auth.currentUser 是存在的
       const u = fbAuth.currentUser;
       if (!u) throw new Error("尚未偵測到登入狀態，請重新整理頁面。");
 
@@ -371,21 +379,23 @@
       }
     });
 
+    // ✅ 4. 防止 PWA 點擊連結跳回 Safari
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('a');
+      if (target && target.href && target.hostname === window.location.hostname && !target.hasAttribute('download')) {
+        e.preventDefault();
+        location.assign(target.href);
+      }
+    }, false);
+
     // 初始化執行
     (async () => {
       try {
         showOverlay("準備環境中…");
-        
-        // 1. 等待 Firebase 初始化
         if (window.firebaseReady) await window.firebaseReady;
-        
-        // 2. 使用 app.js 的 waitForAuthReady 確保登入狀態已完成還原
-        // 這能解決 iOS PWA 模式下 authState 還原太慢導致 currentUser 為 null 的問題
         if (window.waitForAuthReady) {
           await window.waitForAuthReady();
         }
-
-        // 3. 執行權限檢查 (如果沒登入會被導走，但此時應已有 user)
         const user = await window.requireAuth();
         if (!user) return; 
 
@@ -400,7 +410,6 @@
         console.error(e);
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
         hideOverlay();
-        // 如果是權限錯誤，考慮導回 login
         if (e.message.includes("Not logged in")) {
           location.replace("login.html");
         }
