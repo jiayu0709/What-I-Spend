@@ -3,8 +3,21 @@
 <head>
   <link rel="stylesheet" href="theme.css">
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  
+  <!-- 1. PWA 核心設定：連結 Manifest 檔案 -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- 2. iOS PWA 強制全螢幕標籤 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- 使用 black-translucent 隱藏 Safari UI，讓內容延伸到最頂端 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="What I Spend">
+
+  <!-- 3. Android 與其他環境標籤 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f2ede9">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>加入主畫面</title>
 
   <style>
@@ -14,6 +27,9 @@
       background:var(--app-bg);
       color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC",sans-serif;
+      /* 4. 為 black-translucent 留出頂部安全區域（動態島/瀏海區域） */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .app{
@@ -31,6 +47,8 @@
       border-radius:var(--radius);
       padding:20px;
       border:1px solid rgba(0,0,0,0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .head{
@@ -151,7 +169,7 @@
       && !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua);
   }
 
-  // ✅ 已從主畫面打開 → 直接進 onboarding
+  // ✅ 已從主畫面打開 → 直接進 login.html
   if (isStandalone) {
     location.replace("login.html");
   }
