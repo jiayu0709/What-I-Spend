@@ -1,19 +1,22 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
+  <!-- 1. 確保 manifest 最先載入 -->
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="theme.css">
   
-  <!-- ✅ 1. 確保 iOS PWA 全螢幕關鍵標籤 -->
+  <!-- 2. iOS PWA 核心標籤 (必須完整) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <!-- 設定狀態列樣式：default 為白色底黑字, black 為黑底白字, black-translucent 為透明覆蓋 -->
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- black-translucent 能讓頁面延伸到狀態列下方，達到最徹底的全螢幕 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
   
-  <!-- ✅ 2. 針對安卓與其他環境的標籤 -->
+  <!-- 3. 一般 PWA 標籤 -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
   
   <meta charset="utf-8" />
+  <!-- viewport-fit=cover 是為了讓內容填滿瀏海區域 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>開始使用</title>
 
@@ -24,9 +27,12 @@
       background:var(--app-bg);
       color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-      /* ✅ 3. 處理劉海屏/靈動島的安全區域偏移 */
+      
+      /* 4. 重要：因為使用了 black-translucent，必須留出安全區域避免被狀態列遮擋 */
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
     .app{min-height:100vh;padding-bottom:28px}
@@ -379,12 +385,15 @@
       }
     });
 
-    // ✅ 4. 防止 PWA 點擊連結跳回 Safari
+    // ✅ 5. 強制在 PWA 內部開啟所有同網域連結，防止跳回 Safari
     document.addEventListener('click', (e) => {
       const target = e.target.closest('a');
       if (target && target.href && target.hostname === window.location.hostname && !target.hasAttribute('download')) {
-        e.preventDefault();
-        location.assign(target.href);
+        // 如果不是 target="_blank"
+        if (target.target !== '_blank') {
+          e.preventDefault();
+          location.href = target.href;
+        }
       }
     }, false);
 
