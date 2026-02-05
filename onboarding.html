@@ -285,42 +285,15 @@
     </div>
   </div>
 
-  <!-- 
-    註：已移除原本頂部強行跳轉 login.html 的 script 塊，
-    因為該判斷導致 PWA 模式下無法完成 onboarding。
-  -->
-
-  <!-- ✅ 你原本的 persistence / requireAuth 都在 app.js -->
+  <!-- ✅ 載入全域邏輯 -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
     import { auth as fbAuth, db } from "./firebase-config.js";
     import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ✅ 你的 iCloud 捷徑分享連結
+    // ✅ 捷徑連結
     const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/d7117653609d4905a8894d6e7cb5b381";
-
-    async function createSetupCodeViaFunction(){
-      const u = fbAuth.currentUser;
-      if (!u) throw new Error("Not logged in");
-
-      const idToken = await u.getIdToken();
-      const res = await fetch("/.netlify/functions/createSetupCode", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `createSetupCode failed: ${res.status}`);
-      }
-
-      return res.json(); // { code }
-    }
 
     const codeText = document.getElementById("codeText");
     const copyBtn = document.getElementById("copyBtn");
@@ -339,6 +312,29 @@
       statusBox.classList.remove("ok","err");
       if(type) statusBox.classList.add(type);
       statusBox.textContent = text;
+    }
+
+    async function createSetupCodeViaFunction(){
+      // 確保此時 auth.currentUser 是存在的
+      const u = fbAuth.currentUser;
+      if (!u) throw new Error("尚未偵測到登入狀態，請重新整理頁面。");
+
+      const idToken = await u.getIdToken();
+      const res = await fetch("/.netlify/functions/createSetupCode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `產生 Code 失敗 (${res.status})`);
+      }
+
+      return res.json();
     }
 
     copyBtn.addEventListener("click", async () => {
@@ -362,26 +358,38 @@
 
     finishBtn.addEventListener("click", async () => {
       try {
+        showOverlay("正在儲存設定…");
         await window.firebaseReady;
         const u = await window.requireAuth();
         if (u) {
           await updateDoc(doc(db, "users", u.uid), { onboardingDone: true });
         }
+        location.replace("month.html");
       } catch (e) {
         console.error("set onboardingDone failed:", e);
+        location.replace("month.html");
       }
-      location.replace("month.html");
     });
 
-    // init
+    // 初始化執行
     (async () => {
       try {
-        showOverlay("產生 Setup Code…");
-        await window.firebaseReady;
-        // requireAuth 會自動處理未登入狀態，不用另外判斷 isStandalone
-        const user = await window.requireAuth();
-        if (!user) return; // app.js 會處理導頁
+        showOverlay("準備環境中…");
+        
+        // 1. 等待 Firebase 初始化
+        if (window.firebaseReady) await window.firebaseReady;
+        
+        // 2. 使用 app.js 的 waitForAuthReady 確保登入狀態已完成還原
+        // 這能解決 iOS PWA 模式下 authState 還原太慢導致 currentUser 為 null 的問題
+        if (window.waitForAuthReady) {
+          await window.waitForAuthReady();
+        }
 
+        // 3. 執行權限檢查 (如果沒登入會被導走，但此時應已有 user)
+        const user = await window.requireAuth();
+        if (!user) return; 
+
+        showOverlay("產生 Setup Code…");
         const { code } = await createSetupCodeViaFunction();
 
         codeText.textContent = code;
@@ -392,6 +400,10 @@
         console.error(e);
         setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
         hideOverlay();
+        // 如果是權限錯誤，考慮導回 login
+        if (e.message.includes("Not logged in")) {
+          location.replace("login.html");
+        }
       }
     })();
   </script>
