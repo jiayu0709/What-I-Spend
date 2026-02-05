@@ -1,432 +1,203 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <!-- 1. PWA 核心設定：Manifest 必須是第一個 -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="theme.css">
-  
-  <!-- 2. iOS PWA 強制全螢幕標籤 (整合登入頁標籤) -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <!-- 使用 black-translucent 能最徹底隱藏 Safari UI，讓內容延伸到最頂端 -->
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="What I Spend">
-  
-  <!-- 3. 其他環境與顏色宣告 -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="msapplication-navbutton-color" content="#ffffff">
-  
   <meta charset="utf-8" />
-  <!-- viewport-fit=cover 是為了讓 CSS 的 env(safe-area-inset-*) 生效 -->
+  <meta name="mobile-web-app-capable" content="yes">
+   <!-- ✅ 關鍵：iOS Web App 模式 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- ✅ 關鍵：避免 Safari 重新包一層 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>開始使用</title>
+  <title>What I Spend - 登入</title>
 
   <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:var(--app-bg);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-      
-      /* 4. 因為用了 black-translucent，必須留出安全區域避免被動態島/瀏海遮擋 */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
+    :root {
+      --app-bg: #f2ede9;
+      --text: #3c3c3c;
+      --accent: #d61c68;
     }
-
-    .app{min-height:100vh;padding-bottom:28px}
-    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
-
-    .hero{
-      margin-top:10px;
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      padding:18px 16px;
+    body {
+      margin: 0;
+      background: var(--app-bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
-    .hero-top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+    .login-card {
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 320px;
+      width: 90%;
     }
-    .logo{
-      font-size:44px; line-height:1;
-      width:56px;height:56px;border-radius:18px;
-      background:rgba(255,255,255,0.55);
-      display:grid;place-items:center;
-      flex:0 0 auto;
+    .logo {
+      font-size: 64px;
+      margin-bottom: 20px;
     }
-    .hero-title{
-      font-size:34px;
-      font-weight:900;
-      letter-spacing:-.5px;
-      margin:8px 0 2px;
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 10px;
     }
-    .hero-sub{
-      color:var(--secondary);
-      font-weight:800;
-      margin:0;
-      line-height:1.4;
+    p {
+      color: #8e8e93;
+      margin-bottom: 30px;
+      font-weight: 500;
     }
-
-    .section{margin-top:16px}
-    .card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      padding:16px;
+    .btn-google {
+      background: #ffffff;
+      color: #000;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .h2{
-      font-size:18px;
-      font-weight:900;
-      margin:0 0 10px;
-      letter-spacing:-.2px;
+    .btn-google:active {
+      transform: scale(0.98);
     }
-    .p{
-      margin:0;
-      color:var(--secondary);
-      font-weight:800;
-      line-height:1.5;
-      font-size:14px;
+    .loading {
+      display: none;
+      color: var(--accent);
+      font-weight: 700;
+      margin-top: 20px;
     }
-
-    .features{
-      display:grid;
-      gap:10px;
-      margin-top:12px;
-    }
-    .feat{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      padding:12px;
-      border-radius:14px;
-      background:rgba(255,255,255,0.55);
-      border:1px solid rgba(0,0,0,0.06);
-    }
-    .feat .ic{font-size:22px; line-height:1.2; margin-top:1px;}
-    .feat .tx{display:grid; gap:2px;}
-    .feat .t{font-weight:900; color:var(--text); font-size:14px;}
-    .feat .d{font-weight:800; color:var(--secondary); font-size:12px; line-height:1.4;}
-
-    .tokenBox{
-      display:grid;
-      gap:10px;
-      margin-top:12px;
-    }
-    .tokenRow{
-      display:flex;
-      gap:10px;
-      align-items:stretch;
-    }
-    .token{
-      flex:1;
-      border-radius:14px;
-      padding:12px 12px;
-      border:1px solid rgba(0,0,0,0.10);
-      background:#fff;
-      font-weight:900;
-      color:var(--text);
-      font-size:14px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      min-width:0;
-    }
-
-    .btnbar{display:grid; gap:10px; margin-top:12px;}
-    .btn{
-      width:100%;
-      padding:14px 16px;
-      border:0;
-      border-radius:var(--radius);
-      font-size:16px;
-      font-weight:900;
-      cursor:pointer;
-      appearance:none;
-      -webkit-appearance:none;
-      background:rgba(255,255,255,0.55);
-      border:1px solid rgba(0,0,0,0.06);
-      color:var(--accent-text);
-      text-decoration:none;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-    }
-    .btn.primary{
-      background: var(--accent-text);
-      color:#fff;
-      border:0;
-    }
-
-    .muted{
-      margin-top:10px;
-      font-size:12px;
-      color:var(--secondary);
-      font-weight:800;
-      line-height:1.5;
-    }
-
-    .status{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(255,255,255,0.55);
-      border:1px solid rgba(0,0,0,0.06);
-      color:var(--secondary);
-      font-weight:900;
-      font-size:13px;
-    }
-    .status.ok{ color: var(--green); }
-    .status.err{ color: var(--red); }
-
-    a, button { -webkit-tap-highlight-color: transparent; }
-    .btn{
-      user-select:none; -webkit-user-select:none;
-      transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
-    }
-    .btn:active{ opacity:.7; transform:scale(.99); }
-
-    .overlay{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,0.08);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-    }
-    .overlay.show{ display:flex; }
-    .overlay .panel{
-      width:min(420px, 92vw);
-      background: rgba(255,255,255,0.95);
-      border-radius:var(--radius);
-      padding:16px;
-      border:1px solid rgba(0,0,0,0.08);
-    }
-    .overlay .panel .ttl{
-      font-weight:900;
-      font-size:16px;
-      margin:0 0 6px;
-    }
-    .overlay .panel .sub{
-      margin:0;
-      color:var(--secondary);
-      font-weight:800;
-      font-size:13px;
-      line-height:1.4;
-    }
-
   </style>
 </head>
-
 <body>
-  <div class="app">
-    <main class="page">
-      <section class="hero">
-        <div class="hero-top">
-          <div>
-            <div class="hero-title">開始使用</div>
-            <p class="hero-sub">把「捷徑 × 雲端同步」設定好<br>之後就能背景快速記帳</p>
-          </div>
-          <div class="logo">💰</div>
-        </div>
 
-        <div class="features">
-          <div class="feat">
-            <div class="ic">✅</div>
-            <div class="tx">
-              <div class="t">捷徑一鍵記帳</div>
-              <div class="d">不用開app、快速記帳</div>
-            </div>
-          </div>
-          <div class="feat">
-            <div class="ic">☁️</div>
-            <div class="tx">
-              <div class="t">自動同步雲端</div>
-              <div class="d">手機 / 電腦都能查看與編輯</div>
-            </div>
-          </div>
-          <div class="feat">
-            <div class="ic">🔒</div>
-            <div class="tx">
-              <div class="t">每個人獨立帳戶</div>
-              <div class="d">登入後所有裝置都能看見記帳</div>
-            </div>
-          </div>
-        </div>
-      </section>
+  <div class="login-card">
+    <div class="logo">💰</div>
+    <h1>What I Spend</h1>
+    <p>同步你的雲端記帳明細</p>
 
+    <button class="btn-google" id="loginBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="">
+      使用 Google 帳號登入
+    </button>
 
-      <section class="section">
-        <div class="card">
-          <div class="h2">你的 Setup Code</div>
-          <p class="p">請把這組 Code 貼到「Setup Code欄位」捷徑裡（第一次設定用）。</p>
-
-          <div class="tokenBox">
-            <div class="tokenRow">
-              <div class="token" id="codeText">讀取中…</div>
-              <button class="btn" type="button" id="copyBtn" style="width:auto; padding:0 14px;">
-                📋 複製
-              </button>
-            </div>
-
-            <a class="btn primary" id="installBtn" href="#" rel="noopener">
-              🚀 安裝 iPhone 快速記帳捷徑
-            </a>
-
-            <div class="muted">
-              安裝捷徑後，打開捷徑執行一次，貼上 Code 完成初始化。
-            </div>
-
-            <div class="status" id="statusBox">狀態：準備中…</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="btnbar">
-          <button class="btn primary" type="button" id="finishBtn">開始使用 → 進入記帳</button>
-          <a class="btn" href="month.html">先跳過（仍可之後再設定）</a>
-        </div>
-      </section>
-    </main>
+    <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
-  <div class="overlay" id="overlay">
-    <div class="panel">
-      <p class="ttl">讀取中…</p>
-      <p class="sub">正在產生你的 Setup Code，請稍候</p>
-    </div>
-  </div>
-
-  <!-- ✅ 載入全域邏輯 -->
   <script type="module" src="app.js"></script>
 
-  <script type="module">
-    import { auth as fbAuth, db } from "./firebase-config.js";
-    import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+  console.log("URL NOW =", location.href);
+  import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // ✅ 捷徑連結
-    const SHORTCUT_ICLOUD_URL = "https://www.icloud.com/shortcuts/d7117653609d4905a8894d6e7cb5b381";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const codeText = document.getElementById("codeText");
-    const copyBtn = document.getElementById("copyBtn");
-    const installBtn = document.getElementById("installBtn");
-    const finishBtn = document.getElementById("finishBtn");
-    const statusBox = document.getElementById("statusBox");
-    const overlay = document.getElementById("overlay");
+import { auth, db } from "./firebase-config.js";
 
-    function showOverlay(msg="讀取中…"){
-      overlay.querySelector(".ttl").textContent = msg;
-      overlay.classList.add("show");
-    }
-    function hideOverlay(){ overlay.classList.remove("show"); }
+const isStandalone =
+  window.navigator.standalone === true ||
+  window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    function setStatus(text, type=""){
-      statusBox.classList.remove("ok","err");
-      if(type) statusBox.classList.add(type);
-      statusBox.textContent = text;
-    }
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    loginBtn.style.display = "flex";
+    loader.style.display = "none";
+    return; // ✅ 未登入：永遠停在登入頁
+  }
 
-    async function createSetupCodeViaFunction(){
-      const u = fbAuth.currentUser;
-      if (!u) throw new Error("尚未偵測到登入狀態，請重新整理頁面。");
+  // ✅ 已登入：照原本流程
+  await routeAfterLogin(user);
+});
 
-      const idToken = await u.getIdToken();
-      const res = await fetch("/.netlify/functions/createSetupCode", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({}),
-      });
+const provider = new GoogleAuthProvider();
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `產生 Code 失敗 (${res.status})`);
-      }
+async function routeAfterLogin(user){
+  const next = new URLSearchParams(location.search).get("next");
 
-      return res.json();
-    }
+  const userRef = doc(db, "users", user.uid);
+  const snap = await getDoc(userRef);
 
-    copyBtn.addEventListener("click", async () => {
-      const code = (codeText.textContent || "").trim();
-      if (!code || code === "讀取中…") return;
-
-      try {
-        await navigator.clipboard.writeText(code);
-        setStatus("狀態：已複製到剪貼簿 ✅", "ok");
-      } catch (e) {
-        const r = document.createRange();
-        r.selectNodeContents(codeText);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(r);
-        document.execCommand("copy");
-        sel.removeAllRanges();
-        setStatus("狀態：已複製到剪貼簿 ✅", "ok");
-      }
+  // ✅ 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      createdAt: serverTimestamp(),
+      onboardingDone: false,
     });
+    location.replace("onboarding.html");
+    return;
+  }
 
-    finishBtn.addEventListener("click", async () => {
+  const data = snap.data() || {};
+
+  // ✅ 尚未完成 onboarding
+  if (data.onboardingDone === false) {
+    location.replace("onboarding.html");
+    return;
+  }
+
+  // ✅ 已完成 onboarding：回 next 或 month
+  if (next) {
+    location.replace(decodeURIComponent(next));
+  } else {
+    location.replace("month.html");
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const loginBtn = document.getElementById("loginBtn");
+  const loader = document.getElementById("loader");
+  if (!loginBtn || !loader) return;
+
+  await window.firebaseReady;
+  await window.waitForAuthReady(); // 等 session 還原
+
+  onAuthStateChanged(auth, async (user) => {
+    console.log("auth state:", user?.uid || null);
+
+    if (user) {
       try {
-        showOverlay("正在儲存設定…");
-        await window.firebaseReady;
-        const u = await window.requireAuth();
-        if (u) {
-          await updateDoc(doc(db, "users", u.uid), { onboardingDone: true });
-        }
-        location.href = "month.html";
+        await routeAfterLogin(user);
       } catch (e) {
-        console.error("set onboardingDone failed:", e);
-        location.href = "month.html";
+        console.error("routeAfterLogin failed:", e);
+        alert("登入後導頁失敗，請稍後再試");
+        location.replace("month.html");
       }
-    });
+    } else {
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
+    }
+  });
 
-    // ✅ 關鍵：攔截點擊事件，強制在 PWA 窗口內開啟，不跳回 Safari
-    document.addEventListener('click', (e) => {
-      const target = e.target.closest('a');
-      if (target && target.href) {
-        // 如果是同網域的連結
-        if (target.hostname === window.location.hostname && !target.hasAttribute('download')) {
-          if (target.target !== '_blank') {
-            e.preventDefault();
-            window.location.href = target.href;
-          }
-        }
-      }
-    }, false);
-
-    // 初始化執行
-    (async () => {
-      try {
-        showOverlay("準備環境中…");
-        if (window.firebaseReady) await window.firebaseReady;
-        if (window.waitForAuthReady) {
-          await window.waitForAuthReady();
-        }
-        const user = await window.requireAuth();
-        if (!user) return; 
-
-        showOverlay("產生 Setup Code…");
-        const { code } = await createSetupCodeViaFunction();
-
-        codeText.textContent = code;
-        installBtn.href = SHORTCUT_ICLOUD_URL;
-        setStatus("狀態：請安裝捷徑並貼上這組 Code ✅", "ok");
-        hideOverlay();
-      } catch (e) {
-        console.error(e);
-        setStatus("狀態：讀取失敗 ❌ " + (e.message || e), "err");
-        hideOverlay();
-        if (e.message && e.message.includes("Not logged in")) {
-          location.replace("index.html");
-        }
-      }
-    })();
-  </script>
+  loginBtn.addEventListener("click", async () => {
+    loginBtn.style.display = "none";
+    loader.style.display = "block";
+    try {
+      await signInWithPopup(auth, provider);
+      // 導頁交給 onAuthStateChanged
+    } catch (e) {
+      console.error(e);
+      alert("登入失敗，請再試一次");
+      loginBtn.style.display = "flex";
+      loader.style.display = "none";
+    }
+  });
+});
+</script>
 </body>
 </html>
