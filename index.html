@@ -2,8 +2,20 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+  <!-- 1. PWA 核心設定：連結 Manifest 檔案 -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- 2. iOS PWA 強制全螢幕標籤 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- 使用 black-translucent 隱藏 Safari UI，讓內容延伸到最頂端 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="What I Spend">
+
+  <!-- 3. Android 與其他環境標籤 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f2ede9">
+
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
   <title>What I Spend</title>
 
   <style>
@@ -28,6 +40,7 @@
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
       display:grid;
       place-items:center;
+      /* 4. 為 black-translucent 留出頂部安全區域（Viewport-fit） */
       padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
     }
 
