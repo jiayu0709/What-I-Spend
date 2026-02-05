@@ -53,17 +53,24 @@ window.waitForAuthReady = async () => {
   if (window.firebaseReady) await window.firebaseReady;
 
   return await new Promise((resolve) => {
-    // 監聽一次性狀態
+    const start = Date.now();
+    const MAX_WAIT = 12000; // iOS PWA 建議拉長
+
     const unsub = onAuthStateChanged(auth, (user) => {
-      unsub();
-      resolve(user);
+      // ✅ 一旦拿到 user 就結案
+      if (user) {
+        unsub();
+        resolve(user);
+        return;
+      }
+
+      // ✅ 還沒拿到 user：不要立刻 unsub
+      // 直到超過 MAX_WAIT 才結案回傳 null
+      if (Date.now() - start > MAX_WAIT) {
+        unsub();
+        resolve(null);
+      }
     });
-    
-    // 安全機制：如果 3 秒內沒反應（iOS 偶發），強制回傳目前狀態
-    setTimeout(() => {
-      unsub();
-      resolve(auth.currentUser);
-    }, 3000);
   });
 };
 
