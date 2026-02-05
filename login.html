@@ -3,11 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="mobile-web-app-capable" content="yes">
-
-  <!-- iOS Web App 模式 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>What I Spend - 登入</title>
 
@@ -25,7 +22,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      height: 100vh;
     }
     .login-card {
       text-align: center;
@@ -63,9 +60,7 @@
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .btn-google:active {
-      transform: scale(0.98);
-    }
+    .btn-google:active { transform: scale(0.98); }
     .loading {
       display: none;
       color: var(--accent);
@@ -89,7 +84,7 @@
     <div class="loading" id="loader">登入中，請稍候…</div>
   </div>
 
-  <!-- 你原本的 app.js（保留） -->
+  <!-- 你原本的 firebase 初始化、persistence、firebaseReady / requireAuth / waitForAuthReady 都在 app.js -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
@@ -98,7 +93,7 @@
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
-      onAuthStateChanged,
+      onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     import {
@@ -118,13 +113,10 @@
       window.navigator.standalone === true ||
       window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    function showLoading(){
-      loginBtn.style.display = "none";
-      loader.style.display = "block";
-    }
-    function showButton(){
-      loginBtn.style.display = "flex";
-      loader.style.display = "none";
+    function setLoading(on){
+      if (!loginBtn || !loader) return;
+      loginBtn.style.display = on ? "none" : "flex";
+      loader.style.display = on ? "block" : "none";
     }
 
     async function routeAfterLogin(user){
@@ -133,7 +125,7 @@
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
 
-      // 第一次登入：users/{uid} 不存在 → 建立並導去 onboarding
+      // ✅ 第一次登入：建立 users/{uid}，導 onboarding
       if (!snap.exists()) {
         await setDoc(userRef, {
           createdAt: serverTimestamp(),
@@ -145,62 +137,68 @@
 
       const data = snap.data() || {};
 
-      // 尚未完成 onboarding
+      // ✅ 尚未完成 onboarding
       if (data.onboardingDone === false) {
         location.replace("onboarding.html");
         return;
       }
 
-      // 已完成 onboarding：回 next 或 month
-      if (next) location.replace(decodeURIComponent(next));
-      else location.replace("month.html");
-    }
-
-    // ✅ 初始化：等 firebase / auth 還原
-    await window.firebaseReady;
-    await window.waitForAuthReady();
-
-    // ✅ 若剛從 redirect 回來：先吃掉結果（避免狀態抖動）
-    try {
-      await getRedirectResult(auth);
-    } catch (e) {
-      // 這裡不要 alert，避免破壞 UX
-      console.warn("getRedirectResult:", e);
-    }
-
-    // ✅ 只保留「一次」監聽，避免亂跳
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        showButton();          // 未登入：停在登入頁
-        return;
-      }
-
-      try {
-        await routeAfterLogin(user);
-      } catch (e) {
-        console.error("routeAfterLogin failed:", e);
-        // 出錯保守導去 month（或你要留在登入頁也可以）
+      // ✅ 已完成 onboarding：回 next 或 month
+      if (next) {
+        location.replace(decodeURIComponent(next));
+      } else {
         location.replace("month.html");
       }
-    });
+    }
 
-    // ✅ 點登入：standalone 用 redirect；Safari 網頁用 popup
-    loginBtn.addEventListener("click", async () => {
-      showLoading();
-      try {
-        if (isStandalone) {
-          await signInWithRedirect(auth, provider);
-          // redirect 會離開本頁，下面不會執行到
-        } else {
-          await signInWithPopup(auth, provider);
-          // 成功後交給 onAuthStateChanged 導頁
-        }
-      } catch (e) {
-        console.error(e);
-        alert("登入失敗，請再試一次");
-        showButton();
+    // ✅ 只做一次初始化，避免「亂跳」
+    (async () => {
+      // 等 firebase 初始化 & session 還原
+      await window.firebaseReady;
+      await window.waitForAuthReady?.();
+
+      // ✅ 如果是主畫面模式走 redirect，回來時要先把結果吃掉（不做會偶發跳回登入）
+      if (isStandalone) {
+        try { await getRedirectResult(auth); } catch(e) { /* ignore */ }
       }
-    });
+
+      // ✅ 只綁一次監聽
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          setLoading(false);     // 沒登入：就停在登入頁（不導頁）
+          return;
+        }
+        try {
+          setLoading(true);
+          await routeAfterLogin(user);
+        } catch (e) {
+          console.error("routeAfterLogin failed:", e);
+          alert("登入後導頁失敗，請稍後再試");
+          location.replace("month.html");
+        }
+      });
+
+      // 點登入
+      loginBtn?.addEventListener("click", async () => {
+        setLoading(true);
+        try {
+          // ✅ 關鍵：主畫面模式用 redirect（最穩），Safari 用 popup（保留你原本體驗）
+          if (isStandalone) {
+            await signInWithRedirect(auth, provider);
+          } else {
+            await signInWithPopup(auth, provider);
+          }
+          // 導頁交給 onAuthStateChanged
+        } catch (e) {
+          console.error(e);
+          alert("登入失敗，請再試一次");
+          setLoading(false);
+        }
+      });
+
+      // 初始畫面
+      setLoading(false);
+    })();
   </script>
 
 </body>
