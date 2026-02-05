@@ -295,9 +295,12 @@
       window.navigator.standalone === true ||
       window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    if (isStandalone) {
-      // standalone 打開 onboarding 一律送回 login
-      // （避免主畫面 icon 被記到 onboarding 的 URL）
+    const from = new URLSearchParams(location.search).get("from");
+
+    // ✅ 只有「從桌面直接打開 onboarding.html」才導回 login
+    // - 沒有 from=login
+    // - 且沒有 referrer（代表不是從 app 內頁跳過來）
+    if (isStandalone && !from && !document.referrer) {
       location.replace("login.html");
     }
   })();
