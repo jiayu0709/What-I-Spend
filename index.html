@@ -238,11 +238,6 @@
     window.navigator.standalone === true ||
     window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    // ✅ 從主畫面 icon 開啟（standalone）→ 直接去登入頁
-  if (isStandalone) {
-    location.replace("login.html");
-  }
-
   if (isRealSafari() && !isStandalone) {
     // ✅ 防止卡住：如果 firebaseReady 一直沒起來，直接去 a2hs
     const fallback = setTimeout(() => {
