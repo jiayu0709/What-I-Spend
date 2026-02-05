@@ -150,59 +150,45 @@
     }
 
     (async () => {
-      // 確保 Firebase Auth 狀態是持久化的
-      await setPersistence(auth, browserLocalPersistence);
-      
-      await window.firebaseReady;
-      await window.waitForAuthReady?.();
+  await window.firebaseReady;
+  // 不要在這裡 setPersistence
 
-      // 在 PWA 模式下，必須先執行並等待 getRedirectResult，這能讓 Auth 抓回跳轉後的狀態
-      if (isStandalone) {
-        setLoading(true);
-        try {
-          const result = await getRedirectResult(auth);
-          if (result && result.user) {
-            await routeAfterLogin(result.user);
-            return; // 已經處理完畢，中止後續邏輯
-          }
-        } catch (e) {
-          console.error("Redirect Error:", e);
-          // 如果出錯，通常是憑證過期或取消，恢復 UI 讓用戶重試
-          setLoading(false);
-        }
+  // ✅ PWA 先處理 redirect result
+  if (isStandalone) {
+    setLoading(true);
+    try {
+      const result = await getRedirectResult(auth);
+      if (result && result.user) {
+        await routeAfterLogin(result.user);
+        return;
       }
+    } catch (e) {
+      console.error("Redirect Error:", e);
+      setLoading(false);
+    }
+  }
 
-      // 註冊監聽器處理已登入或 Popup 登入的情況
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-        try {
-          setLoading(true);
-          await routeAfterLogin(user);
-        } catch (e) {
-          console.error("Route failed:", e);
-          location.replace("month.html");
-        }
-      });
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    await routeAfterLogin(user);
+  });
 
-      loginBtn?.addEventListener("click", async () => {
-        setLoading(true);
-        try {
-          if (isStandalone) {
-            // iOS PWA 必須使用 Redirect，Popup 會在獨立視窗開啟導致 Session 無法傳回
-            await signInWithRedirect(auth, provider);
-          } else {
-            await signInWithPopup(auth, provider);
-          }
-        } catch (e) {
-          console.error(e);
-          alert("登入失敗，請再試一次");
-          setLoading(false);
-        }
-      });
-    })();
+  loginBtn?.addEventListener("click", async () => {
+    setLoading(true);
+    try {
+      if (isStandalone) await signInWithRedirect(auth, provider);
+      else await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error(e);
+      alert("登入失敗，請再試一次");
+      setLoading(false);
+    }
+  });
+})();
   </script>
 
 </body>
