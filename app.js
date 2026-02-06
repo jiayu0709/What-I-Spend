@@ -185,14 +185,11 @@ function injectDrawer(){
   const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // ✅ 核心修正：定義關閉函式並在啟動時立即執行一次，確保初始狀態被鎖定
-  function closeDrawer(){
-    drawer.classList.remove("open");
-    backdrop.hidden = true;
-    drawer.setAttribute("aria-hidden","true");
-    menuBtn.setAttribute("aria-expanded","false");
-    document.body.style.overflow = ""; // ✅ 還原
-  }
+  // ✅ 保證初始狀態是「關閉」
+  drawer.classList.remove("open");
+  backdrop.hidden = true;
+  drawer.setAttribute("aria-hidden","true");
+  menuBtn.setAttribute("aria-expanded","false");
 
   function openDrawer(){
     drawer.classList.add("open");
@@ -202,8 +199,13 @@ function injectDrawer(){
     document.body.style.overflow = "hidden"; // ✅ 避免背景可滾
   }
 
-  // ✅ 修正初始狀態（防止自動彈出）
-  closeDrawer();
+  function closeDrawer(){
+    drawer.classList.remove("open");
+    backdrop.hidden = true;
+    drawer.setAttribute("aria-hidden","true");
+    menuBtn.setAttribute("aria-expanded","false");
+    document.body.style.overflow = ""; // ✅ 還原
+  }
 
   function toggleDrawer(){
     if (drawer.classList.contains("open")) closeDrawer();
