@@ -182,55 +182,34 @@ function injectDrawer(){
   document.body.appendChild(backdrop);
   document.body.appendChild(drawer);
 
-    const menuBtn = document.getElementById("menuBtn");
+  const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
-
-  // ✅ 保證初始狀態是「關閉」
-  drawer.classList.remove("open");
-  backdrop.hidden = true;
-  drawer.setAttribute("aria-hidden","true");
-  menuBtn.setAttribute("aria-expanded","false");
 
   function openDrawer(){
     drawer.classList.add("open");
     backdrop.hidden = false;
     drawer.setAttribute("aria-hidden","false");
     menuBtn.setAttribute("aria-expanded","true");
-    document.body.style.overflow = "hidden"; // ✅ 避免背景可滾
   }
-
   function closeDrawer(){
     drawer.classList.remove("open");
     backdrop.hidden = true;
     drawer.setAttribute("aria-hidden","true");
     menuBtn.setAttribute("aria-expanded","false");
-    document.body.style.overflow = ""; // ✅ 還原
   }
 
-  function toggleDrawer(){
+  menuBtn.addEventListener("click", () => {
     if (drawer.classList.contains("open")) closeDrawer();
     else openDrawer();
-  }
-
-  // ✅ 漢堡按鈕：切換開/關
-  menuBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleDrawer();
   });
 
-  // ✅ 點空白處：關閉
-  backdrop.addEventListener("click", (e) => {
-    e.preventDefault();
-    closeDrawer();
-  });
+  backdrop.addEventListener("click", closeDrawer);
 
-  // ✅ ESC：關閉（桌機測試用）
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeDrawer();
   });
 
-  // ✅ 登出：Firebase signOut → 回登入頁（保留你的原邏輯）
+  // ✅ 登出：Firebase signOut → 回登入頁
   logoutBtn.addEventListener("click", async () => {
     try {
       await signOut(window.auth);
@@ -241,7 +220,7 @@ function injectDrawer(){
     location.replace("index.html");
   });
 
-  // ✅ 點選 drawer 裡連結後自動關閉（保留）
+  // 點選 drawer 裡連結後自動關閉
   drawer.addEventListener("click", (e) => {
     const a = e.target.closest("a");
     if (a) closeDrawer();
