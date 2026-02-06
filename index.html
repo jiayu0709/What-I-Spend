@@ -2,18 +2,13 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- ✅ 套用全站 theme（不覆蓋、不改 theme.css） -->
   <link rel="stylesheet" href="theme.css">
 
-  <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
 
-  <!-- Android -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f2ede9">
 
@@ -21,10 +16,6 @@
   <title>What I Spend</title>
 
   <style>
-    /* ✅ 只做「版面」與「視覺」：不改功能、不改 JS
-       ✅ 全部用 theme.css 的變數，不去覆蓋 theme.css
-    */
-
     *{ box-sizing:border-box; }
 
     body{
@@ -46,17 +37,12 @@
       width:100%;
       max-width:520px;
       padding:18px var(--page-padding,16px) 28px;
+      display:grid;
+      gap:14px;
     }
 
-    .nav-title{
-      font-size:42px;
-      font-weight:800;
-      margin:10px 0 14px;
-      letter-spacing:-.5px;
-    }
-
-    /* Card */
-    .card{
+    /* ===== Big cards ===== */
+    .big-card{
       background: var(--card-bg, rgba(255,255,255,0.72));
       border-radius: var(--radius, 22px);
       padding:16px;
@@ -67,71 +53,85 @@
       align-items:flex-start;
       justify-content:space-between;
       gap:12px;
+      margin-bottom:12px;
     }
 
     .title{
-      font-size:30px;
+      font-size:42px;
       font-weight:900;
-      letter-spacing:-.5px;
-      margin:0 0 6px;
+      letter-spacing:-.8px;
+      margin:2px 0 6px;
+      line-height:1.05;
     }
 
     .subtitle{
       margin:0;
       color: var(--secondary, #8e8e93);
-      font-weight:800;
+      font-weight:900;
       line-height:1.5;
-      font-size:14px;
+      font-size:16px;
     }
 
     .logo{
-      width:56px;
-      height:56px;
-      border-radius:18px;
+      width:66px;
+      height:66px;
+      border-radius:22px;
       display:grid;
       place-items:center;
-      font-size:34px;
+      font-size:38px;
       background: rgba(255,255,255,0.55);
       flex:0 0 auto;
     }
 
-    /* Feature list (像你截圖的三段卡片) */
-    .section{ margin-top:16px; }
+    /* ===== Small feature cards inside Big Card A ===== */
+    .features{
+      margin-top:12px;
+      display:grid;
+      gap:12px;
+    }
 
     .feature{
       display:flex;
       align-items:center;
       gap:12px;
       padding:14px 14px;
-      border-radius: var(--radius, 22px);
+      border-radius: 18px;
       background: rgba(255,255,255,0.55);
     }
-    .feature + .feature{ margin-top:12px; }
 
     .f-ic{
-      width:34px;height:34px;
-      border-radius:12px;
+      width:44px;height:44px;
+      border-radius:14px;
       display:grid;place-items:center;
       background: rgba(0,0,0,0.06);
       flex:0 0 auto;
-      font-size:18px;
-    }
-    .f-t{
-      font-weight:900;
-      font-size:16px;
-      letter-spacing:-.2px;
-    }
-    .f-d{
-      margin-top:2px;
-      font-weight:800;
-      color: var(--secondary, #8e8e93);
-      font-size:13px;
-      line-height:1.4;
+      font-size:22px;
     }
 
-    /* Steps (保留你原本兩步驟內容，但做成一致卡片樣式) */
+    .f-t{
+      font-weight:900;
+      font-size:18px;
+      letter-spacing:-.2px;
+      line-height:1.2;
+    }
+
+    .f-d{
+      margin-top:4px;
+      font-weight:900;
+      color: var(--secondary, #8e8e93);
+      font-size:14px;
+      line-height:1.3;
+    }
+
+    /* ===== Big Card B steps ===== */
+    .card-title{
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:-.2px;
+      margin:2px 0 10px;
+    }
+
     .steps{
-      margin-top:12px;
       display:grid;
       gap:12px;
     }
@@ -140,31 +140,31 @@
       display:flex;
       gap:10px;
       align-items:flex-start;
-      padding:12px;
+      padding:14px;
       border-radius: 18px;
       background: rgba(255,255,255,0.55);
     }
 
     .badge{
-      width:26px;height:26px;
-      border-radius:10px;
+      width:30px;height:30px;
+      border-radius:12px;
       background: rgba(0,0,0,0.06);
       display:grid;place-items:center;
       font-weight:900;
-      font-size:13px;
+      font-size:14px;
       flex:0 0 auto;
     }
 
-    .step .t{ font-weight:900; font-size:14px; }
+    .step .t{ font-weight:900; font-size:16px; line-height:1.25; }
     .step .d{
-      font-weight:800;
+      font-weight:900;
       color: var(--secondary, #8e8e93);
-      font-size:12px;
-      margin-top:2px;
-      line-height:1.4;
+      font-size:13px;
+      margin-top:4px;
+      line-height:1.35;
     }
 
-    /* Action button: 變成你 app 內常見的大按鈕風格 */
+    /* ===== Action button ===== */
     .actions{
       margin-top:14px;
       display:grid;
@@ -173,7 +173,7 @@
 
     .btn{
       width:100%;
-      padding:14px 16px;
+      padding:16px 16px;
       border-radius: var(--radius, 22px);
       font-size:16px;
       font-weight:900;
@@ -192,7 +192,7 @@
 
     .btn:active{ transform:scale(.99); opacity:.85; }
 
-    /* Toast 保留你原本定位與行為 */
+    /* Toast */
     .toast{
       position:fixed;
       left:50%;
@@ -203,7 +203,7 @@
       padding:10px 14px;
       border-radius:999px;
       font-size:13px;
-      font-weight:800;
+      font-weight:900;
       opacity:0;
       pointer-events:none;
       transition:opacity .2s ease;
@@ -216,28 +216,26 @@
 <body>
   <div class="app">
     <main class="page">
-      <div class="nav-title">開始使用</div>
 
-      <!-- Hero card -->
-      <div class="card">
+      <!-- ✅ Big Card A：開始使用 + icon + 三個優點 -->
+      <section class="big-card" aria-label="App 優點">
         <div class="hero">
           <div>
             <div class="title">開始使用</div>
             <p class="subtitle">
-              歡迎使用 What I Spend<br>
-              請使用 <b>Safari</b> 開啟
+              把「捷徑 × 雲端同步」設定好<br>
+              之後就能背景快速記帳
             </p>
           </div>
           <div class="logo">💰</div>
         </div>
 
-        <!-- 你喜歡的「功能亮點」卡片風格（純視覺，不影響功能） -->
-        <div class="section">
+        <div class="features">
           <div class="feature">
             <div class="f-ic">✅</div>
             <div>
               <div class="f-t">捷徑一鍵記帳</div>
-              <div class="f-d">不用開 app，也能快速記帳</div>
+              <div class="f-d">不用開 app、快速記帳</div>
             </div>
           </div>
 
@@ -253,37 +251,40 @@
             <div class="f-ic">🔒</div>
             <div>
               <div class="f-t">每個人獨立帳戶</div>
-              <div class="f-d">登入後所有裝置都能看到記帳</div>
+              <div class="f-d">登入後所有裝置都能看見記帳</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ✅ Big Card B：Safari 開啟流程 + 按鈕 -->
+      <section class="big-card" aria-label="Safari 開啟流程">
+        <div class="card-title">請使用 Safari 開啟</div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="badge">1</div>
+            <div>
+              <div class="t">點右上角或右下角「⋯ / 分享」</div>
+              <div class="d">LINE、IG、FB 內建瀏覽器都可以</div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="badge">2</div>
+            <div>
+              <div class="t">選擇「在瀏覽器中開啟」</div>
+              <div class="d">避免 Google 登入被系統阻擋</div>
             </div>
           </div>
         </div>
 
-        <!-- 原本的兩步驟指引（文字不改，呈現方式變一致） -->
-        <div class="section">
-          <div class="steps">
-            <div class="step">
-              <div class="badge">1</div>
-              <div>
-                <div class="t">點右上角或右下角「⋯ / 分享」</div>
-                <div class="d">LINE、IG、FB 內建瀏覽器都可以</div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="badge">2</div>
-              <div>
-                <div class="t">選擇「在瀏覽器中開啟」</div>
-                <div class="d">避免 Google 登入被系統阻擋</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions：保留 copyBtn id 與功能 -->
         <div class="actions">
+          <!-- ✅ 保留原本 copyBtn id 與功能 -->
           <button class="btn primary" id="copyBtn">📋 複製 Safari 登入連結</button>
         </div>
-      </div>
+      </section>
+
     </main>
   </div>
 
@@ -382,7 +383,6 @@
     }
   </script>
 
-  <!-- 你原本的 app.js（保留） -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
