@@ -2,18 +2,16 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <!-- PWA -->
+  <!-- 1. PWA 核心設定：連結 Manifest 檔案 -->
   <link rel="manifest" href="manifest.json">
 
-  <!-- ✅ 套用全站 theme（不覆蓋、不改 theme.css） -->
-  <link rel="stylesheet" href="theme.css">
-
-  <!-- iOS PWA -->
+  <!-- 2. iOS PWA 強制全螢幕標籤 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- 使用 black-translucent 隱藏 Safari UI，讓內容延伸到最頂端 -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
 
-  <!-- Android -->
+  <!-- 3. Android 與其他環境標籤 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f2ede9">
 
@@ -21,178 +19,136 @@
   <title>What I Spend</title>
 
   <style>
-    /* ✅ 只做「版面」與「視覺」：不改功能、不改 JS
-       ✅ 全部用 theme.css 的變數，不去覆蓋 theme.css
-    */
+    :root{
+      --app-bg:#f2ede9;
+      --card-bg:rgba(255,255,255,0.72);
+      --text:#3c3c3c;
+      --secondary:#8e8e93;
+      --accent:#d61c68;
+      --radius:22px;
+      --line:rgba(0,0,0,0.08);
+    }
 
-    *{ box-sizing:border-box; }
-
+    *{box-sizing:border-box}
     body{
       margin:0;
       min-height:100vh;
-      background: var(--app-bg, #f2ede9);
-      color: var(--text, #3c3c3c);
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg);
+      color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      display:grid;
+      place-items:center;
+      /* 4. 為 black-translucent 留出頂部安全區域（Viewport-fit） */
+      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
     }
 
-    .app{
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-    }
-
-    .page{
-      width:100%;
-      max-width:520px;
-      padding:18px var(--page-padding,16px) 28px;
-    }
-
-    .nav-title{
-      font-size:42px;
-      font-weight:800;
-      margin:10px 0 14px;
-      letter-spacing:-.5px;
-    }
-
-    /* Card */
     .card{
-      background: var(--card-bg, rgba(255,255,255,0.72));
-      border-radius: var(--radius, 22px);
-      padding:16px;
+      width:min(520px, 100%);
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      border:1px solid var(--line);
+      padding:18px 16px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
     }
 
     .hero{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
       gap:12px;
     }
-
+    .logo{
+      font-size:44px;
+      width:56px;height:56px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.6);
+      display:grid;place-items:center;
+      flex:0 0 auto;
+    }
     .title{
       font-size:30px;
       font-weight:900;
       letter-spacing:-.5px;
-      margin:0 0 6px;
+      margin:6px 0 4px;
     }
-
     .subtitle{
       margin:0;
-      color: var(--secondary, #8e8e93);
+      color:var(--secondary);
       font-weight:800;
-      line-height:1.5;
+      line-height:1.4;
       font-size:14px;
     }
 
-    .logo{
-      width:56px;
-      height:56px;
-      border-radius:18px;
-      display:grid;
-      place-items:center;
-      font-size:34px;
-      background: rgba(255,255,255,0.55);
-      flex:0 0 auto;
-    }
-
-    /* Feature list (像你截圖的三段卡片) */
-    .section{ margin-top:16px; }
-
-    .feature{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:14px 14px;
-      border-radius: var(--radius, 22px);
-      background: rgba(255,255,255,0.55);
-    }
-    .feature + .feature{ margin-top:12px; }
-
-    .f-ic{
-      width:34px;height:34px;
-      border-radius:12px;
-      display:grid;place-items:center;
-      background: rgba(0,0,0,0.06);
-      flex:0 0 auto;
-      font-size:18px;
-    }
-    .f-t{
-      font-weight:900;
-      font-size:16px;
-      letter-spacing:-.2px;
-    }
-    .f-d{
-      margin-top:2px;
-      font-weight:800;
-      color: var(--secondary, #8e8e93);
-      font-size:13px;
-      line-height:1.4;
-    }
-
-    /* Steps (保留你原本兩步驟內容，但做成一致卡片樣式) */
-    .steps{
-      margin-top:12px;
-      display:grid;
-      gap:12px;
-    }
-
+    .section{margin-top:14px}
     .step{
       display:flex;
       gap:10px;
       align-items:flex-start;
       padding:12px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.55);
+      border-radius:16px;
+      background:rgba(255,255,255,0.6);
+      border:1px solid var(--line);
     }
-
     .badge{
       width:26px;height:26px;
-      border-radius:10px;
-      background: rgba(0,0,0,0.06);
+      border-radius:9px;
+      background:rgba(0,0,0,0.06);
       display:grid;place-items:center;
       font-weight:900;
       font-size:13px;
       flex:0 0 auto;
     }
-
     .step .t{ font-weight:900; font-size:14px; }
     .step .d{
       font-weight:800;
-      color: var(--secondary, #8e8e93);
+      color:var(--secondary);
       font-size:12px;
       margin-top:2px;
       line-height:1.4;
     }
 
-    /* Action button: 變成你 app 內常見的大按鈕風格 */
     .actions{
       margin-top:14px;
       display:grid;
       gap:10px;
     }
-
     .btn{
       width:100%;
       padding:14px 16px;
-      border-radius: var(--radius, 22px);
+      border-radius:var(--radius);
       font-size:16px;
       font-weight:900;
       cursor:pointer;
-      border:0;
-      background: var(--card-bg, rgba(255,255,255,0.72));
-      color: var(--accent-text, var(--text, #3c3c3c));
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.6);
+      color:var(--text);
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-
     .btn.primary{
-      background: var(--accent, #d61c68);
+      background:var(--accent);
       color:#fff;
+      border:0;
+    }
+    .btn:active{ transform:scale(.99); opacity:.85 }
+
+    .note{
+      margin-top:10px;
+      font-size:12px;
+      font-weight:800;
+      color:var(--secondary);
+      line-height:1.5;
     }
 
-    .btn:active{ transform:scale(.99); opacity:.85; }
-
-    /* Toast 保留你原本定位與行為 */
     .toast{
       position:fixed;
       left:50%;
@@ -207,182 +163,146 @@
       opacity:0;
       pointer-events:none;
       transition:opacity .2s ease;
-      z-index:9999;
     }
-    .toast.show{ opacity:1; }
+    .toast.show{ opacity:1 }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <main class="page">
-      <div class="nav-title">開始使用</div>
 
-      <!-- Hero card -->
-      <div class="card">
-        <div class="hero">
-          <div>
-            <div class="title">開始使用</div>
-            <p class="subtitle">
-              歡迎使用 What I Spend<br>
-              請使用 <b>Safari</b> 開啟
-            </p>
-          </div>
-          <div class="logo">💰</div>
-        </div>
-
-        <!-- 你喜歡的「功能亮點」卡片風格（純視覺，不影響功能） -->
-        <div class="section">
-          <div class="feature">
-            <div class="f-ic">✅</div>
-            <div>
-              <div class="f-t">捷徑一鍵記帳</div>
-              <div class="f-d">不用開 app，也能快速記帳</div>
-            </div>
-          </div>
-
-          <div class="feature">
-            <div class="f-ic">☁️</div>
-            <div>
-              <div class="f-t">自動同步雲端</div>
-              <div class="f-d">手機 / 電腦都能查看與編輯</div>
-            </div>
-          </div>
-
-          <div class="feature">
-            <div class="f-ic">🔒</div>
-            <div>
-              <div class="f-t">每個人獨立帳戶</div>
-              <div class="f-d">登入後所有裝置都能看到記帳</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 原本的兩步驟指引（文字不改，呈現方式變一致） -->
-        <div class="section">
-          <div class="steps">
-            <div class="step">
-              <div class="badge">1</div>
-              <div>
-                <div class="t">點右上角或右下角「⋯ / 分享」</div>
-                <div class="d">LINE、IG、FB 內建瀏覽器都可以</div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="badge">2</div>
-              <div>
-                <div class="t">選擇「在瀏覽器中開啟」</div>
-                <div class="d">避免 Google 登入被系統阻擋</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions：保留 copyBtn id 與功能 -->
-        <div class="actions">
-          <button class="btn primary" id="copyBtn">📋 複製 Safari 登入連結</button>
-        </div>
-      </div>
-    </main>
+<div class="card">
+  <div class="hero">
+    <div>
+      <div class="title">開始使用</div>
+      <p class="subtitle">
+        歡迎使用Ｗhat I Spend<br>
+        請使用 <b>Safari</b> 開啟
+      </p>
+    </div>
+    <div class="logo">💰</div>
   </div>
 
-  <div class="toast" id="toast">已複製連結，請貼到 Safari 開啟 ✅</div>
+  <div class="section">
+    <div class="step">
+      <div class="badge">1</div>
+      <div>
+        <div class="t">點右上角或右下角「⋯ / 分享」</div>
+        <div class="d">LINE、IG、FB 內建瀏覽器都可以</div>
+      </div>
+    </div>
+  </div>
 
-  <script>
-    // ===== copy safari login url =====
-    const loginUrl = new URL("login.html", location.href).toString();
-    const copyBtn = document.getElementById("copyBtn");
-    const toast = document.getElementById("toast");
+  <div class="section">
+    <div class="step">
+      <div class="badge">2</div>
+      <div>
+        <div class="t">選擇「在瀏覽器中開啟」</div>
+        <div class="d">避免 Google 登入被系統阻擋</div>
+      </div>
+    </div>
+  </div>
 
-    copyBtn.addEventListener("click", async () => {
-      try{
-        await navigator.clipboard.writeText(loginUrl);
-      }catch{
-        const t = document.createElement("textarea");
-        t.value = loginUrl;
-        document.body.appendChild(t);
-        t.select();
-        document.execCommand("copy");
-        document.body.removeChild(t);
-      }
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 2000);
-    });
-  </script>
+  <div class="actions">
+    <button class="btn primary" id="copyBtn">📋 複製 Safari 登入連結</button>
+  </div>
+</div>
 
-  <script type="module">
-    // ===== 判斷：只有「真正 Safari + 非主畫面」才自動離開導覽頁 =====
-    function isRealSafari(){
-      const ua = navigator.userAgent || "";
-      const isIOS = /iPhone|iPad|iPod/i.test(ua);
-      return (
-        isIOS &&
-        /Safari/i.test(ua) &&
-        !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua)
-      );
+<div class="toast" id="toast">已複製連結，請貼到 Safari 開啟 ✅</div>
+
+<script>
+  // ===== copy safari login url =====
+  const loginUrl = new URL("login.html", location.href).toString();
+  const copyBtn = document.getElementById("copyBtn");
+  const toast = document.getElementById("toast");
+
+  copyBtn.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(loginUrl);
+    }catch{
+      const t = document.createElement("textarea");
+      t.value = loginUrl;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      document.body.removeChild(t);
     }
-    const isStandalone =
-      window.navigator.standalone === true ||
-      window.matchMedia?.("(display-mode: standalone)")?.matches;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
+  });
+</script>
 
-      // ✅ 從主畫面 icon 開啟（standalone）→ 直接去登入頁
-    if (isStandalone) {
-      location.replace("login.html");
-    }
+<script type="module">
+  // ===== 判斷：只有「真正 Safari + 非主畫面」才自動離開導覽頁 =====
+  function isRealSafari(){
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    return (
+      isIOS &&
+      /Safari/i.test(ua) &&
+      !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua)
+    );
+  }
+  const isStandalone =
+    window.navigator.standalone === true ||
+    window.matchMedia?.("(display-mode: standalone)")?.matches;
 
-    if (isRealSafari() && !isStandalone) {
-      // ✅ 防止卡住：如果 firebaseReady 一直沒起來，直接去 a2hs
-      const fallback = setTimeout(() => {
+    // ✅ 從主畫面 icon 開啟（standalone）→ 直接去登入頁
+  if (isStandalone) {
+    location.replace("login.html");
+  }
+
+  if (isRealSafari() && !isStandalone) {
+    // ✅ 防止卡住：如果 firebaseReady 一直沒起來，直接去 a2hs
+    const fallback = setTimeout(() => {
+      location.replace("a2hs.html");
+    }, 1200);
+
+    try{
+      await window.firebaseReady;
+      clearTimeout(fallback);
+
+      const user = await window.waitForAuthReady?.();
+
+      // ✅ 重點改這裡：Safari 內「未登入」也先去 a2hs
+      if (!user) {
         location.replace("a2hs.html");
-      }, 1200);
+      } else {
+        try{
+          const { db } = await import("./firebase-config.js");
+          const { doc, getDoc, setDoc, serverTimestamp } =
+            await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
-      try{
-        await window.firebaseReady;
-        clearTimeout(fallback);
+          const userRef = doc(db, "users", user.uid);
+          const snap = await getDoc(userRef);
 
-        const user = await window.waitForAuthReady?.();
-
-        // ✅ 重點改這裡：Safari 內「未登入」也先去 a2hs
-        if (!user) {
-          location.replace("a2hs.html");
-        } else {
-          try{
-            const { db } = await import("./firebase-config.js");
-            const { doc, getDoc, setDoc, serverTimestamp } =
-              await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-            const userRef = doc(db, "users", user.uid);
-            const snap = await getDoc(userRef);
-
-            if (!snap.exists()) {
-              await setDoc(userRef, {
-                createdAt: serverTimestamp(),
-                a2hsDone: false,
-              });
+          if (!snap.exists()) {
+            await setDoc(userRef, {
+              createdAt: serverTimestamp(),
+              a2hsDone: false,
+            });
+            location.replace("a2hs.html");
+          } else {
+            const data = snap.data() || {};
+            if (data.a2hsDone === false) {
               location.replace("a2hs.html");
             } else {
-              const data = snap.data() || {};
-              if (data.a2hsDone === false) {
-                location.replace("a2hs.html");
-              } else {
-                location.replace("month.html");
-              }
+              location.replace("month.html");
             }
-          }catch(e){
-            console.error("index route failed:", e);
-            location.replace("month.html");
           }
+        }catch(e){
+          console.error("index route failed:", e);
+          location.replace("month.html");
         }
-      }catch(e){
-        console.error("firebaseReady failed:", e);
-        // 任何錯誤都不要停在導覽頁
-        location.replace("a2hs.html");
       }
+    }catch(e){
+      console.error("firebaseReady failed:", e);
+      // 任何錯誤都不要停在導覽頁
+      location.replace("a2hs.html");
     }
-  </script>
+  }
+</script>
+<!-- 你原本的 app.js（保留） -->
+<script type="module" src="app.js"></script>
 
-  <!-- 你原本的 app.js（保留） -->
-  <script type="module" src="app.js"></script>
 </body>
 </html>
