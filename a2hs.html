@@ -164,21 +164,23 @@
     /* 按鈕（照 index：主按鈕=accent，次按鈕=玻璃白邊框） */
     .btn{
       width:100%;
-      padding:14px 16px;
-      border-radius:var(--radius, 22px);
+      padding:16px 16px;
+      border-radius: var(--radius, 22px);
       font-size:16px;
       font-weight:900;
       cursor:pointer;
-      border:1px solid rgba(0,0,0,0.08);
-      background:rgba(255,255,255,0.6);
-      color:var(--text, #3c3c3c);
+      border:0;
+      background: var(--card-bg, rgba(255,255,255,0.72));
+      color: var(--accent-text, var(--text, #3c3c3c));
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
+
     .btn.secondary{
-      background:rgba(255,255,255,0.6);
-      color:var(--text, #3c3c3c);
+      background: var(--accent-text);
+      color:#fff;
     }
+
     .btn:active{ transform:scale(.99); opacity:.85; }
 
     /* hint 文字（照 index 的 note 味道） */
