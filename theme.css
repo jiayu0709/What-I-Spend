@@ -192,15 +192,20 @@ button:active{ opacity:.65; transform:scale(.98); }
   position: fixed;
   top: 0;
   left: 0;
-  height: 100%;
+
+  /* ✅ 改：用 bottom + 100dvh，確保背景吃滿到最上方(含 safe-area) */
+  bottom: 0;
+  height: 100dvh;
+
   width: min(320px, 86vw);
   background: var(--card-bg);
   border-right: 1px solid rgba(0,0,0,0.08);
   z-index: 90;
   transform: translateX(-105%);
   transition: transform .22s ease;
-  padding: 14px;
-  padding-top: calc(14px + env(safe-area-inset-top));
+
+  /* ✅ 改：抽屜本體不要用 padding-top 推，避免看起來上面沒上色 */
+  padding: 0;
 }
 
 .drawer.open { transform: translateX(0); }
@@ -208,6 +213,10 @@ button:active{ opacity:.65; transform:scale(.98); }
 .drawer-inner{
   display:grid;
   gap: 10px;
+
+  /* ✅ 改：把原本 drawer 的 padding 搬到 inner，內容才會避開瀏海 */
+  padding: 14px;
+  padding-top: calc(14px + env(safe-area-inset-top));
 }
 
 .drawer-title{
