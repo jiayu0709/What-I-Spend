@@ -122,12 +122,12 @@ import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 const DRAWER_EXCLUDE = new Set([
   "index.html",
   "onboarding.html",
-  "login.html",     // 如果你有
+  "login.html",
+  "a2hs.html"
 ]);
 
 function currentPageName(){
   const p = location.pathname.split("/").pop() || "";
-  // Netlify 有時 root 可能是 "/"，你可視情況改成 index.html
   return p || "index.html";
 }
 
@@ -151,17 +151,16 @@ function injectDrawer(){
 
   // backdrop
   const backdrop = document.createElement("div");
-  backdrop.className = "drawer-backdrop drawer-overlay"; // ✅ 加這個
+  backdrop.className = "drawer-backdrop drawer-overlay";
   backdrop.id = "drawerBackdrop";
-  backdrop.hidden = true;
+  backdrop.hidden = true; // 預設隱藏
 
   // drawer
   const drawer = document.createElement("aside");
-  drawer.className = "drawer drawer-panel"; // ✅ 加這個
+  drawer.className = "drawer drawer-panel";
   drawer.id = "drawer";
   drawer.setAttribute("aria-hidden","true");
 
-  // ✅ 你可以在這裡放「其他功能欄位」
   drawer.innerHTML = `
     <div class="drawer-inner">
       <div class="drawer-title">功能</div>
@@ -172,9 +171,6 @@ function injectDrawer(){
       <a class="drawer-link" href="month.html"><div class="drawer-item">本月</div></a>
       <a class="drawer-link" href="add.html"><div class="drawer-item">新增</div></a>
       <a class="drawer-link" href="year.html"><div class="drawer-item">統計</div></a>
-
-      <!-- 你想加的頁面 -->
-      <!-- <a class="drawer-link" href="settings.html"><div class="drawer-item">設定</div></a> -->
     </div>
   `;
 
@@ -182,10 +178,10 @@ function injectDrawer(){
   document.body.appendChild(backdrop);
   document.body.appendChild(drawer);
 
-    const menuBtn = document.getElementById("menuBtn");
+  const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // ✅ 保證初始狀態是「關閉」
+  // ✅ 修正點：確保 DOM 插入後立即移除 open 類名，並設定狀態
   drawer.classList.remove("open");
   backdrop.hidden = true;
   drawer.setAttribute("aria-hidden","true");
@@ -196,7 +192,7 @@ function injectDrawer(){
     backdrop.hidden = false;
     drawer.setAttribute("aria-hidden","false");
     menuBtn.setAttribute("aria-expanded","true");
-    document.body.style.overflow = "hidden"; // ✅ 避免背景可滾
+    document.body.style.overflow = "hidden"; 
   }
 
   function closeDrawer(){
@@ -204,7 +200,7 @@ function injectDrawer(){
     backdrop.hidden = true;
     drawer.setAttribute("aria-hidden","true");
     menuBtn.setAttribute("aria-expanded","false");
-    document.body.style.overflow = ""; // ✅ 還原
+    document.body.style.overflow = "";
   }
 
   function toggleDrawer(){
@@ -212,25 +208,25 @@ function injectDrawer(){
     else openDrawer();
   }
 
-  // ✅ 漢堡按鈕：切換開/關
+  // 漢堡按鈕：切換開/關
   menuBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     toggleDrawer();
   });
 
-  // ✅ 點空白處：關閉
+  // 點空白處：關閉
   backdrop.addEventListener("click", (e) => {
     e.preventDefault();
     closeDrawer();
   });
 
-  // ✅ ESC：關閉（桌機測試用）
+  // ESC：關閉
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeDrawer();
   });
 
-  // ✅ 登出：Firebase signOut → 回登入頁（保留你的原邏輯）
+  // 登出
   logoutBtn.addEventListener("click", async () => {
     try {
       await signOut(window.auth);
@@ -241,7 +237,7 @@ function injectDrawer(){
     location.replace("index.html");
   });
 
-  // ✅ 點選 drawer 裡連結後自動關閉（保留）
+  // 點選 drawer 裡連結後自動關閉
   drawer.addEventListener("click", (e) => {
     const a = e.target.closest("a");
     if (a) closeDrawer();
