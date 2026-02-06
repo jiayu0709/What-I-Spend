@@ -1,4 +1,8 @@
 /* theme.css — 全站統一色彩（Design Tokens） */
+
+/* =========================
+   0) Design Tokens
+   ========================= */
 :root{
   /* Backgrounds */
   --app-bg: #f0e6e6;
@@ -19,45 +23,57 @@
   --accent: #4f55d8;
   --accent-text: #7b6a6c;
 
-  /* spacing / layout tokens */
+  /* Layout tokens */
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
+  --tabcolor: #503d32;
 
-  --tabcolor:#503d32;
+  /* UI sizing */
+  --topbar-offset: 10px;
+  --page-top-pad: 18px;
+  --drawer-pad: 14px;
+  --hamburger-size: 44px;
+
+  /* Drawer width (2/3 screen) */
+  --drawer-width: 66.6667vw;
 }
 
-/* 全頁統一背景與預設文字色 */
+/* =========================
+   1) Base
+   ========================= */
 body{
   background: var(--app-bg);
   color: var(--text);
+  padding-top: 0; /* 背景要吃滿最上方 */
 }
 
-/* iOS 日期 input 文字顏色（避免系統藍） */
-input[type="date"]{
-  color: var(--accent-text);
-  -webkit-text-fill-color: var(--accent-text);
+/* iPhone notch safe-area（只推內容，不推背景） */
+main.page{
+  padding-top: calc(var(--page-top-pad) + env(safe-area-inset-top, 0px)) !important;
 }
-input[type="date"]::-webkit-datetime-edit{
-  color: var(--accent-text);
-}
-input[type="date"]::-webkit-datetime-edit-text,
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field{
-  color: var(--accent-text);
+.topbar{
+  top: calc(var(--topbar-offset) + env(safe-area-inset-top, 0px)) !important;
 }
 
-/* iOS 時間 input 文字顏色（與日期一致） */
+/* =========================
+   2) iOS input text color
+   ========================= */
+input[type="date"],
 input[type="time"]{
   color: var(--accent-text);
   -webkit-text-fill-color: var(--accent-text);
 }
 
+input[type="date"]::-webkit-datetime-edit,
 input[type="time"]::-webkit-datetime-edit{
   color: var(--accent-text);
 }
 
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field,
 input[type="time"]::-webkit-datetime-edit-text,
 input[type="time"]::-webkit-datetime-edit-hour-field,
 input[type="time"]::-webkit-datetime-edit-minute-field,
@@ -65,27 +81,40 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   color: var(--accent-text);
 }
 
-/* ===============================
-   Page transition (iOS style)
-   =============================== */
-main.page{
-  animation: page-enter .25s ease-out;
-}
+/* =========================
+   3) Page transition (iOS style)
+   ========================= */
+main.page{ animation: page-enter .25s ease-out; }
 @keyframes page-enter{
   from{ opacity:0; transform: translateX(20px); }
   to  { opacity:1; transform: translateX(0); }
 }
-main.page.leaving{
-  animation: page-leave .2s ease-in forwards;
-}
+main.page.leaving{ animation: page-leave .2s ease-in forwards; }
 @keyframes page-leave{
   from{ opacity:1; transform: translateX(0); }
   to  { opacity:0; transform: translateX(-20px); }
 }
 
-/* ===============================
-   Tabbar (GLOBAL)
-   =============================== */
+/* =========================
+   4) Tap feedback (GLOBAL)
+   ========================= */
+a, button, .tx, .tab{ -webkit-tap-highlight-color: transparent; }
+
+.tx, .tab, button{
+  user-select:none;
+  -webkit-user-select:none;
+  transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
+}
+
+.tx:active{ opacity:.6; transform:scale(.995); }
+.tab:active{ opacity:.6; transform:scale(.98); }
+button:active{ opacity:.65; transform:scale(.98); }
+
+.tx:focus, .tab:focus, button:focus{ outline:none; }
+
+/* =========================
+   5) Tabbar (GLOBAL)
+   ========================= */
 .tabbar{
   position:fixed; left:0; right:0; bottom:0;
   height: var(--tab-height);
@@ -119,44 +148,23 @@ main.page.leaving{
 .tabbar .tab .icon{
   font-size:24px;
   line-height:1;
-  color: inherit;            /* ⭐ icon 跟著文字 */
+  color: inherit;
 }
 
-/* ✅ Active 紅色 */
-.tabbar .tab.active{
-  color: var(--tabcolor);
-}
-
-/* iOS-style tap feedback（全站） */
-a, button, .tx, .tab{
-  -webkit-tap-highlight-color: transparent;
-}
-.tx, .tab, button{
-  user-select:none;
-  -webkit-user-select:none;
-  transition: opacity .15s ease, transform .10s ease, background-color .15s ease;
-}
-.tx:active{ opacity:.6; transform:scale(.995); }
-.tab:active{ opacity:.6; transform:scale(.98); }
-button:active{ opacity:.65; transform:scale(.98); }
-.tx:focus, .tab:focus, button:focus{ outline:none; }
+.tabbar .tab.active{ color: var(--tabcolor); }
 
 /* =========================
-   Global Drawer (Hamburger)
+   6) Topbar + Hamburger
    ========================= */
-
-/* 左上角按鈕容器 */
-.topbar {
+.topbar{
   position: fixed;
-  top: 10px;
   left: 10px;
   z-index: 50;
 }
 
-/* 三條線按鈕 */
-.hamburger {
-  width: 44px;
-  height: 44px;
+.hamburger{
+  width: var(--hamburger-size);
+  height: var(--hamburger-size);
   border-radius: 14px;
   border: 1px solid rgba(0,0,0,0.08);
   background: rgba(255,255,255,0.82);
@@ -167,7 +175,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   gap: 4px;
   padding: 0;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .hamburger span{
@@ -179,69 +186,56 @@ button:active{ opacity:.65; transform:scale(.98); }
   opacity: .9;
 }
 
-/* 背景遮罩 */
-.drawer-backdrop {
+/* =========================
+   7) Drawer Overlay + Base Drawer
+   ========================= */
+.drawer-backdrop{
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.20);
   z-index: 80;
 }
 
-/* 左側抽屜 */
-.drawer {
+/* overlay polish */
+.drawer-overlay{
+  background: rgba(0,0,0,0.24) !important;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* drawer base */
+.drawer{
   position: fixed;
   top: 0;
   left: 0;
-
-  /* ✅ 改：用 bottom + 100dvh，確保背景吃滿到最上方(含 safe-area) */
   bottom: 0;
   height: 100dvh;
 
-  width: min(320px, 86vw);
+  width: var(--drawer-width);
+  max-width: var(--drawer-width);
+
   background: var(--card-bg);
   border-right: 1px solid rgba(0,0,0,0.08);
   z-index: 90;
-  transform: translateX(-105%);
+
+  /* 收合/展開位移（不要被別的 transform 覆蓋） */
+  transform: translateX(-105%) translateZ(0);
   transition: transform .22s ease;
 
-  /* ✅ 改：抽屜本體不要用 padding-top 推，避免看起來上面沒上色 */
   padding: 0;
 }
 
-.drawer.open { transform: translateX(0); }
+.drawer.open{
+  transform: translateX(0) translateZ(0);
+}
 
+/* drawer content */
 .drawer-inner{
   display:grid;
-  gap: 10px;
-
-  /* ✅ 改：把原本 drawer 的 padding 搬到 inner，內容才會避開瀏海 */
-  padding: 14px;
-  padding-top: calc(14px + env(safe-area-inset-top));
-}
-
-.drawer-title{
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-
-.drawer-item{
-  width: 100%;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.55);
-  border-radius: 14px;
-  padding: 12px 14px;
-  font-weight: 900;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.drawer-item.danger{
-  background: rgba(217,74,74,0.10);
-  border: 1px solid rgba(217,74,74,0.18);
-  color: #b33b3b;
+  gap: 12px;
+  padding: var(--drawer-pad);
+  padding-top: calc(var(--drawer-pad) + env(safe-area-inset-top));
+  padding-bottom: calc(var(--drawer-pad) + env(safe-area-inset-bottom));
 }
 
 .drawer-link{
@@ -249,41 +243,23 @@ button:active{ opacity:.65; transform:scale(.98); }
   text-decoration:none;
 }
 
-/* =========================================================
-   Drawer — Final polish (iOS premium)
-   只影響抽屜：.drawer-overlay .drawer-panel .drawer-inner ...
-   ========================================================= */
+/* =========================
+   8) Drawer “Premium” Panel (visual only)
+   ========================= */
+.drawer.drawer-panel{
+  height: 100dvh;
 
-/* 1) 背景遮罩：更像原生 sheet */
-.drawer-overlay{
-  background: rgba(0,0,0,0.24) !important;
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
+  border-top-right-radius: 28px;
+  border-bottom-right-radius: 28px;
 
-/* 2) 抽屜面板：玻璃 + 層次 + 右側大圓角 + 邊緣高光 */
-.drawer-panel{
-  height: 100dvh !important;
-
-  /* 右側圓角讓它像卡片抽屜 */
-  border-top-right-radius: 28px !important;
-  border-bottom-right-radius: 28px !important;
-
-  /* 真正的「外層感」：陰影 + 內高光 */
   box-shadow:
     0 24px 70px rgba(0,0,0,0.18),
     0 8px 18px rgba(0,0,0,0.10),
     inset -1px 0 0 rgba(255,255,255,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.55) !important;
+    inset 0 1px 0 rgba(255,255,255,0.55);
 
-  /* 外框線更精緻 */
-  border-right: 1px solid rgba(0,0,0,0.06) !important;
+  border-right: 1px solid rgba(0,0,0,0.06);
 
-  /* 保留 safe-area，但把它設計成「header 區」而不是空白 */
-  padding-top: env(safe-area-inset-top) !important;
-  padding-bottom: env(safe-area-inset-bottom) !important;
-
-  /* 玻璃感底色：上方亮、下方回到 card-bg */
   background:
     radial-gradient(120% 60% at 18% 0%,
       rgba(255,255,255,0.55) 0%,
@@ -293,14 +269,16 @@ button:active{ opacity:.65; transform:scale(.98); }
       rgba(255,255,255,0.26) 0px,
       rgba(255,255,255,0.10) 70px,
       rgba(255,255,255,0.00) 140px),
-    var(--card-bg) !important;
+    var(--card-bg);
 
-  transform: translateZ(0);
   -webkit-overflow-scrolling: touch;
+
+  outline: 1px solid rgba(255,255,255,0.18);
+  outline-offset: -1px;
 }
 
-/* 3) 在 safe-area 下方加「把手」：瞬間像原生 drawer */
-.drawer-panel::after{
+/* handle */
+.drawer.drawer-panel::after{
   content:"";
   position:absolute;
   left: 18px;
@@ -315,104 +293,56 @@ button:active{ opacity:.65; transform:scale(.98); }
   pointer-events:none;
 }
 
-/* 4) 內容容器：間距、群組感 */
-.drawer-panel .drawer-inner{
-  padding-top: 26px !important;   /* 給把手 + header 呼吸空間 */
-  padding-bottom: 14px !important;
-  display: grid !important;
-  gap: 12px !important;
-}
-
-/* 5) 標題：改成精緻「Header Title」(不像貼牆) */
+/* title */
 .drawer-title{
-  margin: 0 0 2px 0 !important;
-  font-size: 18px !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.2px !important;
-  color: var(--text) !important;
+  margin: 0 0 2px 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  color: var(--text);
 
-  /* 讓它像標題區塊 */
-  padding: 10px 12px !important;
-  border-radius: 16px !important;
-  background: rgba(255,255,255,0.38) !important;
-  border: 1px solid rgba(0,0,0,0.06) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.55) inset !important;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.38);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
 }
 
-/* 6) 按鈕：一致、厚實、像 iOS 設定列表 */
+/* items */
 .drawer-item{
-  border-radius: 18px !important;
-  padding: 14px 14px !important;
+  width: 100%;
+  border-radius: 18px;
+  padding: 14px 14px;
 
-  font-size: 18px !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.2px !important;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
 
-  background: rgba(255,255,255,0.62) !important;
-  border: 1px solid rgba(0,0,0,0.06) !important;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(0,0,0,0.06);
 
   box-shadow:
     0 10px 22px rgba(0,0,0,0.06),
-    0 1px 0 rgba(255,255,255,0.55) inset !important;
+    0 1px 0 rgba(255,255,255,0.55) inset;
 
-  transition: transform .12s ease, opacity .15s ease, background-color .15s ease !important;
+  transition: transform .12s ease, opacity .15s ease, background-color .15s ease;
 }
 
-/* 7) 按下手感 */
 .drawer-item:active{
-  transform: scale(.99) !important;
-  opacity: .75 !important;
+  transform: scale(.99);
+  opacity: .75;
 }
 
-/* 8) Danger（登出）：更像「重要操作」 */
 .drawer-item.danger{
-  background: rgba(217,74,74,0.10) !important;
-  border: 1px solid rgba(217,74,74,0.18) !important;
-  color: #b33b3b !important;
+  background: rgba(217,74,74,0.10);
+  border: 1px solid rgba(217,74,74,0.18);
+  color: #b33b3b;
 
   box-shadow:
     0 10px 22px rgba(217,74,74,0.06),
-    0 1px 0 rgba(255,255,255,0.45) inset !important;
-}
-
-/* 9) 讓抽屜右側邊緣更乾淨（跟背景分離） */
-.drawer-panel{
-  outline: 1px solid rgba(255,255,255,0.18);
-  outline-offset: -1px;
-}
-
-/* ✅ Fix: 不讓 .drawer-panel 的 transform 覆蓋抽屜開關位移 */
-.drawer.drawer-panel{
-  transform: translateX(-105%) translateZ(0) !important;
-}
-
-.drawer.drawer-panel.open{
-  transform: translateX(0) translateZ(0) !important;
-}
-
-/* =========================
-   iPhone notch safe-area fix
-   背景延伸到頂，但內容/按鈕避開劉海
-   ========================= */
-
-/* 1) 主要頁面內容（標題、表單）往下避開劉海 */
-main.page{
-  padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important;
-}
-
-/* 2) 左上角漢堡按鈕也往下避開劉海 */
-.topbar{
-  top: calc(10px + env(safe-area-inset-top, 0px)) !important;
-}
-
-/* 3) 確保背景本身仍然吃滿到最上方（不把 body 往下推） */
-body{
-  padding-top: 0 !important;
-}
-
-/* ✅ Drawer 只佔螢幕一半寬（不動其他程式碼） */
-.drawer.drawer-panel{
-  width: 66.6667vw !important;
-  max-width: 66.6667vw !important;
+    0 1px 0 rgba(255,255,255,0.45) inset;
 }
