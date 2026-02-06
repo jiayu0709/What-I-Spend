@@ -151,13 +151,13 @@ function injectDrawer(){
 
   // backdrop
   const backdrop = document.createElement("div");
-  backdrop.className = "drawer-backdrop";
+  backdrop.className = "drawer-backdrop drawer-overlay"; // ✅ 加這個
   backdrop.id = "drawerBackdrop";
   backdrop.hidden = true;
 
   // drawer
   const drawer = document.createElement("aside");
-  drawer.className = "drawer";
+  drawer.className = "drawer drawer-panel"; // ✅ 加這個
   drawer.id = "drawer";
   drawer.setAttribute("aria-hidden","true");
 
