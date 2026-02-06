@@ -49,19 +49,22 @@
       background: var(--card-bg);
       border-radius: var(--radius, 22px);
 
-      /* ✅ 玻璃邊：上亮下暗，視覺更立體 */
-      border: 1px solid rgba(255,255,255,0.52);
+      border: 1px solid rgba(255,255,255,0.22);
 
-      /* ✅ 玻璃霧化更像 iOS 卡片 */
-      backdrop-filter: blur(26px) saturate(170%);
-      -webkit-backdrop-filter: blur(26px) saturate(170%);
-
-      /* ✅ 浮起來：陰影更柔 + 玻璃內高光 */
       box-shadow:
-        0 34px 90px rgba(0,0,0,0.16),
-        0 10px 28px rgba(0,0,0,0.10),
-        0 1px 0 rgba(255,255,255,0.35) inset,
-        0 0 0 1px rgba(255,255,255,0.18) inset;
+        /* 外圈柔光：讓邊緣像弧面反光 */
+        0 0 0 1px rgba(255,255,255,0.10),
+
+        /* 內圈高光：上亮下暗的「曲面」感 */
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        inset 0 -1px 0 rgba(0,0,0,0.06),
+
+        /* 四周內側微亮：增加玻璃厚度感 */
+        inset 0 0 0 1px rgba(255,255,255,0.18),
+
+        /* 浮起來的陰影 */
+        0 28px 70px rgba(0,0,0,0.14),
+        0 10px 24px rgba(0,0,0,0.10);
 
       padding: 18px 16px;
     }
