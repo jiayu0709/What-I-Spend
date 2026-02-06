@@ -19,7 +19,6 @@
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
     .nav-title{font-size:42px;font-weight:800;margin:10px 0 12px;letter-spacing:-.5px}
 
-    /* ✅ 月份切換器（跟 month.html 同風格） */
     .monthbar{
       margin-top:6px;
       background: var(--card-bg);
@@ -52,7 +51,6 @@
       font-weight:900;
     }
 
-    /* ✅ empty 狀態：不要外層深色區塊，只留白色方框 */
     .card.card--empty{
       background: transparent;
       padding: 0;
@@ -62,7 +60,6 @@
     .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
 
-    /* ===== Donut card ===== */
     .donut-wrap{display:grid;grid-template-columns:1fr;gap:14px;align-items:center;}
     .donut-area{display:grid;place-items:center;padding:8px 0 2px;}
     .donut-legend{margin-top:6px;display:grid;gap:12px;}
@@ -93,11 +90,9 @@
       font-weight:800;
     }
 
-    /* Donut SVG sizing */
     .donut-svg{width:260px;height:260px;display:block;}
     .center-title{font-size:18px;font-weight:900;fill:var(--secondary);}
     .center-value{font-size:26px;font-weight:900;fill:var(--text);}
-
   </style>
 </head>
 <body>
@@ -105,12 +100,9 @@
     <main class="page">
       <div class="nav-title">統計</div>
 
-      <!-- ✅ 月份切換器 -->
       <div class="monthbar" aria-label="月份切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
-        <div class="m-title">
-          <span id="monthLabel">January</span>
-        </div>
+        <div class="m-title"><span id="monthLabel">January</span></div>
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
@@ -122,7 +114,6 @@
       </section>
     </main>
 
-    <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
         <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
@@ -133,155 +124,206 @@
   </div>
 
   <script>
-    // ===== month state: ?m=YYYY-MM =====
+    // =========================
+    // Utils (no behavior change)
+    // =========================
+    const $ = (id) => document.getElementById(id);
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+
+    const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+
+    const parseMonthKey = (key) => {
+      if (!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y, m] = key.split("-").map((n) => parseInt(n, 10));
+      if (!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m - 1, 1);
+    };
+
+    const addMonths = (dateObj, delta) =>
+      new Date(dateObj.getFullYear(), dateObj.getMonth() + delta, 1);
+
+    const monthLabel = (dateObj) =>
+      `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}`;
+
+    const parseAmount = (v) => {
+      const n = Number(String(v ?? "").replace(/,/g, ""));
+      return isFinite(n) ? n : 0;
+    };
+
+    const moneyNT = (n) => "NT$" + Math.round(n).toLocaleString("en-US");
+
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+    // =========================
+    // Month state: ?m=YYYY-MM
+    // =========================
     const qs = new URLSearchParams(location.search);
+    let currentMonth =
+      parseMonthKey(qs.get("m")) ||
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function monthKeyFromDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
-    function parseMonthKey(key){
-      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-      const [y,m] = key.split("-").map(n => parseInt(n,10));
-      if(!y || !m || m<1 || m>12) return null;
-      return new Date(y, m-1, 1);
-    }
-    function addMonths(dateObj, delta){ return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1); }
-    function monthLabel(dateObj){
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
-    }
-
-    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
 
-    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
-    document.getElementById("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth()+1)}）`;
+    $("monthLabel").textContent = monthLabel(currentMonth);
+    $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(
+      currentMonth.getMonth() + 1
+    )}）`;
 
-    document.getElementById("btnPrev").addEventListener("click", () => {
+    $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
       location.href = `year.html?m=${monthKeyFromDate(prev)}`;
     });
-    document.getElementById("btnNext").addEventListener("click", () => {
+
+    $("btnNext").addEventListener("click", () => {
       const next = addMonths(currentMonth, 1);
       location.href = `year.html?m=${monthKeyFromDate(next)}`;
     });
 
-    // ===== storage helpers =====
-    function getTxIndex(){
-      try{
+    // =========================
+    // LocalStorage helpers
+    // =========================
+    const getTxIndex = () => {
+      try {
         const raw = localStorage.getItem("tx:index");
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
-      }catch(e){ return []; }
-    }
-    function readTx(id){
-      const raw = localStorage.getItem("tx:"+id);
-      if(!raw) return null;
-      try{ return JSON.parse(raw); }catch(e){ return null; }
-    }
-    function isDeleted(id){ return localStorage.getItem("tx:deleted:"+id) === "1"; }
-    function parseAmount(v){
-      const n = Number(String(v ?? "").replace(/,/g,""));
-      return (isFinite(n) ? n : 0);
-    }
-    function moneyNT(n){ return "NT$" + Math.round(n).toLocaleString("en-US"); }
-    function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+      } catch {
+        return [];
+      }
+    };
 
-    // ===== Donut (pure SVG) =====
-    function polarToCartesian(cx, cy, r, angleDeg){
-      const rad = (angleDeg - 90) * Math.PI / 180;
+    const readTx = (id) => {
+      const raw = localStorage.getItem("tx:" + id);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
+    const isDeleted = (id) => localStorage.getItem("tx:deleted:" + id) === "1";
+
+    // =========================
+    // Donut (pure SVG)
+    // =========================
+    const polarToCartesian = (cx, cy, r, angleDeg) => {
+      const rad = ((angleDeg - 90) * Math.PI) / 180;
       return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-    }
-    function describeArc(cx, cy, r, startAngle, endAngle){
+    };
+
+    const describeArc = (cx, cy, r, startAngle, endAngle) => {
       const start = polarToCartesian(cx, cy, r, endAngle);
       const end = polarToCartesian(cx, cy, r, startAngle);
-      const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
       return ["M", start.x, start.y, "A", r, r, 0, largeArcFlag, 0, end.x, end.y].join(" ");
-    }
+    };
 
-    const palette = ["#f04b3a","#d61c68","#7c3aed","#3b82f6","#06b6d4","#22c55e","#f59e0b","#a855f7","#ef4444","#10b981"];
+    const palette = [
+      "#f04b3a",
+      "#d61c68",
+      "#7c3aed",
+      "#3b82f6",
+      "#06b6d4",
+      "#22c55e",
+      "#f59e0b",
+      "#a855f7",
+      "#ef4444",
+      "#10b981",
+    ];
 
-    function buildDonutSVG(total, slices){
-      const size = 260, cx=size/2, cy=size/2;
-      const r = 92, stroke = 34;
+    const buildDonutSVG = (total, slices) => {
+      const size = 260;
+      const cx = size / 2;
+      const cy = size / 2;
+      const r = 92;
+      const stroke = 34;
 
       let start = 0;
-      const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-      svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-      svg.setAttribute("class","donut-svg");
 
-      const bg = document.createElementNS(svg.namespaceURI,"circle");
-      bg.setAttribute("cx", cx); bg.setAttribute("cy", cy); bg.setAttribute("r", r);
-      bg.setAttribute("fill","none");
-      bg.setAttribute("stroke","rgba(0,0,0,0.06)");
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+      svg.setAttribute("class", "donut-svg");
+
+      const bg = document.createElementNS(svg.namespaceURI, "circle");
+      bg.setAttribute("cx", cx);
+      bg.setAttribute("cy", cy);
+      bg.setAttribute("r", r);
+      bg.setAttribute("fill", "none");
+      bg.setAttribute("stroke", "rgba(0,0,0,0.06)");
       bg.setAttribute("stroke-width", stroke);
       svg.appendChild(bg);
 
-      slices.forEach(s => {
+      for (const s of slices) {
         const sweep = 360 * (s.value / total);
         const end = start + sweep;
 
-        const path = document.createElementNS(svg.namespaceURI,"path");
+        const path = document.createElementNS(svg.namespaceURI, "path");
         path.setAttribute("d", describeArc(cx, cy, r, start, end));
-        path.setAttribute("fill","none");
+        path.setAttribute("fill", "none");
         path.setAttribute("stroke", s.color);
         path.setAttribute("stroke-width", stroke);
         path.setAttribute("stroke-linecap", "butt");
         svg.appendChild(path);
 
         start = end;
-      });
+      }
 
-      const t1 = document.createElementNS(svg.namespaceURI,"text");
-      t1.setAttribute("x", cx); t1.setAttribute("y", cy - 4);
-      t1.setAttribute("text-anchor","middle");
-      t1.setAttribute("class","center-title");
+      const t1 = document.createElementNS(svg.namespaceURI, "text");
+      t1.setAttribute("x", cx);
+      t1.setAttribute("y", cy - 4);
+      t1.setAttribute("text-anchor", "middle");
+      t1.setAttribute("class", "center-title");
       t1.textContent = "Expenses";
       svg.appendChild(t1);
 
-      const t2 = document.createElementNS(svg.namespaceURI,"text");
-      t2.setAttribute("x", cx); t2.setAttribute("y", cy + 26);
-      t2.setAttribute("text-anchor","middle");
-      t2.setAttribute("class","center-value");
+      const t2 = document.createElementNS(svg.namespaceURI, "text");
+      t2.setAttribute("x", cx);
+      t2.setAttribute("y", cy + 26);
+      t2.setAttribute("text-anchor", "middle");
+      t2.setAttribute("class", "center-value");
       t2.textContent = moneyNT(total);
       svg.appendChild(t2);
 
       return svg;
-    }
+    };
 
-    function renderMonthCategoryChart(){
+    // =========================
+    // Render chart
+    // =========================
+    const renderMonthCategoryChart = () => {
       const ids = getTxIndex().filter(Boolean);
-      const map = new Map(); // category -> sum
+      const sumsByCat = new Map(); // category -> sum
 
-      for(const id of ids){
-        if(isDeleted(id)) continue;
+      for (const id of ids) {
+        if (isDeleted(id)) continue;
+
         const tx = readTx(id);
-        if(!tx) continue;
+        if (!tx) continue;
 
-        // ✅ 只統計「當月」
         const date = String(tx.date || "");
-        if(!date.startsWith(currentKey)) continue; // YYYY-MM
+        if (!date.startsWith(currentKey)) continue; // only this month (YYYY-MM)
 
-        // ✅ 只統計支出：type === income 才排除；其他(含沒type)都當支出
-        if(tx.type === "income") continue;
+        // expense only: exclude income; others treated as expense
+        if (tx.type === "income") continue;
 
         const amt = parseAmount(tx.amount);
-        if(amt <= 0) continue;
+        if (amt <= 0) continue;
 
         const cat = (tx.category || "Uncategorized").trim() || "Uncategorized";
-        map.set(cat, (map.get(cat) || 0) + amt);
+        sumsByCat.set(cat, (sumsByCat.get(cat) || 0) + amt);
       }
 
-      const items = Array.from(map.entries())
-        .map(([name,value]) => ({ name, value }))
-        .sort((a,b) => b.value - a.value);
+      const items = Array.from(sumsByCat.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
 
-      const root = document.getElementById("chartRoot");
-      const card = document.getElementById("chartCard");
+      const root = $("chartRoot");
+      const card = $("chartCard");
       root.innerHTML = "";
 
-      if(items.length === 0){
-        // ✅ 只留白色方框：外層 card 變透明
+      if (items.length === 0) {
         card.classList.add("card--empty");
 
         const empty = document.createElement("div");
@@ -291,24 +333,24 @@
         return;
       }
 
-      // ✅ 有資料就恢復外層深色 card
       card.classList.remove("card--empty");
 
-      const total = items.reduce((s,x)=>s+x.value,0);
+      const total = items.reduce((s, x) => s + x.value, 0);
 
-      // 最多 8 類，其餘合併 Other
+      // Top 8 + merge rest into "Other"
       const MAX = 8;
-      let main = items.slice(0, MAX);
+      const main = items.slice(0, MAX);
       const rest = items.slice(MAX);
-      if(rest.length){
-        const restSum = rest.reduce((s,x)=>s+x.value,0);
-        main = main.concat([{ name:"Other", value:restSum }]);
+
+      if (rest.length) {
+        const restSum = rest.reduce((s, x) => s + x.value, 0);
+        main.push({ name: "Other", value: restSum });
       }
 
-      const slices = main.map((x,i)=>({
+      const slices = main.map((x, i) => ({
         ...x,
         color: palette[i % palette.length],
-        pct: x.value / total
+        pct: x.value / total,
       }));
 
       const donutArea = document.createElement("div");
@@ -318,7 +360,7 @@
       const legend = document.createElement("div");
       legend.className = "donut-legend";
 
-      slices.forEach(s => {
+      for (const s of slices) {
         const row = document.createElement("div");
         row.className = "legend-row";
 
@@ -338,7 +380,7 @@
 
         const pct = document.createElement("div");
         pct.className = "pct";
-        pct.textContent = Math.round(clamp01(s.pct)*100) + "%";
+        pct.textContent = Math.round(clamp01(s.pct) * 100) + "%";
 
         const amt = document.createElement("div");
         amt.className = "amt";
@@ -349,14 +391,15 @@
         row.appendChild(amt);
 
         legend.appendChild(row);
-      });
+      }
 
       root.appendChild(donutArea);
       root.appendChild(legend);
-    }
+    };
 
     renderMonthCategoryChart();
   </script>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
