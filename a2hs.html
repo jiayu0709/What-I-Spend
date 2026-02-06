@@ -237,6 +237,17 @@
       color:var(--secondary, #8e8e93);
       line-height:1.5;
     }
+
+    /* ✅ iOS Safari 防「底部彈出不同底色」：固定一層背景貼住 viewport */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg, #f2ede9);
+    }
   </style>
 </head>
 
