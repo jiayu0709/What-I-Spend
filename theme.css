@@ -390,3 +390,23 @@ button:active{ opacity:.65; transform:scale(.98); }
 .drawer.drawer-panel.open{
   transform: translateX(0) translateZ(0) !important;
 }
+
+/* =========================
+   iPhone notch safe-area fix
+   背景延伸到頂，但內容/按鈕避開劉海
+   ========================= */
+
+/* 1) 主要頁面內容（標題、表單）往下避開劉海 */
+main.page{
+  padding-top: calc(18px + env(safe-area-inset-top, 0px)) !important;
+}
+
+/* 2) 左上角漢堡按鈕也往下避開劉海 */
+.topbar{
+  top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+}
+
+/* 3) 確保背景本身仍然吃滿到最上方（不把 body 往下推） */
+body{
+  padding-top: 0 !important;
+}
