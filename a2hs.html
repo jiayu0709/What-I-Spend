@@ -19,20 +19,28 @@
     /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
     *{ box-sizing:border-box; }
 
-    body{
-      margin:0;
-      min-height:100vh;
-      background:
-        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
-        var(--app-bg, #f2ede9);
-      color:var(--text, #3c3c3c);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    .card{
+      width:min(520px, 100%);
 
-      display:grid;
-      place-items:center;
+      /* ✅ 更像玻璃：更透明 + 微微帶白 */
+      background: rgba(255,255,255,0.28);
 
-      /* index.html 的安全區域 padding 寫法 */
-      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
+      border-radius: var(--radius, 22px);
+
+      /* ✅ 玻璃邊緣：外圈淡白高光邊 */
+      border: 1px solid rgba(255,255,255,0.35);
+
+      /* ✅ 玻璃模糊更明顯 */
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+
+      /* ✅ 浮起來：更柔更立體的陰影 + 些微外光暈 */
+      box-shadow:
+        0 28px 70px rgba(0,0,0,0.14),
+        0 2px 0 rgba(255,255,255,0.25) inset,
+        0 0 0 1px rgba(255,255,255,0.18) inset;
+
+      padding: 18px 16px;
     }
 
     .app{
