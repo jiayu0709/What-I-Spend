@@ -410,3 +410,9 @@ main.page{
 body{
   padding-top: 0 !important;
 }
+
+/* ✅ Drawer 只佔螢幕一半寬（不動其他程式碼） */
+.drawer.drawer-panel{
+  width: 50vw !important;
+  max-width: 50vw !important;
+}
