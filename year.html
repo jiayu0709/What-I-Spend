@@ -181,7 +181,7 @@
     });
 
     // =========================
-    // LocalStorage helpers
+    // LocalStorage helpers (保留原本程式碼，不刪不改)
     // =========================
     const getTxIndex = () => {
       try {
@@ -290,18 +290,26 @@
     };
 
     // =========================
-    // Render chart
+    // Render chart（原本邏輯保留）
+    // ✅ 只改：讓它可以吃「外部傳入的 txs」（Firestore），不再只靠 localStorage
     // =========================
-    const renderMonthCategoryChart = () => {
-      const ids = getTxIndex().filter(Boolean);
+    const renderMonthCategoryChart = (txs) => {
       const sumsByCat = new Map(); // category -> sum
 
-      for (const id of ids) {
-        if (isDeleted(id)) continue;
+      // ✅ 若沒傳入 txs，維持舊行為（localStorage）
+      let sourceTxs = Array.isArray(txs) ? txs : [];
+      if (!Array.isArray(txs)) {
+        const ids = getTxIndex().filter(Boolean);
+        const tmp = [];
+        for (const id of ids) {
+          if (isDeleted(id)) continue;
+          const tx = readTx(id);
+          if (tx) tmp.push(tx);
+        }
+        sourceTxs = tmp;
+      }
 
-        const tx = readTx(id);
-        if (!tx) continue;
-
+      for (const tx of sourceTxs) {
         const date = String(tx.date || "");
         if (!date.startsWith(currentKey)) continue; // only this month (YYYY-MM)
 
@@ -397,7 +405,69 @@
       root.appendChild(legend);
     };
 
-    renderMonthCategoryChart();
+    // ✅ 不再在這裡直接 render（因為要等 Firestore 資料）
+    // renderMonthCategoryChart();
+
+    // ✅ 只加：提供 module script 呼叫（不影響其他功能）
+    window.__renderMonthCategoryChart = renderMonthCategoryChart;
+    window.__currentKeyForStats = currentKey;
+  </script>
+
+  <!-- ✅ 修正點：改用 Firestore 抓當月 transactions（跟 month.html 同資料來源） -->
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
+
+    function nextMonthKey(ym){
+      const [y,m] = ym.split("-").map(n => parseInt(n,10));
+      const d = new Date(y, m-1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      const mm = String(next.getMonth()+1).padStart(2,"0");
+      return `${next.getFullYear()}-${mm}`;
+    }
+
+    async function fetchMonthTxs(uid, ym){
+      const start = `${ym}-01`;
+      const end = `${nextMonthKey(ym)}-01`;
+
+      const txRef = collection(db, "users", uid, "transactions");
+      const q = query(
+        txRef,
+        where("date", ">=", start),
+        where("date", "<", end),
+        orderBy("date", "desc"),
+        orderBy("time", "desc")
+      );
+
+      const snap = await getDocs(q);
+      const txs = [];
+      snap.forEach(doc => txs.push({ id: doc.id, ...doc.data() }));
+      return txs;
+    }
+
+    // 1) 等 Firebase persistence ready（跟你其他頁一致）
+    await window.firebaseReady;
+
+    // 2) 監聽登入狀態 -> 有 user 才用 Firestore 讀
+    onAuthStateChanged(window.auth, async (user) => {
+      const ym = window.__currentKeyForStats;
+
+      if (!user) {
+        // 沒登入：維持原本行為（用 localStorage 渲染空 or 舊資料）
+        window.__renderMonthCategoryChart();
+        return;
+      }
+
+      try {
+        const txs = await fetchMonthTxs(user.uid, ym);
+        window.__renderMonthCategoryChart(txs);
+      } catch (e) {
+        // Firestore 失敗：fallback 不影響其他功能
+        console.error("統計頁讀取當月明細失敗（fallback localStorage）:", e);
+        window.__renderMonthCategoryChart();
+      }
+    });
   </script>
 
   <script type="module" src="app.js"></script>
