@@ -45,21 +45,22 @@
     .card{
       width:min(520px, 100%);
 
-      /* ✅ 更像玻璃：更透明 + 微微帶白 */
+      /* ✅ 卡片背景顏色維持不動 */
       background: var(--card-bg);
       border-radius: var(--radius, 22px);
 
-      /* ✅ 玻璃邊緣：外圈淡白高光邊 */
-      border: 1px solid rgba(255,255,255,0.35);
+      /* ✅ 玻璃邊：上亮下暗，視覺更立體 */
+      border: 1px solid rgba(255,255,255,0.52);
 
-      /* ✅ 玻璃模糊更明顯 */
-      backdrop-filter: blur(22px) saturate(160%);
-      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      /* ✅ 玻璃霧化更像 iOS 卡片 */
+      backdrop-filter: blur(26px) saturate(170%);
+      -webkit-backdrop-filter: blur(26px) saturate(170%);
 
-      /* ✅ 浮起來：更柔更立體的陰影 + 些微外光暈 */
+      /* ✅ 浮起來：陰影更柔 + 玻璃內高光 */
       box-shadow:
-        0 28px 70px rgba(0,0,0,0.14),
-        0 2px 0 rgba(255,255,255,0.25) inset,
+        0 34px 90px rgba(0,0,0,0.16),
+        0 10px 28px rgba(0,0,0,0.10),
+        0 1px 0 rgba(255,255,255,0.35) inset,
         0 0 0 1px rgba(255,255,255,0.18) inset;
 
       padding: 18px 16px;
