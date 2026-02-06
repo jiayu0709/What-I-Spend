@@ -40,56 +40,50 @@
       padding:24px;
     }
 
+    /* ✅ 只改最大卡片裡元素的「顏色」：大小/間距/版面都不動 */
     .card{
       width:100%;
       max-width:420px;
-      background:rgba(255,255,255,0.95);
+      background:var(--card-bg);                 /* 原本 rgba(255,255,255,0.95) */
       border-radius:var(--radius);
       padding:20px;
-      border:1px solid rgba(0,0,0,0.08);
+      border:1px solid var(--divider, rgba(0,0,0,0.08)); /* 用 theme.css 的 divider */
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
 
-    .head{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom:12px;
-    }
+    .head{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+
     .icon{
       width:44px;height:44px;
       border-radius:14px;
       display:grid;place-items:center;
-      background:rgba(0,0,0,0.04);
-      border:1px solid rgba(0,0,0,0.06);
+      background:rgba(255,255,255,0.6);          /* 改亮玻璃感，吃 card 色系 */
+      border:1px solid var(--divider, rgba(0,0,0,0.06));
       font-size:20px;
+      color:var(--text);                          /* ✅ icon 文字色 */
     }
-    .ttl{
-      font-weight:900;
-      font-size:18px;
-    }
+
+    .ttl{ font-weight:900; font-size:18px; color:var(--text); }
     .sub{
       font-weight:800;
-      color:var(--secondary);
+      color:var(--secondary);                     /* ✅ 副標題吃 theme.css */
       font-size:13px;
       margin-top:2px;
     }
 
-    .steps{
-      display:grid;
-      gap:10px;
-      margin-top:14px;
-    }
+    .steps{ display:grid; gap:10px; margin-top:14px; }
+
     .step{
       display:flex;
       gap:10px;
       align-items:flex-start;
       padding:12px;
       border-radius:14px;
-      background:rgba(0,0,0,0.03);
-      border:1px solid rgba(0,0,0,0.06);
+      background:rgba(255,255,255,0.55);          /* ✅ 由灰改為同系玻璃白 */
+      border:1px solid var(--divider, rgba(0,0,0,0.06));
     }
+
     .num{
       width:26px;height:26px;
       border-radius:9px;
@@ -97,15 +91,14 @@
       font-weight:900;
       background:rgba(0,0,0,0.06);
       flex:0 0 auto;
+      color:var(--text);                          /* ✅ 數字顏色 */
     }
-    .st{
-      font-weight:900;
-      font-size:14px;
-    }
+
+    .st{ font-weight:900; font-size:14px; color:var(--text); }
     .sd{
       font-weight:800;
       font-size:12px;
-      color:var(--secondary);
+      color:var(--secondary);                     /* ✅ 說明文字吃 theme.css */
       line-height:1.35;
     }
 
@@ -113,16 +106,14 @@
       display:inline-block;
       padding:2px 8px;
       border-radius:999px;
-      background:#fff;
-      border:1px solid rgba(0,0,0,0.1);
+      background:rgba(255,255,255,0.8);           /* ✅ 透明白 */
+      border:1px solid var(--divider, rgba(0,0,0,0.1));
       font-weight:900;
+      color:var(--text);                          /* ✅ chip 文字色 */
     }
 
-    .actions{
-      margin-top:16px;
-      display:grid;
-      gap:10px;
-    }
+    .actions{ margin-top:16px; display:grid; gap:10px; }
+
     .btn{
       width:100%;
       padding:14px 16px;
@@ -131,20 +122,21 @@
       font-weight:900;
       border:0;
       cursor:pointer;
-      background:var(--accent-text);
+      background:var(--accent-text);              /* ✅ 主色用 theme.css */
       color:#fff;
     }
+
     .btn.secondary{
       background:rgba(255,255,255,0.6);
       color:var(--accent-text);
-      border:1px solid rgba(0,0,0,0.06);
+      border:1px solid var(--divider, rgba(0,0,0,0.06));
     }
 
     .hint{
       margin-top:10px;
       font-size:12px;
       font-weight:800;
-      color:var(--secondary);
+      color:var(--secondary);                     /* ✅ hint 吃 theme.css */
       text-align:center;
     }
   </style>
