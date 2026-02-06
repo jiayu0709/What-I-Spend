@@ -381,3 +381,12 @@ button:active{ opacity:.65; transform:scale(.98); }
   outline: 1px solid rgba(255,255,255,0.18);
   outline-offset: -1px;
 }
+
+/* ✅ Fix: 不讓 .drawer-panel 的 transform 覆蓋抽屜開關位移 */
+.drawer.drawer-panel{
+  transform: translateX(-105%) translateZ(0) !important;
+}
+
+.drawer.drawer-panel.open{
+  transform: translateX(0) translateZ(0) !important;
+}
