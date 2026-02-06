@@ -19,6 +19,29 @@
     /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
     *{ box-sizing:border-box; }
 
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg, #f2ede9);
+      color:var(--text, #3c3c3c);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+
+      display:grid;
+      place-items:center;
+
+      /* index.html 的安全區域 padding 寫法 */
+      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
+    }
+
+    .app{
+      width:100%;
+      display:grid;
+      place-items:center;
+    }
+
+    /* ✅ 最大卡片：照 index.html */
     .card{
       width:min(520px, 100%);
 
@@ -41,24 +64,6 @@
         0 0 0 1px rgba(255,255,255,0.18) inset;
 
       padding: 18px 16px;
-    }
-
-    .app{
-      width:100%;
-      display:grid;
-      place-items:center;
-    }
-
-    /* ✅ 最大卡片：照 index.html */
-    .card{
-      width:min(520px, 100%);
-      background:var(--card-bg, rgba(255,255,255,0.72));
-      border-radius:var(--radius, 22px);
-      border:1px solid rgba(0,0,0,0.08);
-      padding:18px 16px;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
     }
 
     /* Header */
