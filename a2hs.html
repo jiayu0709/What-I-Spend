@@ -1,255 +1,293 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <link rel="stylesheet" href="theme.css">
   <meta charset="utf-8" />
-  
-  <!-- 1. PWA 核心設定：連結 Manifest 檔案 -->
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="theme.css">
 
-  <!-- 2. iOS PWA 強制全螢幕標籤 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <!-- 使用 black-translucent 隱藏 Safari UI，讓內容延伸到最頂端 -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="What I Spend">
 
-  <!-- 3. Android 與其他環境標籤 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#f2ede9">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
   <title>加入主畫面</title>
 
   <style>
-    *{ box-sizing:border-box }
+    /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
+    *{ box-sizing:border-box; }
+
     body{
       margin:0;
-      background:var(--app-bg);
-      color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC",sans-serif;
-      /* 4. 為 black-translucent 留出頂部安全區域（動態島/瀏海區域） */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+      min-height:100vh;
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg, #f2ede9);
+      color:var(--text, #3c3c3c);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+
+      display:grid;
+      place-items:center;
+
+      /* index.html 的安全區域 padding 寫法 */
+      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
     }
 
     .app{
-      min-height:100vh;
+      width:100%;
+      display:grid;
+      place-items:center;
+    }
+
+    /* ✅ 最大卡片：照 index.html */
+    .card{
+      width:min(520px, 100%);
+      background:var(--card-bg, rgba(255,255,255,0.72));
+      border-radius:var(--radius, 22px);
+      border:1px solid rgba(0,0,0,0.08);
+      padding:18px 16px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
+    }
+
+    /* Header */
+    .head{
       display:flex;
       align-items:center;
-      justify-content:center;
-      padding:24px;
+      gap:12px;
+      margin-bottom:12px;
     }
 
-    /* ✅ 只改最大卡片裡元素的「顏色」：大小/間距/版面都不動 */
-    .card{
-      width:100%;
-      max-width:420px;
-      background:var(--card-bg);                 /* 原本 rgba(255,255,255,0.95) */
-      border-radius:var(--radius);
-      padding:20px;
-      border:1px solid var(--divider, rgba(0,0,0,0.08)); /* 用 theme.css 的 divider */
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .head{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-
+    /* 左側 icon 小卡（照 index 的玻璃白） */
     .icon{
-      width:44px;height:44px;
-      border-radius:14px;
+      width:56px;height:56px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.6);
       display:grid;place-items:center;
-      background:rgba(255,255,255,0.6);          /* 改亮玻璃感，吃 card 色系 */
-      border:1px solid var(--divider, rgba(0,0,0,0.06));
-      font-size:20px;
-      color:var(--text);                          /* ✅ icon 文字色 */
+      flex:0 0 auto;
+      font-size:28px;
+      border:1px solid rgba(0,0,0,0.08);
     }
 
-    .ttl{ font-weight:900; font-size:18px; color:var(--text); }
+    .ttl{
+      font-weight:900;
+      letter-spacing:-.5px;
+      font-size:30px;   /* index title 視覺更大 */
+      line-height:1.1;
+      margin:0;
+    }
+
     .sub{
+      margin:6px 0 0;
+      color:var(--secondary, #8e8e93);
       font-weight:800;
-      color:var(--secondary);                     /* ✅ 副標題吃 theme.css */
-      font-size:13px;
-      margin-top:2px;
+      line-height:1.4;
+      font-size:14px;   /* index subtitle */
     }
 
-    .steps{ display:grid; gap:10px; margin-top:14px; }
+    /* Steps 區塊（照 index 的 step 卡） */
+    .steps{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
 
     .step{
       display:flex;
       gap:10px;
       align-items:flex-start;
       padding:12px;
-      border-radius:14px;
-      background:rgba(255,255,255,0.55);          /* ✅ 由灰改為同系玻璃白 */
-      border:1px solid var(--divider, rgba(0,0,0,0.06));
+      border-radius:16px;
+      background:rgba(255,255,255,0.6);
+      border:1px solid rgba(0,0,0,0.08);
     }
 
     .num{
       width:26px;height:26px;
       border-radius:9px;
+      background:rgba(0,0,0,0.06);
       display:grid;place-items:center;
       font-weight:900;
-      background:rgba(0,0,0,0.06);
+      font-size:13px;
       flex:0 0 auto;
-      color:var(--text);                          /* ✅ 數字顏色 */
+      color:var(--text, #3c3c3c);
     }
 
-    .st{ font-weight:900; font-size:14px; color:var(--text); }
+    .st{
+      font-weight:900;
+      font-size:14px;
+      line-height:1.25;
+      margin:0;
+    }
+
     .sd{
+      margin-top:2px;
       font-weight:800;
+      color:var(--secondary, #8e8e93);
       font-size:12px;
-      color:var(--secondary);                     /* ✅ 說明文字吃 theme.css */
-      line-height:1.35;
+      line-height:1.4;
     }
 
+    /* chip（照 index 的圓角小膠囊） */
     .chip{
       display:inline-block;
       padding:2px 8px;
       border-radius:999px;
-      background:rgba(255,255,255,0.8);           /* ✅ 透明白 */
-      border:1px solid var(--divider, rgba(0,0,0,0.1));
+      background:rgba(255,255,255,0.6);
+      border:1px solid rgba(0,0,0,0.08);
       font-weight:900;
-      color:var(--text);                          /* ✅ chip 文字色 */
+      color:var(--text, #3c3c3c);
     }
 
-    .actions{ margin-top:16px; display:grid; gap:10px; }
+    .actions{
+      margin-top:14px;
+      display:grid;
+      gap:10px;
+    }
 
+    /* 按鈕（照 index：主按鈕=accent，次按鈕=玻璃白邊框） */
     .btn{
       width:100%;
       padding:14px 16px;
-      border-radius:var(--radius);
+      border-radius:var(--radius, 22px);
       font-size:16px;
       font-weight:900;
-      border:0;
       cursor:pointer;
-      background:var(--accent-text);              /* ✅ 主色用 theme.css */
-      color:#fff;
+      border:1px solid rgba(0,0,0,0.08);
+      background:rgba(255,255,255,0.6);
+      color:var(--text, #3c3c3c);
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
     }
-
     .btn.secondary{
       background:rgba(255,255,255,0.6);
-      color:var(--accent-text);
-      border:1px solid var(--divider, rgba(0,0,0,0.06));
+      color:var(--text, #3c3c3c);
     }
+    .btn:active{ transform:scale(.99); opacity:.85; }
 
+    /* hint 文字（照 index 的 note 味道） */
     .hint{
       margin-top:10px;
       font-size:12px;
       font-weight:800;
-      color:var(--secondary);                     /* ✅ hint 吃 theme.css */
-      text-align:center;
+      color:var(--secondary, #8e8e93);
+      line-height:1.5;
     }
   </style>
 </head>
 
 <body>
-<div class="app">
-  <div class="card" id="content">
-    <!-- 動態填入 -->
+  <div class="app">
+    <div class="card" id="content">
+      <!-- 動態填入 -->
+    </div>
   </div>
-</div>
 
-<script>
-  const isStandalone =
-    window.navigator.standalone === true ||
-    window.matchMedia("(display-mode: standalone)").matches;
+  <script>
+    const isStandalone =
+      window.navigator.standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches;
 
-  function isRealSafari(){
-    const ua = navigator.userAgent || "";
-    return /iPhone|iPad|iPod/i.test(ua)
-      && /Safari/i.test(ua)
-      && !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua);
-  }
+    function isRealSafari(){
+      const ua = navigator.userAgent || "";
+      return /iPhone|iPad|iPod/i.test(ua)
+        && /Safari/i.test(ua)
+        && !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua);
+    }
 
-  // ✅ 已從主畫面打開 → 直接進 login.html
-  if (isStandalone) {
-    location.replace("login.html");
-  }
+    // ✅ 已從主畫面打開 → 直接進 login.html
+    if (isStandalone) {
+      location.replace("login.html");
+    }
 
-  const el = document.getElementById("content");
+    const el = document.getElementById("content");
 
-  // ❌ 非 Safari
-  if (!isRealSafari()) {
-    el.innerHTML = `
-      <div class="head">
-        <div class="icon">🌐</div>
-        <div>
-          <div class="ttl">請用 Safari 開啟</div>
-          <div class="sub">才能加入主畫面</div>
-        </div>
-      </div>
-      <p class="hint">
-        請複製此網址，貼到 Safari 開啟後再繼續。
-      </p>
-      <div class="actions">
-        <button class="btn secondary" onclick="copyLink()">複製目前網址</button>
-      </div>
-    `;
-  } else {
-    // ✅ Safari 教學
-    el.innerHTML = `
-      <div class="head">
-        <div class="icon">➕</div>
-        <div>
-          <div class="ttl">加入主畫面</div>
-          <div class="sub">像 App 一樣快速打開</div>
-        </div>
-      </div>
-
-      <div class="steps">
-        <div class="step">
-          <div class="num">1</div>
+    // ❌ 非 Safari
+    if (!isRealSafari()) {
+      el.innerHTML = `
+        <div class="head">
+          <div class="icon">🌐</div>
           <div>
-            <div class="st">點 Safari 的分享</div>
-            <div class="sd">畫面下方 <span class="chip">□↑</span> 按鈕</div>
+            <div class="ttl">請用 Safari 開啟</div>
+            <div class="sub">才能加入主畫面</div>
           </div>
         </div>
-        <div class="step">
-          <div class="num">2</div>
+        <p class="hint">
+          請複製此網址，貼到 Safari 開啟後再繼續。
+        </p>
+        <div class="actions">
+          <button class="btn secondary" onclick="copyLink()">複製目前網址</button>
+        </div>
+      `;
+    } else {
+      // ✅ Safari 教學
+      el.innerHTML = `
+        <div class="head">
+          <div class="icon">➕</div>
           <div>
-            <div class="st">選「加入主畫面」</div>
-            <div class="sd">往下滑即可看到</div>
+            <div class="ttl">加入主畫面</div>
+            <div class="sub">像 App 一樣快速打開</div>
           </div>
         </div>
-        <div class="step">
-          <div class="num">3</div>
-          <div>
-            <div class="st">加入完成</div>
-            <div class="sd">之後請從桌面圖示打開</div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <div>
+              <div class="st">點 Safari 的分享</div>
+              <div class="sd">畫面下方 <span class="chip">□↑</span> 按鈕</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <div>
+              <div class="st">選「加入主畫面」</div>
+              <div class="sd">往下滑即可看到</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <div>
+              <div class="st">加入完成</div>
+              <div class="sd">之後請從桌面圖示打開</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="actions">
-        <button class="btn secondary" onclick="alert('加入完成後，請從桌面圖示打開');">
-          我知道了
-        </button>
-      </div>
-    `;
-  }
+        <div class="actions">
+          <button class="btn secondary" onclick="alert('加入完成後，請從桌面圖示打開');">
+            我知道了
+          </button>
+        </div>
+      `;
+    }
 
-  function copyLink(){
-    navigator.clipboard.writeText(location.href);
-    alert("已複製網址，請貼到 Safari 開啟");
-  }
-</script>
-<script>
-(function () {
-  // iOS standalone 判斷
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true;
+    function copyLink(){
+      navigator.clipboard.writeText(location.href);
+      alert("已複製網址，請貼到 Safari 開啟");
+    }
+  </script>
 
-  // ✅ 如果是從主畫面打開（standalone），不要顯示提示頁，直接進入口
-  if (isStandalone) {
-    // 用 replace 避免返回鍵回到 a2hs.html
-    location.replace('/login.html'); // ←改成你真正入口頁
-    return;
-  }
+  <script>
+  (function () {
+    // iOS standalone 判斷
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
 
-  // ✅ 如果是在 Safari 裡，才顯示「加入主畫面」提示內容
-  // （你原本的 UI 照常顯示即可）
-})();
-</script>
+    // ✅ 如果是從主畫面打開（standalone），不要顯示提示頁，直接進入口
+    if (isStandalone) {
+      // 用 replace 避免返回鍵回到 a2hs.html
+      location.replace('/login.html'); // ←改成你真正入口頁
+      return;
+    }
+
+    // ✅ 如果是在 Safari 裡，才顯示「加入主畫面」提示內容
+    // （你原本的 UI 照常顯示即可）
+  })();
+  </script>
 </body>
 </html>
