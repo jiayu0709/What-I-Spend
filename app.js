@@ -57,16 +57,13 @@ window.waitForAuthReady = async () => {
 };
 
 /* ---------------------------
-   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
+   3️⃣ 登入保護
 ---------------------------- */
 window.requireAuth = async () => {
-  // 1) 先等 persistence 設好
   if (window.firebaseReady) await window.firebaseReady;
 
-  // 2) 等待狀態還原（多給 iOS 一點時間）
   const user = await new Promise((resolve) => {
     let done = false;
-
     const unsub = onAuthStateChanged(auth, (u) => {
       if (done) return;
       done = true;
@@ -74,12 +71,11 @@ window.requireAuth = async () => {
       resolve(u);
     });
 
-    // iOS 偶爾需要多一點時間，避免還原前就被導走
     setTimeout(() => {
       if (done) return;
       done = true;
       unsub();
-      resolve(auth.currentUser); // 可能仍是 null，但至少不會「秒踢走」
+      resolve(auth.currentUser);
     }, 1200);
   });
 
@@ -92,7 +88,7 @@ window.requireAuth = async () => {
 };
 
 /* ---------------------------
-   4️⃣ UI（跟 Auth 無關）
+   4️⃣ UI 標籤高亮
 ---------------------------- */
 function highlightTab() {
   const currentPath =
@@ -114,11 +110,10 @@ function highlightTab() {
 document.addEventListener("DOMContentLoaded", highlightTab);
 
 // ================================
-// Global Drawer UI (exclude pages)
+// Global Drawer UI (修正自動彈出問題)
 // ================================
 import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 你可以在這裡調整哪些頁面不要顯示（登入/歡迎頁不用）
 const DRAWER_EXCLUDE = new Set([
   "index.html",
   "onboarding.html",
@@ -138,9 +133,9 @@ function shouldShowDrawer(){
 
 function injectDrawer(){
   if (!shouldShowDrawer()) return;
-  if (document.getElementById("menuBtn")) return; // 避免重複注入
+  if (document.getElementById("menuBtn")) return; 
 
-  // topbar (left hamburger)
+  // 1. Topbar
   const topbar = document.createElement("div");
   topbar.className = "topbar";
   topbar.innerHTML = `
@@ -149,25 +144,25 @@ function injectDrawer(){
     </button>
   `;
 
-  // backdrop
+  // 2. Backdrop (強制預設隱藏且不可見)
   const backdrop = document.createElement("div");
   backdrop.className = "drawer-backdrop drawer-overlay";
   backdrop.id = "drawerBackdrop";
-  backdrop.hidden = true; // 預設隱藏
+  backdrop.style.visibility = "hidden"; // 額外保護
+  backdrop.hidden = true;
 
-  // drawer
+  // 3. Drawer (強制預設不在畫面上)
   const drawer = document.createElement("aside");
   drawer.className = "drawer drawer-panel";
   drawer.id = "drawer";
   drawer.setAttribute("aria-hidden","true");
+  // 強制覆寫可能存在的 CSS 預設值，確保啟動時在畫面外
+  drawer.style.transform = "translateX(-105%)";
 
   drawer.innerHTML = `
     <div class="drawer-inner">
       <div class="drawer-title">功能</div>
-
-      <!-- 登出一定放最上面 -->
       <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
-
       <a class="drawer-link" href="month.html"><div class="drawer-item">本月</div></a>
       <a class="drawer-link" href="add.html"><div class="drawer-item">新增</div></a>
       <a class="drawer-link" href="year.html"><div class="drawer-item">統計</div></a>
@@ -181,52 +176,48 @@ function injectDrawer(){
   const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // ✅ 修正點：確保 DOM 插入後立即移除 open 類名，並設定狀態
-  drawer.classList.remove("open");
-  backdrop.hidden = true;
-  drawer.setAttribute("aria-hidden","true");
-  menuBtn.setAttribute("aria-expanded","false");
-
-  function openDrawer(){
-    drawer.classList.add("open");
-    backdrop.hidden = false;
-    drawer.setAttribute("aria-hidden","false");
-    menuBtn.setAttribute("aria-expanded","true");
-    document.body.style.overflow = "hidden"; 
-  }
-
-  function closeDrawer(){
+  // 初始化狀態鎖定
+  const closeDrawer = () => {
     drawer.classList.remove("open");
+    drawer.style.transform = "translateX(-105%)";
     backdrop.hidden = true;
+    backdrop.style.visibility = "hidden";
     drawer.setAttribute("aria-hidden","true");
     menuBtn.setAttribute("aria-expanded","false");
     document.body.style.overflow = "";
-  }
+  };
 
-  function toggleDrawer(){
-    if (drawer.classList.contains("open")) closeDrawer();
-    else openDrawer();
-  }
+  const openDrawer = () => {
+    drawer.classList.add("open");
+    drawer.style.transform = "translateX(0)";
+    backdrop.hidden = false;
+    backdrop.style.visibility = "visible";
+    drawer.setAttribute("aria-hidden","false");
+    menuBtn.setAttribute("aria-expanded","true");
+    document.body.style.overflow = "hidden"; 
+  };
 
-  // 漢堡按鈕：切換開/關
+  // 立即執行一次關閉邏輯，確保注入後狀態正確
+  requestAnimationFrame(() => {
+    closeDrawer();
+  });
+
   menuBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleDrawer();
+    if (drawer.classList.contains("open")) closeDrawer();
+    else openDrawer();
   });
 
-  // 點空白處：關閉
   backdrop.addEventListener("click", (e) => {
     e.preventDefault();
     closeDrawer();
   });
 
-  // ESC：關閉
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeDrawer();
   });
 
-  // 登出
   logoutBtn.addEventListener("click", async () => {
     try {
       await signOut(window.auth);
@@ -237,14 +228,13 @@ function injectDrawer(){
     location.replace("index.html");
   });
 
-  // 點選 drawer 裡連結後自動關閉
   drawer.addEventListener("click", (e) => {
     const a = e.target.closest("a");
     if (a) closeDrawer();
   });
 }
 
-// 等 DOM 好了再注入
+// 啟動注入
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", injectDrawer);
 } else {
