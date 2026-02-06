@@ -37,16 +37,8 @@
       width:100%;padding:12px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.12);
       background:#fff;font-size:16px;
     }
-    input, select {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    input[type="date"]{
-      display:block;
-      appearance:none;
-      -webkit-appearance:none;
-    }
+    input, select { width:100%; max-width:100%; box-sizing:border-box; }
+    input[type="date"]{ display:block; appearance:none; -webkit-appearance:none; }
     .field, .card { min-width:0; }
 
     .save{
@@ -60,9 +52,7 @@
       color: var(--accent-text);
     }
 
-    /* =================================================
-       iOS-style tap feedback（只改按鈕/可點擊元件）
-       ================================================= */
+    /* iOS-style tap feedback */
     a, button, .seg-btn, .save, .tab{ -webkit-tap-highlight-color: transparent; }
     .seg-btn, .save, .tab, button{
       user-select:none; -webkit-user-select:none;
@@ -72,18 +62,13 @@
     .save:active{ opacity:.65; transform:scale(.98); }
     .tab:active{ opacity:.6; transform:scale(.98); }
     .seg-btn:focus, .save:focus, .tab:focus, button:focus{ outline:none; }
-    /* ===============================
-    iOS 日期 input 文字顏色（統一控色）
-    =============================== */
+
+    /* iOS 日期 input 文字顏色（統一控色） */
     input[type="date"]{
       color: var(--accent-text);
       -webkit-text-fill-color: var(--accent-text);
     }
-
-    input[type="date"]::-webkit-datetime-edit{
-      color: var(--accent-text);
-    }
-
+    input[type="date"]::-webkit-datetime-edit{ color: var(--accent-text); }
     input[type="date"]::-webkit-datetime-edit-text,
     input[type="date"]::-webkit-datetime-edit-month-field,
     input[type="date"]::-webkit-datetime-edit-day-field,
@@ -94,17 +79,17 @@
 </head>
 <body>
   <div class="app">
-    <!-- ✅ Drawer Button（左上角按鈕，位置固定不動） -->
+    <!-- Drawer Button -->
     <div class="topbar">
       <button class="hamburger" id="drawerBtn" type="button" aria-label="menu">
         <span></span><span></span><span></span>
       </button>
     </div>
 
-    <!-- ✅ Drawer Backdrop -->
+    <!-- Drawer Backdrop -->
     <div class="drawer-backdrop drawer-overlay" id="drawerBackdrop" style="display:none;"></div>
 
-    <!-- ✅ Drawer Panel -->
+    <!-- Drawer Panel -->
     <aside class="drawer drawer-panel" id="drawer">
       <div class="drawer-inner">
         <div class="drawer-title">功能</div>
@@ -116,10 +101,11 @@
         <button class="drawer-item danger" id="logoutBtn" type="button">登出</button>
       </div>
     </aside>
+
     <main class="page">
       <div class="nav-title">新增</div>
 
-      <!-- 類型（segmented） -->
+      <!-- 類型 -->
       <section class="section">
         <div class="label">類型</div>
         <div class="segment" role="tablist" aria-label="類型">
@@ -138,8 +124,7 @@
 
           <div class="field">
             <div class="label">分類</div>
-            <select class="input" id="category">
-            </select>
+            <select class="input" id="category"></select>
           </div>
 
           <div class="field">
@@ -167,52 +152,71 @@
     </nav>
   </div>
 
-  <!-- ✅ module 版 app.js（只做 persistence） -->
+  <!-- module 版 app.js（只做 persistence） -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
-    // ✅ 只調整「寫入流程」：其餘 UI/功能完全保留
+    // ✅ 功能不變：只整理結構、去重、讓邏輯更清楚
     import { auth, db } from "./firebase-config.js";
     import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ===== categories =====
-    const expenseCategories = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
-    const incomeCategories  = ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"];
+    // =========================
+    // Constants
+    // =========================
+    const CATEGORIES = {
+      expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"],
+      income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"],
+    };
 
-    // ===== helpers =====
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function todayYMD(){
+    // =========================
+    // Helpers
+    // =========================
+    const $ = (id) => document.getElementById(id);
+    const pad2 = (n) => String(n).padStart(2, "0");
+
+    const todayYMD = () => {
       const d = new Date();
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    }
-    function nowHHMM(){
+      return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    };
+
+    const nowHHMM = () => {
       const d = new Date();
       return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-    }
-    
-    function monthKeyFromDateStr(ymd){
-      return (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) ? ymd.slice(0,7) : "";
-    }
-    function parseAmount(v){
-      const n = Number(String(v ?? "").replace(/,/g,""));
+    };
+
+    const monthKeyFromDateStr = (ymd) =>
+      (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) ? ymd.slice(0, 7) : "";
+
+    const parseAmount = (v) => {
+      const n = Number(String(v ?? "").replace(/,/g, ""));
       return isFinite(n) ? n : NaN;
-    }
+    };
 
-    // ===== DOM =====
-    const btnExpense = document.getElementById("btn-expense");
-    const btnIncome  = document.getElementById("btn-income");
-    const categorySelect = document.getElementById("category");
-    const dateInput = document.getElementById("date");
-    const amountInput = document.getElementById("amount");
-    const noteInput = document.getElementById("note");
-    const saveBtn = document.getElementById("saveBtn");
+    const isLocalhost = () =>
+      location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
+    // =========================
+    // DOM
+    // =========================
+    const btnExpense = $("btn-expense");
+    const btnIncome  = $("btn-income");
+    const categorySelect = $("category");
+    const dateInput = $("date");
+    const amountInput = $("amount");
+    const noteInput = $("note");
+    const saveBtn = $("saveBtn");
+
+    // =========================
+    // State
+    // =========================
     let currentType = "expense";
-    let uid = null; // 登入成功後才會有
+    let uid = null;
 
-    // ===== render categories =====
-    function updateCategoryOptions(type){
-      const list = (type === "income") ? incomeCategories : expenseCategories;
+    // =========================
+    // UI: Categories + Type
+    // =========================
+    function renderCategoryOptions(type) {
+      const list = type === "income" ? CATEGORIES.income : CATEGORIES.expense;
       const prev = categorySelect.value;
 
       categorySelect.innerHTML = "";
@@ -226,24 +230,31 @@
       categorySelect.value = list.includes(prev) ? prev : list[0];
     }
 
-    function setType(t){
-      currentType = (t === "income") ? "income" : "expense";
+    function setType(type) {
+      currentType = (type === "income") ? "income" : "expense";
       const isExpense = currentType === "expense";
+
       btnExpense.classList.toggle("active", isExpense);
       btnIncome.classList.toggle("active", !isExpense);
+
       btnExpense.setAttribute("aria-pressed", String(isExpense));
       btnIncome.setAttribute("aria-pressed", String(!isExpense));
-      updateCategoryOptions(currentType);
+
+      renderCategoryOptions(currentType);
     }
 
-    // ===== 先把 UI 填起來（不等登入）=====
+    // =========================
+    // Prefill (UI first)
+    // =========================
     dateInput.value = todayYMD();
     setType("expense");
 
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click", () => setType("income"));
 
-    // ===== 讀捷徑參數（預填）=====
+    // =========================
+    // Querystring prefill
+    // =========================
     const qs = new URLSearchParams(location.search);
     const qsType = qs.get("type");
     const qsAmount = qs.get("amount");
@@ -262,39 +273,34 @@
       categorySelect.value = qsCategory;
     }
 
-    // ===== 登入（只影響能不能寫入）=====
+    // =========================
+    // Auth gate (no behavior change)
+    // =========================
     await window.firebaseReady;
-    const user = await window.waitForAuthReady();
 
-    if (user) {
-      uid = user.uid;
-      saveBtn.disabled = false;
-    } else {
-      // 沒登入：按儲存就導去登入頁
-      saveBtn.disabled = false;
-    }
+    const initialUser = await window.waitForAuthReady();
+    uid = initialUser?.uid || null;
 
-    async function ensureLoginOrRedirect(){
+    // 原本邏輯：不論有沒有登入，都先讓按鈕可按；未登入按下才跳登入
+    saveBtn.disabled = false;
+
+    async function ensureLoginOrRedirect() {
       const user = await window.waitForAuthReady();
       if (user) return user;
+
       const next = encodeURIComponent(location.href);
-      location.replace(`index.html?next=${next}`); // 你登入頁叫 index.html
+      location.replace(`index.html?next=${next}`);
       return null;
     }
 
-    // ============================
-    // ✅ 新增：兩用寫入（Function優先，失敗fallback前端直寫）
-    // ============================
-    function isLocalhost(){
-      return location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    }
-
-    async function addViaFunction(payload){
+    // =========================
+    // Write: function first, fallback to client
+    // =========================
+    async function addViaFunction(payload) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
       const token = await u.getIdToken();
-
       const res = await fetch("/.netlify/functions/addTransaction", {
         method: "POST",
         headers: {
@@ -306,7 +312,6 @@
 
       if (!res.ok) {
         const text = await res.text();
-        // 把錯誤完整保留在 console，方便你 debug
         console.error("Function error status:", res.status, "body:", text);
         throw new Error(text || `Function failed: ${res.status}`);
       }
@@ -314,7 +319,7 @@
       return res.json().catch(() => ({}));
     }
 
-    async function addViaClientFirestore(payload){
+    async function addViaClientFirestore(payload) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
@@ -324,14 +329,13 @@
       );
     }
 
-    async function writeTransaction(payload, { prefer = "function" } = {}){
-      // prefer: "function" 或 "client"
+    async function writeTransaction(payload, { prefer = "function" } = {}) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
-      const tryFunctionFirst = (prefer === "function") && !isLocalhost();
+      const functionFirst = (prefer === "function") && !isLocalhost();
 
-      if (tryFunctionFirst) {
+      if (functionFirst) {
         try {
           await addViaFunction(payload);
           return { via: "function" };
@@ -340,24 +344,27 @@
           await addViaClientFirestore(payload);
           return { via: "client_fallback" };
         }
-      } else {
-        try {
-          await addViaClientFirestore(payload);
-          return { via: "client" };
-        } catch (e) {
-          console.warn("Client write failed; fallback to function:", e);
-          await addViaFunction(payload);
-          return { via: "function_fallback" };
-        }
+      }
+
+      try {
+        await addViaClientFirestore(payload);
+        return { via: "client" };
+      } catch (e) {
+        console.warn("Client write failed; fallback to function:", e);
+        await addViaFunction(payload);
+        return { via: "function_fallback" };
       }
     }
 
-    async function saveToFirestore({ redirectAfter = true } = {}){
+    // =========================
+    // Save flow
+    // =========================
+    async function saveToFirestore({ redirectAfter = true } = {}) {
       console.log("firebaseReady:", !!window.firebaseReady);
       console.log("currentUser:", window.auth?.currentUser?.uid || null);
 
       const user = await ensureLoginOrRedirect();
-      if (!user) return; // 已跳轉
+      if (!user) return;
 
       const date = dateInput.value || todayYMD();
       const time = nowHHMM();
@@ -365,17 +372,15 @@
       const note = (noteInput.value || "").trim();
       const amount = parseAmount(amountInput.value);
 
-      if(!category){ alert("請選擇分類"); return; }
-      if(!isFinite(amount) || amount <= 0){ alert("請輸入正確金額（> 0）"); return; }
+      if (!category) { alert("請選擇分類"); return; }
+      if (!isFinite(amount) || amount <= 0) { alert("請輸入正確金額（> 0）"); return; }
 
-      // ✅ 注意：payload 不包含 createdAt（Function 由後端加；client 由 addViaClientFirestore 加）
       const payload = { date, time, type: currentType, amount, category, note };
 
-      // ✅ 兩用寫入：優先 Function，失敗自動 fallback
       const result = await writeTransaction(payload, { prefer: "function" });
       console.log("writeTransaction via:", result.via);
 
-      if(redirectAfter){
+      if (redirectAfter) {
         const ym = monthKeyFromDateStr(date);
         location.replace(ym ? `month.html?m=${ym}` : "month.html");
       }
@@ -392,7 +397,7 @@
       }
     });
 
-    // ✅ 捷徑自動儲存：等 UI & auth 都 ready 後才做（原有功能保留）
+    // 捷徑自動儲存：等 UI & auth 都 ready 後才做（行為不變）
     if (autoSave) {
       const ok = qsAmount && qsCategory;
       if (ok) {
@@ -405,29 +410,29 @@
       }
     }
   </script>
+
   <script>
-  const drawerBtn = document.getElementById("drawerBtn");
-  const drawer = document.getElementById("drawer");
-  const backdrop = document.getElementById("drawerBackdrop");
+    const drawerBtn = document.getElementById("drawerBtn");
+    const drawer = document.getElementById("drawer");
+    const backdrop = document.getElementById("drawerBackdrop");
 
-  function openDrawer(){
-    drawer.classList.add("open");
-    backdrop.style.display = "block";
-    document.body.style.overflow = "hidden";
-  }
-  function closeDrawer(){
-    drawer.classList.remove("open");
-    backdrop.style.display = "none";
-    document.body.style.overflow = "";
-  }
+    function openDrawer(){
+      drawer.classList.add("open");
+      backdrop.style.display = "block";
+      document.body.style.overflow = "hidden";
+    }
+    function closeDrawer(){
+      drawer.classList.remove("open");
+      backdrop.style.display = "none";
+      document.body.style.overflow = "";
+    }
 
-  drawerBtn?.addEventListener("click", openDrawer);
-  backdrop?.addEventListener("click", closeDrawer);
+    drawerBtn?.addEventListener("click", openDrawer);
+    backdrop?.addEventListener("click", closeDrawer);
 
-  // 可選：按 ESC 關閉（桌機測試方便）
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeDrawer();
-  });
-</script>
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDrawer();
+    });
+  </script>
 </body>
 </html>
