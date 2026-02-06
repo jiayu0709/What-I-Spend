@@ -123,12 +123,7 @@
     </nav>
   </div>
 
-  <!-- ✅ 只修正「抓不到明細做統計」：優先用 Firestore；沒登入/沒資料才 fallback 舊 localStorage -->
-  <script type="module">
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { db } from "./firebase-config.js";
-
+  <script>
     // =========================
     // Utils (no behavior change)
     // =========================
@@ -150,13 +145,6 @@
 
     const monthLabel = (dateObj) =>
       `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}`;
-
-    const nextMonthKey = (ym) => {
-      const [y, m] = ym.split("-").map((n) => parseInt(n, 10));
-      const d = new Date(y, m - 1, 1);
-      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      return monthKeyFromDate(next);
-    };
 
     const parseAmount = (v) => {
       const n = Number(String(v ?? "").replace(/,/g, ""));
@@ -193,7 +181,7 @@
     });
 
     // =========================
-    // LocalStorage helpers (保留原功能 fallback 用)
+    // LocalStorage helpers
     // =========================
     const getTxIndex = () => {
       try {
@@ -302,15 +290,22 @@
     };
 
     // =========================
-    // Render (shared)
+    // Render chart
     // =========================
-    function renderFromTxs(txs){
-      const sumsByCat = new Map();
+    const renderMonthCategoryChart = () => {
+      const ids = getTxIndex().filter(Boolean);
+      const sumsByCat = new Map(); // category -> sum
 
-      for (const tx of txs) {
+      for (const id of ids) {
+        if (isDeleted(id)) continue;
+
+        const tx = readTx(id);
+        if (!tx) continue;
+
         const date = String(tx.date || "");
-        if (!date.startsWith(currentKey)) continue;
+        if (!date.startsWith(currentKey)) continue; // only this month (YYYY-MM)
 
+        // expense only: exclude income; others treated as expense
         if (tx.type === "income") continue;
 
         const amt = parseAmount(tx.amount);
@@ -342,9 +337,11 @@
 
       const total = items.reduce((s, x) => s + x.value, 0);
 
+      // Top 8 + merge rest into "Other"
       const MAX = 8;
       const main = items.slice(0, MAX);
       const rest = items.slice(MAX);
+
       if (rest.length) {
         const restSum = rest.reduce((s, x) => s + x.value, 0);
         main.push({ name: "Other", value: restSum });
@@ -398,62 +395,9 @@
 
       root.appendChild(donutArea);
       root.appendChild(legend);
-    }
+    };
 
-    function renderFromLocalStorage(){
-      const ids = getTxIndex().filter(Boolean);
-      const txs = [];
-
-      for (const id of ids) {
-        if (isDeleted(id)) continue;
-        const tx = readTx(id);
-        if (!tx) continue;
-        txs.push(tx);
-      }
-      renderFromTxs(txs);
-    }
-
-    // =========================
-    // Firestore: fetch month txs
-    // =========================
-    async function fetchMonthTxs(uid){
-      const start = `${currentKey}-01`;
-      const end = `${nextMonthKey(currentKey)}-01`;
-
-      const txRef = collection(db, "users", uid, "transactions");
-      const q = query(
-        txRef,
-        where("date", ">=", start),
-        where("date", "<", end),
-        orderBy("date", "desc"),
-        orderBy("time", "desc")
-      );
-
-      const snap = await getDocs(q);
-      const txs = [];
-      snap.forEach(doc => txs.push({ id: doc.id, ...doc.data() }));
-      return txs;
-    }
-
-    // =========================
-    // Init: prefer Firestore, fallback localStorage
-    // =========================
-    await window.firebaseReady;
-
-    onAuthStateChanged(window.auth, async (user) => {
-      if (user) {
-        try {
-          const txs = await fetchMonthTxs(user.uid);
-          renderFromTxs(txs);
-        } catch (e) {
-          console.error("統計讀取 Firestore 失敗，fallback localStorage:", e);
-          renderFromLocalStorage();
-        }
-      } else {
-        // 沒登入：維持原本「可看舊 localStorage 圖表」的行為
-        renderFromLocalStorage();
-      }
-    });
+    renderMonthCategoryChart();
   </script>
 
   <script type="module" src="app.js"></script>
