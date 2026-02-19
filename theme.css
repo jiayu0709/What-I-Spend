@@ -170,9 +170,9 @@ button:active{ opacity:.65; transform:scale(.98); }
   border: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  display: grid;
+  display: flex;
   place-items: center;
-  gap: 0px;
+  gap: 2px;
   padding: 0;
   cursor: pointer;
 }
