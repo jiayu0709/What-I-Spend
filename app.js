@@ -85,7 +85,7 @@ window.requireAuth = async () => {
 
   if (!user) {
     const next = encodeURIComponent(window.location.href);
-    window.location.replace(`waiting.html?next=${next}`);
+    window.location.replace(`index.html?next=${next}`);
     return null;
   }
   return user;
