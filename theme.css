@@ -356,11 +356,6 @@ button:active{ opacity:.65; transform:scale(.98); }
    UI Modal (ui.alert / ui.confirm / ui.prompt)
    ========================= */
 
-/* 你可以在這裡調整粉紅色 */
-:root{
-  --ui-modal-bg: rgba(240, 210, 215, 0.92); /* 單一粉紅底 */
-}
-
 .ui-modal-backdrop{
   position: fixed;
   inset: 0;
