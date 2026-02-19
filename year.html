@@ -444,6 +444,9 @@
       const start = `${ym}-01`;
       const end = `${nextMonthKey(ym)}-01`;
 
+      const bookId = localStorage.getItem("wis_currentBookId");
+      if (!bookId) return [];
+
       const txRef = collection(db, "users", uid, "transactions");
       const q = query(
         txRef,

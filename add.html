@@ -406,7 +406,13 @@
       if (!category) { alert("請選擇分類"); return; }
       if (!isFinite(amount) || amount <= 0) { alert("請輸入正確金額（> 0）"); return; }
 
-      const payload = { date, time, type: currentType, amount, category, note };
+      const bookId = localStorage.getItem("wis_currentBookId");
+      if (!bookId) {
+        location.replace("books.html");
+        return;
+      }
+
+      const payload = { bookId, date, time, type: currentType, amount, category, note };
 
       // ✅ 新增：每筆交易帶 bookId（最小改動）
       payload.bookId = await ensureDefaultBook(user.uid);

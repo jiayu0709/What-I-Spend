@@ -463,6 +463,12 @@
       const root = document.getElementById("list-root");
       root.innerHTML = "<div class='empty'>讀取中...</div>";
 
+      const bookId = localStorage.getItem("wis_currentBookId");
+      if (!bookId) {
+        location.replace("books.html");
+        return [];
+      }
+
       // 修正：使用匯入的 db 變數，而不是 window.db
       const txRef = collection(db, "users", uid, "transactions");
 
@@ -472,6 +478,7 @@
       // ✅ 修改：多一個 bookId 條件（最小改動）
       const q = query(
         txRef,
+        where("bookId", "==", bookId),
         where("bookId", "==", currentBookId),
         where("date", ">=", start),
         where("date", "<", end),
