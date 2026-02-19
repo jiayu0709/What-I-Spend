@@ -20,34 +20,29 @@
     *{ box-sizing:border-box; }
 
     /* 1. 將底色鎖定在 html，防止彈性滾動露出白底 */
-    html {
-      background-color: #f2ede9; /* 與 var(--app-bg) 一致 */
+    html, body {
       height: 100%;
     }
 
-    body {
+    html{
+      background:
+        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
+        var(--app-bg, #f2ede9);
+    }
+
+    body{
       margin: 0;
-      min-height: 100vh;
-      /* 2. 移除原有的 background 寫法，改用更穩定的方式 */
-      background-color: var(--app-bg, #f2ede9);
-      background-image: radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%);
-      background-attachment: fixed; /* 讓漸層固定，不隨內容滾動 */
-      
+      min-height: 100vh;            /* 保留你的排版需求 */
+      background: transparent;      /* 讓 html 的背景透出來 */
       color: var(--text, #3c3c3c);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 
       display: grid;
       place-items: center;
       padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
-    }
 
-    /* 3. 簡化 body::before，確保全屏覆蓋且顏色一致 */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background: var(--app-bg, #f2ede9);
+      /* ✅ 降低 iOS 橡皮筋時的奇怪露底（不影響你內容能不能顯示） */
+      overscroll-behavior: none;
     }
 
     .app{
