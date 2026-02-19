@@ -414,14 +414,12 @@
 
       const payload = { bookId, date, time, type: currentType, amount, category, note };
 
-      // ✅ 新增：每筆交易帶 bookId（最小改動）
-      payload.bookId = await ensureDefaultBook(user.uid);
-
       const result = await writeTransaction(payload, { prefer: "function" });
       console.log("writeTransaction via:", result.via);
 
       if (redirectAfter) {
         const ym = monthKeyFromDateStr(date);
+        const b = encodeURIComponent(bookId);
         location.replace(ym ? `month.html?m=${ym}` : "month.html");
       }
     }
