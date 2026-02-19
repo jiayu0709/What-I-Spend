@@ -16,33 +16,40 @@
   <title>加入主畫面</title>
 
   <style>
-    /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
+    /* 定義變數確保即使 theme.css 沒讀到也能維持視覺一致 */
+    :root {
+      --app-bg: #f2ede9;
+      --card-bg: rgba(255, 255, 255, 0.45);
+      --text: #3c3c3c;
+      --secondary: #8e8e93;
+      --accent-text: #6b5e55;
+      --radius: 28px;
+    }
+
     *{ box-sizing:border-box; }
 
-    /* 1. 將底色鎖定在 html，防止彈性滾動露出白底 */
+    /* 修正底色不同問題：將 HTML 與 Body 的背景完全同步 */
     html, body {
       height: 100%;
-    }
-
-    html{
-      background:
-        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
-        var(--app-bg, #f2ede9);
-    }
-
-    body{
       margin: 0;
-      min-height: 100vh;            /* 保留你的排版需求 */
-      background: transparent;      /* 讓 html 的背景透出來 */
-      color: var(--text, #3c3c3c);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background-color: var(--app-bg);
+    }
 
+    html {
+      /* 使用圖片中的放射狀漸層，從上方透出微光 */
+      background: 
+        radial-gradient(circle at 50% -20%, #ffffff 0%, transparent 70%),
+        var(--app-bg);
+    }
+
+    body {
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       display: grid;
       place-items: center;
       padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
-
-      /* ✅ 降低 iOS 橡皮筋時的奇怪露底（不影響你內容能不能顯示） */
       overscroll-behavior: none;
+      background: transparent; /* 繼承 html 的漸層 */
     }
 
     .app{
