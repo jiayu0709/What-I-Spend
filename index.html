@@ -330,7 +330,7 @@
 
       // ✅ 從主畫面 icon 開啟（standalone）→ 直接去登入頁
     if (isStandalone) {
-      location.replace("login.html");
+      location.replace("waiting.html?next=month.html");
     }
 
     if (isRealSafari() && !isStandalone) {
