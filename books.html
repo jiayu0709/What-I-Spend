@@ -154,7 +154,9 @@
     import { auth, db } from "./firebase-config.js";
 
     await window.firebaseReady;
-
+    if (!window.ui) {
+        console.error("window.ui 不存在：請確認 ui.js / app.js 是否有初始化 window.ui");
+        }
     const LS_KEY = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
 
