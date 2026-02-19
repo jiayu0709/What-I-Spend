@@ -151,7 +151,7 @@
       collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
       serverTimestamp, where, deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { db } from "./firebase-config.js";
+    import { auth, db } from "./firebase-config.js";
 
     await window.firebaseReady;
 
@@ -381,7 +381,7 @@
     }
 
     btnNew.addEventListener("click", async () => {
-      const user = window.auth.currentUser;
+      const user = auth.currentUser;
       if (!user) return;
 
       const name = await window.ui.prompt("新帳本名稱", {
@@ -406,7 +406,7 @@
       location.replace(ref || "month.html");
     });
 
-    onAuthStateChanged(window.auth, async (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         location.replace("index.html");
         return;
