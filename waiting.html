@@ -6,30 +6,114 @@
   <link rel="stylesheet" href="theme.css">
   <title>載入中</title>
   <style>
-    body{ margin:0; background:var(--app-bg); color:var(--text); }
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      background: var(--app-bg);
+      color: var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
+
     .wrap{
       min-height:100vh;
       display:grid;
       place-items:center;
-      padding:24px;
+      padding: 24px var(--page-padding, 16px);
+    }
+
+    .card{
+      width:min(520px, 100%);
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: calc(var(--radius) + 6px);
+      padding: 18px 16px;
+      box-shadow:
+        0 18px 50px rgba(0,0,0,0.08),
+        0 1px 0 rgba(255,255,255,0.55) inset;
       text-align:center;
     }
-    .card{
-      width:min(420px, 100%);
-      background:rgba(255,255,255,0.55);
-      border:1px solid rgba(0,0,0,0.06);
-      border-radius:var(--radius);
-      padding:18px 16px;
-      font-weight:900;
+
+    .logo{
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      display:grid;
+      place-items:center;
+      margin: 4px auto 12px;
+      font-size: 42px;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
     }
-    .sub{ margin-top:8px; font-weight:800; color:var(--secondary); font-size:14px; }
+
+    .title{
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+      margin: 0;
+    }
+
+    .sub{
+      margin-top: 8px;
+      font-weight: 900;
+      color: var(--secondary);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .row{
+      margin-top: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+    }
+
+    .spinner{
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 3px solid rgba(0,0,0,0.10);
+      border-top-color: var(--accent-text);
+      animation: spin .85s linear infinite;
+    }
+
+    @keyframes spin{
+      to{ transform: rotate(360deg); }
+    }
+
+    .hint{
+      margin-top: 12px;
+      font-weight: 800;
+      color: var(--secondary);
+      font-size: 12px;
+      opacity: .95;
+    }
+
+    /* subtle enter */
+    .card{ animation: pop .22s ease-out; }
+    @keyframes pop{
+      from{ opacity:0; transform: translateY(10px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="card">
-      正在載入你的帳戶…
-      <div class="sub">請稍候</div>
+    <div class="card" role="status" aria-live="polite">
+      <div class="logo">💰</div>
+      <p class="title">正在載入你的帳戶…</p>
+
+      <div class="row">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="sub">請稍候</div>
+      </div>
+
+      <div class="hint">如果你已登入，會自動帶你進去</div>
     </div>
   </div>
 
