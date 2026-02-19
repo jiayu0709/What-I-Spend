@@ -171,7 +171,9 @@ button:active{ opacity:.65; transform:scale(.98); }
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   display: flex;
+  flex-direction: column;
   place-items: center;
+  justify-content: center;
   gap: 2px;
   padding: 0;
   cursor: pointer;
@@ -186,6 +188,7 @@ button:active{ opacity:.65; transform:scale(.98); }
   background: var(--text);
   border-radius: 999px;
   opacity: .9;
+  margin:0;
 }
 
 /* =========================
