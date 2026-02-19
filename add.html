@@ -414,13 +414,13 @@
 
       const payload = { bookId, date, time, type: currentType, amount, category, note };
 
-      const result = await writeTransaction(payload, { prefer: "function" });
+      const result = await writeTransaction(payload, { prefer: "client" });
       console.log("writeTransaction via:", result.via);
 
       if (redirectAfter) {
         const ym = monthKeyFromDateStr(date);
         const b = encodeURIComponent(bookId);
-        location.replace(ym ? `month.html?m=${ym}` : "month.html");
+        location.replace(ym ? `month.html?m=${ym}&b=${b}` : `month.html?b=${b}`);
       }
     }
 
