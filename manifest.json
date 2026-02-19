@@ -2,6 +2,7 @@
   "name": "What I Spend",
   "short_name": "Spend",
   "start_url": "/waiting.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f3e7e3",
   "theme_color": "#f3e7e3",
