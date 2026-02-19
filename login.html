@@ -89,11 +89,6 @@
   const isStandalone =
     window.navigator.standalone === true ||
     window.matchMedia?.("(display-mode: standalone)")?.matches === true;
-
-  // 只在主畫面啟動時做（避免 Safari 一般開啟也一直跳）
-  if (isStandalone) {
-    location.replace("waiting.html?next=month.html");
-  }
 </script>
 
   <div class="login-card">
