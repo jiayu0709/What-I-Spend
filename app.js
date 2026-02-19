@@ -262,10 +262,6 @@ if (document.readyState === "loading") {
 (function () {
   if (window.ui) return; // 避免重複載入
 
-  const style = document.createElement("style");
-  style.textContent = css;
-  document.head.appendChild(style);
-
   const backdrop = document.createElement("div");
   backdrop.className = "ui-modal-backdrop";
   backdrop.innerHTML = `
