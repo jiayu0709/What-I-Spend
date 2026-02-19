@@ -1,4 +1,4 @@
-// netlify/functions/addTransaction.js
+// netlify/functions/getBooks.js
 import admin from "firebase-admin";
 
 function json(statusCode, body) {
@@ -41,64 +41,43 @@ export const handler = async (event) => {
     return json(400, { ok: false, error: "Invalid JSON" });
   }
 
-  const { date, time, type, amount, category, note, shortcutToken } = body;
-
-  if (!date || !category || !amount) {
-    return json(400, { ok: false, error: "Missing fields" });
+  const { shortcutToken } = body;
+  if (!shortcutToken) {
+    return json(400, { ok: false, error: "Missing shortcutToken" });
   }
 
   try {
     initAdmin();
     const db = admin.firestore();
 
-    let uid = null;
+    // 用 shortcutToken 找 uid
+    const userSnap = await db
+      .collection("users")
+      .where("shortcutToken", "==", shortcutToken)
+      .limit(1)
+      .get();
 
-    /* ===============================
-       A️⃣ Web / PWA：Firebase ID Token
-       =============================== */
-    const authHeader = event.headers.authorization || event.headers.Authorization;
-    if (authHeader?.startsWith("Bearer ")) {
-      const idToken = authHeader.slice(7);
-      const decoded = await admin.auth().verifyIdToken(idToken);
-      uid = decoded.uid;
+    if (userSnap.empty) {
+      return json(401, { ok: false, error: "Invalid shortcut token" });
     }
 
-    /* ==================================
-       B️⃣ Shortcut：shortcutToken
-       ================================== */
-    if (!uid && shortcutToken) {
-      const snap = await db
-        .collection("users")
-        .where("shortcutToken", "==", shortcutToken)
-        .limit(1)
-        .get();
+    const uid = userSnap.docs[0].id;
 
-      if (snap.empty) {
-        return json(401, { ok: false, error: "Invalid shortcut token" });
-      }
-      uid = snap.docs[0].id;
-    }
-
-    if (!uid) {
-      return json(401, { ok: false, error: "Unauthorized" });
-    }
-
-    await db
+    // 取 books（未封存）
+    const booksSnap = await db
       .collection("users")
       .doc(uid)
-      .collection("transactions")
-      .add({
-        date,
-        time: time || "",
-        type: type || "expense",
-        amount,
-        category,
-        note: note || "",
-        source: shortcutToken ? "shortcut" : "web",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      .collection("books")
+      .where("archived", "==", false)
+      .orderBy("createdAt", "asc")
+      .get();
 
-    return json(200, { ok: true });
+    const books = booksSnap.docs.map((d) => {
+      const data = d.data() || {};
+      return { id: d.id, name: data.name || "未命名帳本" };
+    });
+
+    return json(200, { ok: true, books });
   } catch (e) {
     console.error(e);
     return json(500, { ok: false, error: "Server error" });
