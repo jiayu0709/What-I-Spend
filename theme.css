@@ -166,10 +166,11 @@ button:active{ opacity:.65; transform:scale(.98); }
   width: var(--hamburger-size);
   height: var(--hamburger-size);
   border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
   display: grid;
   place-items: center;
   gap: 4px;
