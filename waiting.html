@@ -122,14 +122,14 @@
     await window.firebaseReady;
     const user = await window.waitForAuthReady();
 
-    // 想回到原本頁就用 ?next=
     const qs = new URLSearchParams(location.search);
     const next = qs.get("next") || "month.html";
 
     if (user) {
-      location.replace(next);
+        location.replace(next);
     } else {
-      location.replace("index.html");
+        // ✅ 直接去 login（並把 next 帶過去）
+        location.replace(`login.html?next=${encodeURIComponent(next)}`);
     }
   </script>
 </body>
