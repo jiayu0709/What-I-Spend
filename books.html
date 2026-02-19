@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="theme.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="What I Spend">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>帳本</title>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+    .app{min-height:100vh;padding-bottom:var(--tab-height)}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
+    .nav-title{font-size:28px;font-weight:800;margin:0px 0 14px;transform: translateY(-4px);letter-spacing:-.5px;text-align:center}
+
+    .section{margin-top:14px}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .empty{
+      margin-top:10px;
+      background:rgba(255,255,255,0.5);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      color:var(--secondary);
+      font-weight:800;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:12px 0;
+    }
+    .divider{height:1px;background:var(--divider);border:0;margin:0}
+    .name{
+      font-weight:900;
+      font-size:18px;
+      letter-spacing:-.2px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .badge{
+      font-size:12px;
+      font-weight:900;
+      padding:2px 8px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.65);
+      border:1px solid rgba(0,0,0,0.08);
+      color:var(--text);
+      flex:0 0 auto;
+    }
+    .sub{
+      margin-top:4px;
+      font-size:12px;
+      font-weight:800;
+      color:var(--secondary);
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .btn{
+      border:0;
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+      background:rgba(255,255,255,0.62);
+      border:1px solid rgba(0,0,0,0.06);
+      color:var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn.primary{
+      background: var(--accent-text);
+      color:#fff;
+      border:0;
+    }
+    .btn.danger{
+      background: rgba(217,74,74,0.10);
+      border: 1px solid rgba(217,74,74,0.18);
+      color: #b33b3b;
+    }
+    .btn:active{opacity:.7;transform:scale(.99)}
+    .toolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+    }
+    .hint{
+      font-size:12px;
+      font-weight:800;
+      color:var(--secondary);
+      line-height:1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav-title">帳本</div>
+
+      <section class="section">
+        <div class="card">
+          <div class="toolbar">
+            <div class="hint" id="hint">讀取中...</div>
+            <button class="btn primary" id="btnNew" type="button">＋ 新增帳本</button>
+          </div>
+
+          <div id="list"></div>
+        </div>
+
+        <div id="err" class="empty" style="display:none;"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Tab Bar">
+      <div class="tabbar-inner">
+        <a class="tab" href="add.html"><div class="icon">＋</div><div>新增</div></a>
+        <a class="tab" href="month.html"><div class="icon">▦</div><div>本月</div></a>
+        <a class="tab" href="year.html"><div class="icon">⛁</div><div>統計</div></a>
+      </div>
+    </nav>
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
+      serverTimestamp, where
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
+
+    await window.firebaseReady;
+
+    const LS_KEY = "wis_currentBookId";
+    const $ = (id) => document.getElementById(id);
+
+    const listEl = $("list");
+    const hintEl = $("hint");
+    const errEl = $("err");
+    const btnNew = $("btnNew");
+
+    const qs = new URLSearchParams(location.search);
+    const ref = qs.get("ref"); // optional return url
+
+    function showErr(msg){
+      errEl.style.display = "block";
+      errEl.textContent = msg;
+    }
+    function clearErr(){
+      errEl.style.display = "none";
+      errEl.textContent = "";
+    }
+
+    function currentBookId(){
+      return localStorage.getItem(LS_KEY) || "";
+    }
+    function setCurrentBookId(id){
+      localStorage.setItem(LS_KEY, id);
+    }
+
+    async function ensureDefaultBook(uid){
+      // 1) 若 localStorage 已有 -> ok
+      const existing = currentBookId();
+      if (existing) return existing;
+
+      // 2) 若沒有 -> 看 Firestore 有沒有第一本
+      const booksRef = collection(db, "users", uid, "books");
+      const q1 = query(booksRef, where("archived","==", false), orderBy("createdAt","asc"));
+      const snap = await getDocs(q1);
+
+      if (!snap.empty) {
+        const first = snap.docs[0].id;
+        setCurrentBookId(first);
+        return first;
+      }
+
+      // 3) 都沒有 -> 建立「生活」
+      const docRef = await addDoc(booksRef, {
+        name: "生活",
+        archived: false,
+        createdAt: serverTimestamp(),
+      });
+      setCurrentBookId(docRef.id);
+      return docRef.id;
+    }
+
+    async function loadBooks(uid){
+      clearErr();
+      hintEl.textContent = "讀取中...";
+
+      await ensureDefaultBook(uid);
+
+      const booksRef = collection(db, "users", uid, "books");
+      // 先顯示未封存（封存的你也可以改成顯示在下面）
+      const q1 = query(booksRef, orderBy("createdAt","asc"));
+      const snap = await getDocs(q1);
+
+      const books = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(b => b.archived !== true);
+
+      renderList(uid, books);
+
+      hintEl.textContent = books.length
+        ? "點「切換」就會切到該帳本"
+        : "尚未建立帳本";
+    }
+
+    function renderList(uid, books){
+      listEl.innerHTML = "";
+
+      if (!books.length) {
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = "尚未建立帳本，先新增一個吧！";
+        listEl.appendChild(e);
+        return;
+      }
+
+      const cur = currentBookId();
+
+      books.forEach((b, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "row";
+
+        const left = document.createElement("div");
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = b.name || "未命名帳本";
+
+        if (b.id === cur) {
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = "目前";
+          name.appendChild(badge);
+        }
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = `ID: ${b.id.slice(0,8)}…`;
+
+        left.appendChild(name);
+        left.appendChild(sub);
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const btnSwitch = document.createElement("button");
+        btnSwitch.className = "btn";
+        btnSwitch.type = "button";
+        btnSwitch.textContent = (b.id === cur) ? "已在此帳本" : "切換";
+        btnSwitch.disabled = (b.id === cur);
+
+        btnSwitch.addEventListener("click", () => {
+          setCurrentBookId(b.id);
+          // 切換後回到 ref 或月頁
+          location.replace(ref || "month.html");
+        });
+
+        const btnRename = document.createElement("button");
+        btnRename.className = "btn";
+        btnRename.type = "button";
+        btnRename.textContent = "重命名";
+        btnRename.addEventListener("click", async () => {
+          const newName = prompt("帳本名稱", b.name || "");
+          if (newName === null) return;
+          const nm = newName.trim();
+          if (!nm) { alert("名稱不能空白"); return; }
+
+          await updateDoc(doc(db, "users", uid, "books", b.id), { name: nm });
+          await loadBooks(uid);
+        });
+
+        const btnArchive = document.createElement("button");
+        btnArchive.className = "btn danger";
+        btnArchive.type = "button";
+        btnArchive.textContent = "封存";
+        btnArchive.addEventListener("click", async () => {
+          const ok = confirm(`封存「${b.name || "未命名"}」？\n封存後不會刪除交易，只是隱藏帳本。`);
+          if (!ok) return;
+
+          await updateDoc(doc(db, "users", uid, "books", b.id), { archived: true });
+
+          // 若封存的是目前帳本 -> 重新指定一個
+          if (currentBookId() === b.id) {
+            localStorage.removeItem(LS_KEY);
+            await ensureDefaultBook(uid);
+          }
+          await loadBooks(uid);
+        });
+
+        actions.appendChild(btnSwitch);
+        actions.appendChild(btnRename);
+        actions.appendChild(btnArchive);
+
+        wrap.appendChild(left);
+        wrap.appendChild(actions);
+
+        listEl.appendChild(wrap);
+
+        if (idx !== books.length - 1) {
+          const hr = document.createElement("hr");
+          hr.className = "divider";
+          listEl.appendChild(hr);
+        }
+      });
+    }
+
+    btnNew.addEventListener("click", async () => {
+      const user = window.auth.currentUser;
+      if (!user) return;
+
+      const name = prompt("新帳本名稱", "新帳本");
+      if (name === null) return;
+      const nm = name.trim();
+      if (!nm) { alert("名稱不能空白"); return; }
+
+      const booksRef = collection(db, "users", user.uid, "books");
+      const docRef = await addDoc(booksRef, {
+        name: nm,
+        archived: false,
+        createdAt: serverTimestamp(),
+      });
+
+      setCurrentBookId(docRef.id);
+      location.replace(ref || "month.html");
+    });
+
+    onAuthStateChanged(window.auth, async (user) => {
+      if (!user) {
+        location.replace("index.html");
+        return;
+      }
+      try {
+        await loadBooks(user.uid);
+      } catch (e) {
+        console.error(e);
+        showErr("讀取帳本失敗，請確認 Firestore 規則與索引");
+      }
+    });
+  </script>
+</body>
+</html>

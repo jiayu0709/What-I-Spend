@@ -153,18 +153,95 @@
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
     
     // 1. 先等待 Firebase 核心初始化完成 (Persistence 設定)
     await window.firebaseReady;
 
+    // ✅ 新增：帳本（最小改動）
+    const LS_BOOK = "wis_currentBookId";
+    async function ensureDefaultBook(uid){
+      const existing = localStorage.getItem(LS_BOOK);
+      if (existing) return existing;
+
+      const booksRef = collection(db, "users", uid, "books");
+      const q1 = query(booksRef, orderBy("createdAt","asc"), limit(1));
+      const snap = await getDocs(q1);
+
+      if (!snap.empty) {
+        const firstId = snap.docs[0].id;
+        localStorage.setItem(LS_BOOK, firstId);
+        return firstId;
+      }
+
+      const docRef = await addDoc(booksRef, {
+        name: "生活",
+        archived: false,
+        createdAt: serverTimestamp(),
+      });
+      localStorage.setItem(LS_BOOK, docRef.id);
+      return docRef.id;
+    }
+
     let isInitialCheck = true;
+
+    // ===== month state (from ?m=YYYY-MM) =====
+    const qs = new URLSearchParams(location.search);
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    }
+    function parseMonthKey(key){
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y,m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m-1, 1);
+    }
+    function addMonths(dateObj, delta){
+      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
+    }
+    function monthLabel(dateObj){
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}`;
+    }
+
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth);
+
+    // ✅ 新增：從網址或 localStorage 取得 bookId（最小改動）
+    const urlBook = qs.get("b");
+    if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
+    let currentBookId = localStorage.getItem(LS_BOOK) || "";
+
+    // ✅ currentRef 也帶上 b，避免 edit 回來丟失帳本
+    const currentRef = `month.html?m=${currentKey}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
+
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      const m = monthKeyFromDate(prev);
+      const b = localStorage.getItem(LS_BOOK) || "";
+      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
+    });
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      const m = monthKeyFromDate(next);
+      const b = localStorage.getItem(LS_BOOK) || "";
+      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
+    });
 
     // 2. 監聽登入狀態
     onAuthStateChanged(window.auth, async (user) => {
       if (user) {
         isInitialCheck = false;
+
+        // ✅ 確保一定有 bookId
+        currentBookId = await ensureDefaultBook(user.uid);
+
         // 登入成功，開始抓資料
         try {
           const txs = await fetchMonthTxs(user.uid);
@@ -191,43 +268,6 @@
           location.replace("index.html");
         }
       }
-    });
-
-    // ===== month state (from ?m=YYYY-MM) =====
-    const qs = new URLSearchParams(location.search);
-
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function monthKeyFromDate(d){
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-    }
-    function parseMonthKey(key){
-      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-      const [y,m] = key.split("-").map(n => parseInt(n,10));
-      if(!y || !m || m < 1 || m > 12) return null;
-      return new Date(y, m-1, 1);
-    }
-    function addMonths(dateObj, delta){
-      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
-    }
-    function monthLabel(dateObj){
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
-    }
-
-    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const currentKey = monthKeyFromDate(currentMonth);
-    const currentRef = `month.html?m=${currentKey}`;
-
-    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
-
-    document.getElementById("btnPrev").addEventListener("click", () => {
-      const prev = addMonths(currentMonth, -1);
-      location.href = `month.html?m=${monthKeyFromDate(prev)}`;
-    });
-    document.getElementById("btnNext").addEventListener("click", () => {
-      const next = addMonths(currentMonth, 1);
-      location.href = `month.html?m=${monthKeyFromDate(next)}`;
     });
 
     // ===== helpers =====
@@ -429,8 +469,10 @@
       const start = `${currentKey}-01`;
       const end = `${nextMonthKey(currentKey)}-01`;
 
+      // ✅ 修改：多一個 bookId 條件（最小改動）
       const q = query(
         txRef,
+        where("bookId", "==", currentBookId),
         where("date", ">=", start),
         where("date", "<", end),
         orderBy("date", "desc"),

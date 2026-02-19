@@ -167,6 +167,12 @@
 
     const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
 
+    // ✅ 新增：帳本（最小改動）
+    const LS_BOOK = "wis_currentBookId";
+    const urlBook = qs.get("b");
+    if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
+    const currentBookId = localStorage.getItem(LS_BOOK) || "";
+
     $("monthLabel").textContent = monthLabel(currentMonth);
     $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(
       currentMonth.getMonth() + 1
@@ -174,12 +180,14 @@
 
     $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
-      location.href = `year.html?m=${monthKeyFromDate(prev)}`;
+      const m = monthKeyFromDate(prev);
+      location.href = `year.html?m=${m}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
     });
 
     $("btnNext").addEventListener("click", () => {
       const next = addMonths(currentMonth, 1);
-      location.href = `year.html?m=${monthKeyFromDate(next)}`;
+      const m = monthKeyFromDate(next);
+      location.href = `year.html?m=${m}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
     });
 
     // =========================
@@ -413,6 +421,9 @@
     // ✅ 只加：提供 module script 呼叫（不影響其他功能）
     window.__renderMonthCategoryChart = renderMonthCategoryChart;
     window.__currentKeyForStats = currentKey;
+
+    // ✅ 新增：提供 module script 取用目前帳本（最小改動）
+    window.__currentBookIdForStats = currentBookId;
   </script>
 
   <!-- ✅ 修正點：改用 Firestore 抓當月 transactions（跟 month.html 同資料來源） -->
@@ -429,13 +440,14 @@
       return `${next.getFullYear()}-${mm}`;
     }
 
-    async function fetchMonthTxs(uid, ym){
+    async function fetchMonthTxs(uid, ym, bookId){
       const start = `${ym}-01`;
       const end = `${nextMonthKey(ym)}-01`;
 
       const txRef = collection(db, "users", uid, "transactions");
       const q = query(
         txRef,
+        where("bookId", "==", bookId),
         where("date", ">=", start),
         where("date", "<", end),
         orderBy("date", "desc"),
@@ -454,6 +466,7 @@
     // 2) 監聽登入狀態 -> 有 user 才用 Firestore 讀
     onAuthStateChanged(window.auth, async (user) => {
       const ym = window.__currentKeyForStats;
+      const bookId = window.__currentBookIdForStats;
 
       if (!user) {
         // 沒登入：維持原本行為（用 localStorage 渲染空 or 舊資料）
@@ -461,8 +474,14 @@
         return;
       }
 
+      // ✅ 新增：沒有 bookId 就先用 fallback（避免查詢報錯）
+      if (!bookId) {
+        window.__renderMonthCategoryChart();
+        return;
+      }
+
       try {
-        const txs = await fetchMonthTxs(user.uid, ym);
+        const txs = await fetchMonthTxs(user.uid, ym, bookId);
         window.__renderMonthCategoryChart(txs);
       } catch (e) {
         // Firestore 失敗：fallback 不影響其他功能

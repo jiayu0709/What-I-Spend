@@ -97,6 +97,8 @@
         <a class="drawer-link" href="month.html"><button class="drawer-item" type="button">本月</button></a>
         <a class="drawer-link" href="add.html"><button class="drawer-item" type="button">新增</button></a>
         <a class="drawer-link" href="year.html"><button class="drawer-item" type="button">統計</button></a>
+        <!-- ✅ 新增：帳本（只加入口，不影響其他功能） -->
+        <a class="drawer-link" href="books.html?ref=add.html"><button class="drawer-item" type="button">帳本</button></a>
 
         <button class="drawer-item danger" id="logoutBtn" type="button">登出</button>
       </div>
@@ -157,7 +159,32 @@
   <script type="module">
     // ✅ 功能不變：只整理結構、去重、讓邏輯更清楚
     import { auth, db } from "./firebase-config.js";
-    import { addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { addDoc, collection, serverTimestamp, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ✅ 新增：帳本（最小改動）
+    const LS_BOOK = "wis_currentBookId";
+    async function ensureDefaultBook(uid){
+      const existing = localStorage.getItem(LS_BOOK);
+      if (existing) return existing;
+
+      const booksRef = collection(db, "users", uid, "books");
+      const q1 = query(booksRef, orderBy("createdAt","asc"), limit(1));
+      const snap = await getDocs(q1);
+
+      if (!snap.empty) {
+        const firstId = snap.docs[0].id;
+        localStorage.setItem(LS_BOOK, firstId);
+        return firstId;
+      }
+
+      const docRef = await addDoc(booksRef, {
+        name: "生活",
+        archived: false,
+        createdAt: serverTimestamp(),
+      });
+      localStorage.setItem(LS_BOOK, docRef.id);
+      return docRef.id;
+    }
 
     // =========================
     // Constants
@@ -280,6 +307,11 @@
     const initialUser = await window.waitForAuthReady();
     uid = initialUser?.uid || null;
 
+    // ✅ 新增：確保有預設帳本（不影響原本流程）
+    if (uid) {
+      await ensureDefaultBook(uid);
+    }
+
     // 原本邏輯：不論有沒有登入，都先讓按鈕可按；未登入按下才跳登入
     saveBtn.disabled = false;
 
@@ -375,6 +407,9 @@
       if (!isFinite(amount) || amount <= 0) { alert("請輸入正確金額（> 0）"); return; }
 
       const payload = { date, time, type: currentType, amount, category, note };
+
+      // ✅ 新增：每筆交易帶 bookId（最小改動）
+      payload.bookId = await ensureDefaultBook(user.uid);
 
       const result = await writeTransaction(payload, { prefer: "function" });
       console.log("writeTransaction via:", result.via);
