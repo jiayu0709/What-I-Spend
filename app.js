@@ -173,8 +173,10 @@ function injectDrawer(){
       <a class="drawer-link" href="add.html"><div class="drawer-item">新增</div></a>
       <a class="drawer-link" href="year.html"><div class="drawer-item">統計</div></a>
 
-      <!-- 你想加的頁面 -->
-      <!-- <a class="drawer-link" href="settings.html"><div class="drawer-item">設定</div></a> -->
+      <!-- ✅ 新增：切換帳本 -->
+      <a class="drawer-link" href="books.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
+        <div class="drawer-item">切換帳本</div>
+      </a>
     </div>
   `;
 
