@@ -172,7 +172,7 @@ button:active{ opacity:.65; transform:scale(.98); }
   -webkit-backdrop-filter: none;
   display: grid;
   place-items: center;
-  gap: 1px;
+  gap: 0px;
   padding: 0;
   cursor: pointer;
 }
