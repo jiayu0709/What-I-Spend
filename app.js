@@ -274,14 +274,27 @@ if (document.readyState === "loading") {
   }
   .ui-modal-backdrop.show{ display:grid; place-items:center; }
 
+  /* ✅ 統一粉紅底（你可調色） */
+  :root{
+    --ui-modal-pink: rgba(240, 210, 215, 0.92);
+  }
+
   .ui-modal{
     width: min(520px, 100%);
-    background: var(--card-bg, rgba(255,255,255,.78));
+    background: var(--ui-modal-pink);
     border: 1px solid rgba(0,0,0,.08);
     border-radius: calc(var(--radius, 22px) + 6px);
     box-shadow: 0 18px 50px rgba(0,0,0,.18);
     overflow:hidden;
   }
+
+  /* ✅ 讓各區塊不要自己再上色，整張同色 */
+  .ui-modal-head,
+  .ui-modal-body,
+  .ui-modal-actions{
+    background: transparent;
+  }
+
   .ui-modal-head{
     padding: 16px 16px 10px;
   }
@@ -317,14 +330,16 @@ if (document.readyState === "loading") {
   .ui-modal-input:focus{
     border-color: rgba(0,0,0,.18);
   }
+
   .ui-modal-actions{
     display:flex;
     gap:10px;
     padding: 14px 16px 16px;
     justify-content:flex-end;
     border-top: 1px solid rgba(0,0,0,.06);
-    background: rgba(255,255,255,.40);
+    /* ❌ 刪掉原本的白色背景：background: rgba(255,255,255,.40); */
   }
+
   .ui-btn{
     border:0;
     border-radius: 14px;
@@ -347,7 +362,7 @@ if (document.readyState === "loading") {
     border: 1px solid rgba(217,74,74,0.20);
     color: #b33b3b;
   }
-  `;
+`;
 
   const style = document.createElement("style");
   style.textContent = css;
