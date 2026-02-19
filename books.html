@@ -151,12 +151,10 @@
       collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
       serverTimestamp, where, deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { auth, db } from "./firebase-config.js";
+    import { db } from "./firebase-config.js";
 
     await window.firebaseReady;
-    if (!window.ui) {
-        console.error("window.ui 不存在：請確認 ui.js / app.js 是否有初始化 window.ui");
-        }
+
     const LS_KEY = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
 
@@ -383,7 +381,7 @@
     }
 
     btnNew.addEventListener("click", async () => {
-      const user = auth.currentUser;
+      const user = window.auth.currentUser;
       if (!user) return;
 
       const name = await window.ui.prompt("新帳本名稱", {
@@ -408,7 +406,7 @@
       location.replace(ref || "month.html");
     });
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(window.auth, async (user) => {
       if (!user) {
         location.replace("index.html");
         return;
