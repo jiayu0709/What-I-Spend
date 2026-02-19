@@ -19,30 +19,27 @@
     /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
     *{ box-sizing:border-box; }
 
-    /* 1. 將底色鎖定在 html，防止彈性滾動露出白底 */
-    html, body {
-      height: 100%;
-    }
-
-    html{
-      background:
-        radial-gradient(1200px 700px at 50% -200px, rgba(255,255,255,0.85), transparent 60%),
-        var(--app-bg, #f2ede9);
-    }
-
     body{
-      margin: 0;
-      min-height: 100vh;            /* 保留你的排版需求 */
-      background: transparent;      /* 讓 html 的背景透出來 */
+      margin:0;
+      min-height:100vh;
+      background: var(--app-bg, #f2ede9);
       color: var(--text, #3c3c3c);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
 
-      display: grid;
-      place-items: center;
-      padding: env(safe-area-inset-top) 18px env(safe-area-inset-bottom);
+    .app{
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+    }
 
-      /* ✅ 降低 iOS 橡皮筋時的奇怪露底（不影響你內容能不能顯示） */
-      overscroll-behavior: none;
+    .page{
+      width:100%;
+      max-width:520px;
+      padding:18px var(--page-padding,16px) 28px;
+      display:grid;
+      gap:14px;
     }
 
     .app{
