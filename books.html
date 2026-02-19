@@ -142,7 +142,7 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
       collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
-      serverTimestamp, where
+      serverTimestamp, where, deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
@@ -150,6 +150,51 @@
 
     const LS_KEY = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
+
+    async function deleteBook(uid, book){
+        const cur = currentBookId();
+
+        // ✅ 防呆：不允許刪除目前帳本（避免整個 app 沒 bookId）
+        if (book.id === cur) {
+            alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。");
+            return;
+        }
+
+        const ok = confirm(`確定要刪除帳本「${book.name || "未命名"}」？\n此操作無法復原。`);
+        if (!ok) return;
+
+        // ✅ 二段確認：是否也刪除該帳本底下的交易
+        const deleteTxToo = confirm(
+            "要同時刪除這個帳本的所有交易明細嗎？\n「確定」= 一併刪除交易\n「取消」= 只刪帳本（交易會留在資料庫）"
+        );
+
+        // 1) 刪除帳本文件
+        await deleteDoc(doc(db, "users", uid, "books", book.id));
+
+        // 2) 可選：刪除該帳本的 transactions（分批刪，避免一次太多）
+        if (deleteTxToo) {
+            const txRef = collection(db, "users", uid, "transactions");
+
+            while (true) {
+            // 每次抓 200 筆刪掉（你可以改 100/300）
+            const qtx = query(txRef, where("bookId", "==", book.id));
+            const snap = await getDocs(qtx);
+
+            if (snap.empty) break;
+
+            // 分批刪除
+            const docsToDelete = snap.docs.slice(0, 200);
+            await Promise.all(
+                docsToDelete.map(d => deleteDoc(doc(db, "users", uid, "transactions", d.id)))
+            );
+
+            // 若這次少於 200，表示刪完了
+            if (docsToDelete.length < 200) break;
+            }
+        }
+
+        alert("刪除完成");
+        }
 
     const listEl = $("list");
     const hintEl = $("hint");
@@ -306,10 +351,25 @@
           await loadBooks(uid);
         });
 
+        const btnDelete = document.createElement("button");
+        btnDelete.className = "btn danger";
+        btnDelete.type = "button";
+        btnDelete.textContent = "刪除";
+        btnDelete.addEventListener("click", async () => {
+        try{
+            await deleteBookAndAllTx(uid, b);
+            await loadBooks(uid);
+        }catch(e){
+            console.error(e);
+            alert("刪除失敗，請稍後再試（可能是權限/規則/網路問題）");
+        }
+        });
+
         actions.appendChild(btnSwitch);
         actions.appendChild(btnRename);
         actions.appendChild(btnArchive);
-
+        actions.appendChild(btnDelete);
+        
         wrap.appendChild(left);
         wrap.appendChild(actions);
 
