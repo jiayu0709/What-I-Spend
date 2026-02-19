@@ -132,55 +132,5 @@
         location.replace(`login.html?next=${encodeURIComponent(next)}`);
     }
   </script>
-  <script type="module">
-  const show = (msg) => {
-    const p = document.createElement("pre");
-    p.style.whiteSpace = "pre-wrap";
-    p.style.fontSize = "12px";
-    p.style.opacity = "0.9";
-    p.style.marginTop = "10px";
-    p.textContent = msg;
-    document.querySelector(".card")?.appendChild(p);
-  };
-
-  // ✅ 強制繞過快取（非常重要：PWA / Netlify 常常在用舊檔）
-  const V = "20260220_1";
-  try {
-    show("1) start…");
-    await import(`./app.js?v=${V}`);
-    show("2) app.js loaded");
-
-    show("firebaseReady type = " + typeof window.firebaseReady);
-    show("waitForAuthReady type = " + typeof window.waitForAuthReady);
-
-    // 如果這兩個是 undefined，代表 app.js 沒跑完（中途 error）
-    if (!window.firebaseReady || !window.waitForAuthReady) {
-      throw new Error("app.js did not initialize window.firebaseReady / waitForAuthReady");
-    }
-
-    // 防止永遠卡住
-    const qs = new URLSearchParams(location.search);
-    const next = qs.get("next") || "month.html";
-
-    const t = setTimeout(() => {
-      show("timeout -> go login");
-      location.replace(`login.html?next=${encodeURIComponent(next)}`);
-    }, 3000);
-
-    await window.firebaseReady;
-    show("3) firebaseReady done");
-
-    const user = await window.waitForAuthReady();
-    show("4) auth restored, user = " + (user?.uid || "null"));
-
-    clearTimeout(t);
-
-    if (user) location.replace(next);
-    else location.replace(`login.html?next=${encodeURIComponent(next)}`);
-  } catch (e) {
-    show("ERROR: " + (e?.message || e));
-    console.error(e);
-  }
-</script>
 </body>
 </html>
