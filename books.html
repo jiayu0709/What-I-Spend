@@ -31,14 +31,16 @@
       font-weight:800;
     }
 
+    /* ✅ 版面：第一排(名稱+目前) / 第二排(按鈕) */
     .row{
       display:grid;
-      grid-template-columns: 1fr auto;
-      gap:12px;
-      align-items:center;
+      grid-template-columns: 1fr;
+      gap:10px;
+      align-items:start;
       padding:12px 0;
     }
     .divider{height:1px;background:var(--divider);border:0;margin:0}
+
     .name{
       font-weight:900;
       font-size:18px;
@@ -47,7 +49,11 @@
       align-items:center;
       gap:8px;
       min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
+
     .badge{
       font-size:12px;
       font-weight:900;
@@ -58,19 +64,19 @@
       color:var(--text);
       flex:0 0 auto;
     }
-    .sub{
-      margin-top:4px;
-      font-size:12px;
-      font-weight:800;
-      color:var(--secondary);
-    }
 
+    /* ✅ 按鈕一排，大小不變 */
     .actions{
       display:flex;
       gap:8px;
       align-items:center;
-      justify-content:flex-end;
+      justify-content:flex-start;
+      flex-wrap:nowrap;
+      overflow-x:auto;                 /* 手機窄時可橫滑，不壓縮按鈕 */
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
     }
+
     .btn{
       border:0;
       border-radius:12px;
@@ -81,6 +87,7 @@
       border:1px solid rgba(0,0,0,0.06);
       color:var(--text);
       -webkit-tap-highlight-color: transparent;
+      flex:0 0 auto;                   /* ✅ 不讓按鈕縮小 */
     }
     .btn.primary{
       background: var(--accent-text);
@@ -151,51 +158,6 @@
     const LS_KEY = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
 
-    async function deleteBook(uid, book){
-        const cur = currentBookId();
-
-        // ✅ 防呆：不允許刪除目前帳本（避免整個 app 沒 bookId）
-        if (book.id === cur) {
-            alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。");
-            return;
-        }
-
-        const ok = confirm(`確定要刪除帳本「${book.name || "未命名"}」？\n此操作無法復原。`);
-        if (!ok) return;
-
-        // ✅ 二段確認：是否也刪除該帳本底下的交易
-        const deleteTxToo = confirm(
-            "要同時刪除這個帳本的所有交易明細嗎？\n「確定」= 一併刪除交易\n「取消」= 只刪帳本（交易會留在資料庫）"
-        );
-
-        // 1) 刪除帳本文件
-        await deleteDoc(doc(db, "users", uid, "books", book.id));
-
-        // 2) 可選：刪除該帳本的 transactions（分批刪，避免一次太多）
-        if (deleteTxToo) {
-            const txRef = collection(db, "users", uid, "transactions");
-
-            while (true) {
-            // 每次抓 200 筆刪掉（你可以改 100/300）
-            const qtx = query(txRef, where("bookId", "==", book.id));
-            const snap = await getDocs(qtx);
-
-            if (snap.empty) break;
-
-            // 分批刪除
-            const docsToDelete = snap.docs.slice(0, 200);
-            await Promise.all(
-                docsToDelete.map(d => deleteDoc(doc(db, "users", uid, "transactions", d.id)))
-            );
-
-            // 若這次少於 200，表示刪完了
-            if (docsToDelete.length < 200) break;
-            }
-        }
-
-        alert("刪除完成");
-        }
-
     const listEl = $("list");
     const hintEl = $("hint");
     const errEl = $("err");
@@ -218,6 +180,42 @@
     }
     function setCurrentBookId(id){
       localStorage.setItem(LS_KEY, id);
+    }
+
+    async function deleteBook(uid, book){
+      const cur = currentBookId();
+
+      // ✅ 防呆：不允許刪除目前帳本
+      if (book.id === cur) {
+        alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。");
+        return;
+      }
+
+      const ok = confirm(
+        `確定要刪除帳本「${book.name || "未命名"}」？\n` +
+        `會一併刪除這個帳本裡的所有明細，且無法復原。`
+      );
+      if (!ok) return;
+
+      // 1) 先刪 transactions（分批刪）
+      const txRef = collection(db, "users", uid, "transactions");
+      while (true) {
+        const qtx = query(txRef, where("bookId", "==", book.id));
+        const snap = await getDocs(qtx);
+        if (snap.empty) break;
+
+        const chunk = snap.docs.slice(0, 200);
+        await Promise.all(
+          chunk.map(d => deleteDoc(doc(db, "users", uid, "transactions", d.id)))
+        );
+
+        if (chunk.length < 200) break;
+      }
+
+      // 2) 再刪 books/{bookId}
+      await deleteDoc(doc(db, "users", uid, "books", book.id));
+
+      alert("刪除完成");
     }
 
     async function ensureDefaultBook(uid){
@@ -253,7 +251,6 @@
       await ensureDefaultBook(uid);
 
       const booksRef = collection(db, "users", uid, "books");
-      // 先顯示未封存（封存的你也可以改成顯示在下面）
       const q1 = query(booksRef, orderBy("createdAt","asc"));
       const snap = await getDocs(q1);
 
@@ -284,8 +281,7 @@
         const wrap = document.createElement("div");
         wrap.className = "row";
 
-        const left = document.createElement("div");
-
+        // ✅ 第一排：名稱 + 目前（不顯示 ID）
         const name = document.createElement("div");
         name.className = "name";
         name.textContent = b.name || "未命名帳本";
@@ -297,13 +293,7 @@
           name.appendChild(badge);
         }
 
-        const sub = document.createElement("div");
-        sub.className = "sub";
-        sub.textContent = `ID: ${b.id.slice(0,8)}…`;
-
-        left.appendChild(name);
-        left.appendChild(sub);
-
+        // ✅ 第二排：按鈕
         const actions = document.createElement("div");
         actions.className = "actions";
 
@@ -312,10 +302,8 @@
         btnSwitch.type = "button";
         btnSwitch.textContent = (b.id === cur) ? "已在此帳本" : "切換";
         btnSwitch.disabled = (b.id === cur);
-
         btnSwitch.addEventListener("click", () => {
           setCurrentBookId(b.id);
-          // 切換後回到 ref 或月頁
           location.replace(ref || "month.html");
         });
 
@@ -343,7 +331,6 @@
 
           await updateDoc(doc(db, "users", uid, "books", b.id), { archived: true });
 
-          // 若封存的是目前帳本 -> 重新指定一個
           if (currentBookId() === b.id) {
             localStorage.removeItem(LS_KEY);
             await ensureDefaultBook(uid);
@@ -356,21 +343,21 @@
         btnDelete.type = "button";
         btnDelete.textContent = "刪除";
         btnDelete.addEventListener("click", async () => {
-        try{
-            await deleteBookAndAllTx(uid, b);
+          try{
+            await deleteBook(uid, b);
             await loadBooks(uid);
-        }catch(e){
+          }catch(e){
             console.error(e);
             alert("刪除失敗，請稍後再試（可能是權限/規則/網路問題）");
-        }
+          }
         });
 
         actions.appendChild(btnSwitch);
         actions.appendChild(btnRename);
         actions.appendChild(btnArchive);
         actions.appendChild(btnDelete);
-        
-        wrap.appendChild(left);
+
+        wrap.appendChild(name);
         wrap.appendChild(actions);
 
         listEl.appendChild(wrap);
