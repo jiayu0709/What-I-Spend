@@ -41,10 +41,24 @@ export const handler = async (event) => {
     return json(400, { ok: false, error: "Invalid JSON" });
   }
 
-  const { date, time, type, amount, category, note, shortcutToken } = body;
+  // ✅ 重要：token trim + amount 轉數字
+  const shortcutToken = String(body.shortcutToken || "").trim();
+  const bookId = String(body.bookId || "").trim();
+  const date = String(body.date || "").trim();
+  const time = String(body.time || "").trim();
+  const type = String(body.type || "expense").trim();
+  const category = String(body.category || "").trim();
+  const note = String(body.note || "").trim();
 
-  if (!date || !category || !amount) {
-    return json(400, { ok: false, error: "Missing fields" });
+  const amountNum = Number(String(body.amount ?? "").replace(/,/g, ""));
+  const amount = Number.isFinite(amountNum) ? amountNum : NaN;
+
+  if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
+    return json(400, {
+      ok: false,
+      error: "Missing fields",
+      detail: { date, category, amount: body.amount },
+    });
   }
 
   try {
@@ -53,9 +67,7 @@ export const handler = async (event) => {
 
     let uid = null;
 
-    /* ===============================
-       A️⃣ Web / PWA：Firebase ID Token
-       =============================== */
+    // A) Web / PWA：Firebase ID Token
     const authHeader = event.headers.authorization || event.headers.Authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const idToken = authHeader.slice(7);
@@ -63,10 +75,12 @@ export const handler = async (event) => {
       uid = decoded.uid;
     }
 
-    /* ==================================
-       B️⃣ Shortcut：shortcutToken
-       ================================== */
-    if (!uid && shortcutToken) {
+    // B) Shortcut：shortcutToken
+    if (!uid) {
+      if (!shortcutToken) {
+        return json(401, { ok: false, error: "Unauthorized (missing shortcutToken)" });
+      }
+
       const snap = await db
         .collection("users")
         .where("shortcutToken", "==", shortcutToken)
@@ -76,29 +90,44 @@ export const handler = async (event) => {
       if (snap.empty) {
         return json(401, { ok: false, error: "Invalid shortcut token" });
       }
+
       uid = snap.docs[0].id;
     }
 
-    if (!uid) {
-      return json(401, { ok: false, error: "Unauthorized" });
+    // ✅ 如果捷徑沒傳 bookId，就給它用預設第一本（避免你忘了接）
+    let finalBookId = bookId;
+    if (!finalBookId) {
+      const booksSnap = await db
+        .collection("users")
+        .doc(uid)
+        .collection("books")
+        .where("archived", "==", false)
+        .orderBy("createdAt", "asc")
+        .limit(1)
+        .get();
+
+      if (!booksSnap.empty) {
+        finalBookId = booksSnap.docs[0].id;
+      }
     }
 
-    await db
+    const docRef = await db
       .collection("users")
       .doc(uid)
       .collection("transactions")
       .add({
+        bookId: finalBookId || "", // ✅ 寫入 bookId（可能是空字串但至少不會漏）
         date,
-        time: time || "",
-        type: type || "expense",
+        time,
+        type,
         amount,
         category,
-        note: note || "",
+        note,
         source: shortcutToken ? "shortcut" : "web",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-    return json(200, { ok: true });
+    return json(200, { ok: true, id: docRef.id, bookId: finalBookId || "" });
   } catch (e) {
     console.error(e);
     return json(500, { ok: false, error: "Server error" });
