@@ -30,8 +30,10 @@
 
     .app{
       min-height:100vh;
+      width:100%;
       display:flex;
       justify-content:center;
+      align-items:center;
     }
 
     .page{
@@ -42,8 +44,14 @@
       gap:14px;
     }
 
+    .app{
+      width:100%;
+      display:grid;
+      place-items:center;
+    }
+
     .card{
-      width:min(550px, 100%);
+      width:min(720px, 100%);
       background: var(--card-bg);              /* ✅ 背景色維持不動 */
       border-radius: var(--radius, 22px);
       padding: 18px 16px;
