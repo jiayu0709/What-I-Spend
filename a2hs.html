@@ -49,7 +49,8 @@
     }
 
     .card{
-      width:min(680px, 100%)!important;
+      width: calc(100% - 32px);   /* ✅ 手機左右各留 16px，會明顯變寬 */
+      max-width: 680px;   
       background: var(--card-bg);              /* ✅ 背景色維持不動 */
       border-radius: var(--radius, 22px);
       padding: 18px 16px;
