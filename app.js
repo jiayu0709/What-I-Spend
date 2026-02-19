@@ -256,3 +256,220 @@ if (document.readyState === "loading") {
 } else {
   injectDrawer();
 }
+// ==========================
+// Themed Modal (alert/confirm/prompt replacement)
+// ==========================
+(function () {
+  if (window.ui) return; // 避免重複載入
+
+  const css = `
+  .ui-modal-backdrop{
+    position:fixed; inset:0;
+    background: rgba(0,0,0,.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display:none;
+    z-index: 99999;
+    padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  }
+  .ui-modal-backdrop.show{ display:grid; place-items:center; }
+
+  .ui-modal{
+    width: min(520px, 100%);
+    background: var(--card-bg, rgba(255,255,255,.78));
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: calc(var(--radius, 22px) + 6px);
+    box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    overflow:hidden;
+  }
+  .ui-modal-head{
+    padding: 16px 16px 10px;
+  }
+  .ui-modal-title{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:-.2px;
+    color: var(--text, #3c3c3c);
+  }
+  .ui-modal-msg{
+    margin:8px 0 0;
+    font-size:14px;
+    font-weight:800;
+    line-height:1.5;
+    color: var(--secondary, #8e8e93);
+    white-space:pre-wrap;
+  }
+  .ui-modal-body{
+    padding: 0 16px 14px;
+  }
+  .ui-modal-input{
+    width:100%;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,.10);
+    background: rgba(255,255,255,.65);
+    padding: 12px 12px;
+    font-weight:900;
+    font-size:16px;
+    color: var(--text, #3c3c3c);
+    outline:none;
+  }
+  .ui-modal-input:focus{
+    border-color: rgba(0,0,0,.18);
+  }
+  .ui-modal-actions{
+    display:flex;
+    gap:10px;
+    padding: 14px 16px 16px;
+    justify-content:flex-end;
+    border-top: 1px solid rgba(0,0,0,.06);
+    background: rgba(255,255,255,.40);
+  }
+  .ui-btn{
+    border:0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-weight:900;
+    cursor:pointer;
+    background: rgba(255,255,255,0.70);
+    border:1px solid rgba(0,0,0,0.06);
+    color: var(--text, #3c3c3c);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ui-btn:active{ opacity:.75; transform: scale(.99); }
+  .ui-btn.primary{
+    background: var(--accent-text, #d61c68);
+    color:#fff;
+    border:0;
+  }
+  .ui-btn.danger{
+    background: rgba(217,74,74,0.12);
+    border: 1px solid rgba(217,74,74,0.20);
+    color: #b33b3b;
+  }
+  `;
+
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.appendChild(style);
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "ui-modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="ui-modal" role="dialog" aria-modal="true" aria-live="polite">
+      <div class="ui-modal-head">
+        <h3 class="ui-modal-title" id="uiTitle"></h3>
+        <p class="ui-modal-msg" id="uiMsg"></p>
+      </div>
+      <div class="ui-modal-body" id="uiBody" style="display:none;"></div>
+      <div class="ui-modal-actions" id="uiActions"></div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const $ = (id) => backdrop.querySelector("#" + id);
+
+  function open() {
+    backdrop.classList.add("show");
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    backdrop.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+
+  // 點背景不關（避免誤觸），你要可關再打開即可
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) {
+      // do nothing
+    }
+  });
+
+  // ESC 可關（桌機）
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && backdrop.classList.contains("show")) {
+      // 不自動關，避免誤關；如果你要 ESC 關閉可改成 close()
+    }
+  });
+
+  function render({ title, message, input, buttons }) {
+    $("uiTitle").textContent = title || "";
+    $("uiMsg").textContent = message || "";
+    const body = $("uiBody");
+    const actions = $("uiActions");
+    actions.innerHTML = "";
+    body.innerHTML = "";
+    body.style.display = "none";
+
+    let inputEl = null;
+    if (input) {
+      body.style.display = "block";
+      inputEl = document.createElement("input");
+      inputEl.className = "ui-modal-input";
+      inputEl.type = input.type || "text";
+      inputEl.placeholder = input.placeholder || "";
+      inputEl.value = input.value || "";
+      body.appendChild(inputEl);
+      // iOS 讓鍵盤彈起後 focus
+      setTimeout(() => inputEl.focus(), 50);
+    }
+
+    return new Promise((resolve) => {
+      buttons.forEach((b) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ui-btn" + (b.variant ? " " + b.variant : "");
+        btn.textContent = b.text;
+        btn.addEventListener("click", () => {
+          const val = inputEl ? inputEl.value : null;
+          close();
+          resolve(b.onClick ? b.onClick(val) : b.value);
+        });
+        actions.appendChild(btn);
+      });
+
+      open();
+    });
+  }
+
+  window.ui = {
+    alert(message, opts = {}) {
+      return render({
+        title: opts.title || "提示",
+        message,
+        buttons: [{ text: opts.okText || "知道了", variant: "primary", value: true }],
+      });
+    },
+
+    confirm(message, opts = {}) {
+      return render({
+        title: opts.title || "確認",
+        message,
+        buttons: [
+          { text: opts.cancelText || "取消", value: false },
+          { text: opts.okText || "確定", variant: opts.danger ? "danger" : "primary", value: true },
+        ],
+      });
+    },
+
+    prompt(message, opts = {}) {
+      return render({
+        title: opts.title || "請輸入",
+        message,
+        input: {
+          value: opts.defaultValue || "",
+          placeholder: opts.placeholder || "",
+          type: "text",
+        },
+        buttons: [
+          { text: opts.cancelText || "取消", value: null },
+          {
+            text: opts.okText || "確定",
+            variant: "primary",
+            onClick: (val) => (val ?? "").trim(),
+          },
+        ],
+      });
+    },
+  };
+})();

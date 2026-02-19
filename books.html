@@ -187,13 +187,14 @@
 
       // ✅ 防呆：不允許刪除目前帳本
       if (book.id === cur) {
-        alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。");
+        await window.ui.alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。", { title: "無法刪除" });
         return;
       }
 
-      const ok = confirm(
+      const ok = await window.ui.confirm(
         `確定要刪除帳本「${book.name || "未命名"}」？\n` +
-        `會一併刪除這個帳本裡的所有明細，且無法復原。`
+        `會一併刪除這個帳本裡的所有明細，且無法復原。`,
+        { title: "刪除帳本", danger: true, okText: "刪除", cancelText: "取消" }
       );
       if (!ok) return;
 
@@ -215,7 +216,7 @@
       // 2) 再刪 books/{bookId}
       await deleteDoc(doc(db, "users", uid, "books", book.id));
 
-      alert("刪除完成");
+      await window.ui.alert("刪除完成", { title: "完成" });
     }
 
     async function ensureDefaultBook(uid){
@@ -312,10 +313,16 @@
         btnRename.type = "button";
         btnRename.textContent = "重命名";
         btnRename.addEventListener("click", async () => {
-          const newName = prompt("帳本名稱", b.name || "");
+          const newName = await window.ui.prompt("帳本名稱", {
+            title: "重命名帳本",
+            defaultValue: b.name || "",
+            placeholder: "輸入帳本名稱",
+            okText: "儲存",
+            cancelText: "取消",
+          });
           if (newName === null) return;
-          const nm = newName.trim();
-          if (!nm) { alert("名稱不能空白"); return; }
+          const nm = String(newName).trim();
+          if (!nm) { await window.ui.alert("名稱不能空白", { title: "提示" }); return; }
 
           await updateDoc(doc(db, "users", uid, "books", b.id), { name: nm });
           await loadBooks(uid);
@@ -326,7 +333,10 @@
         btnArchive.type = "button";
         btnArchive.textContent = "封存";
         btnArchive.addEventListener("click", async () => {
-          const ok = confirm(`封存「${b.name || "未命名"}」？\n封存後不會刪除交易，只是隱藏帳本。`);
+          const ok = await window.ui.confirm(
+            `封存「${b.name || "未命名"}」？\n封存後不會刪除交易，只是隱藏帳本。`,
+            { title: "封存帳本", okText: "封存", cancelText: "取消" }
+          );
           if (!ok) return;
 
           await updateDoc(doc(db, "users", uid, "books", b.id), { archived: true });
@@ -348,7 +358,7 @@
             await loadBooks(uid);
           }catch(e){
             console.error(e);
-            alert("刪除失敗，請稍後再試（可能是權限/規則/網路問題）");
+            await window.ui.alert("刪除失敗，請稍後再試（可能是權限/規則/網路問題）", { title: "錯誤" });
           }
         });
 
@@ -374,10 +384,16 @@
       const user = window.auth.currentUser;
       if (!user) return;
 
-      const name = prompt("新帳本名稱", "新帳本");
+      const name = await window.ui.prompt("新帳本名稱", {
+        title: "新增帳本",
+        defaultValue: "新帳本",
+        placeholder: "輸入帳本名稱",
+        okText: "建立",
+        cancelText: "取消",
+      });
       if (name === null) return;
-      const nm = name.trim();
-      if (!nm) { alert("名稱不能空白"); return; }
+      const nm = String(name).trim();
+      if (!nm) { await window.ui.alert("名稱不能空白", { title: "提示" }); return; }
 
       const booksRef = collection(db, "users", user.uid, "books");
       const docRef = await addDoc(booksRef, {
