@@ -117,8 +117,8 @@
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
   <script type="module">
+    import "./app.js";
     await window.firebaseReady;
     const user = await window.waitForAuthReady();
 
