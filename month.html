@@ -479,7 +479,6 @@
       const q = query(
         txRef,
         where("bookId", "==", bookId),
-        where("bookId", "==", currentBookId),
         where("date", ">=", start),
         where("date", "<", end),
         orderBy("date", "desc"),
