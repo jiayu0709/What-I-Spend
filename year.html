@@ -444,7 +444,7 @@
       const start = `${ym}-01`;
       const end = `${nextMonthKey(ym)}-01`;
 
-      const bookId = localStorage.getItem("wis_currentBookId");
+      // ✅ 用傳進來的 bookId（不要在這裡再 const bookId = ...）
       if (!bookId) return [];
 
       const txRef = collection(db, "users", uid, "transactions");
@@ -459,25 +459,25 @@
 
       const snap = await getDocs(q);
       const txs = [];
-      snap.forEach(doc => txs.push({ id: doc.id, ...doc.data() }));
+      snap.forEach(d => txs.push({ id: d.id, ...d.data() }));
       return txs;
     }
 
-    // 1) 等 Firebase persistence ready（跟你其他頁一致）
+    // 1) 等 Firebase persistence ready
     await window.firebaseReady;
 
-    // 2) 監聽登入狀態 -> 有 user 才用 Firestore 讀
+    // 2) 監聽登入狀態（你說「只有登入過後才能用」→ 未登入直接去 login）
     onAuthStateChanged(window.auth, async (user) => {
-      const ym = window.__currentKeyForStats;
-      const bookId = window.__currentBookIdForStats;
-
       if (!user) {
-        // 沒登入：維持原本行為（用 localStorage 渲染空 or 舊資料）
-        window.__renderMonthCategoryChart();
+        const next = encodeURIComponent(location.href);
+        location.replace(`login.html?next=${next}`);
         return;
       }
 
-      // ✅ 新增：沒有 bookId 就先用 fallback（避免查詢報錯）
+      const ym = window.__currentKeyForStats;               // "YYYY-MM"
+      const bookId = window.__currentBookIdForStats || "";  // 來自 URL b 或 localStorage
+
+      // 沒有 bookId：先用舊行為（localStorage render）
       if (!bookId) {
         window.__renderMonthCategoryChart();
         return;
@@ -487,7 +487,6 @@
         const txs = await fetchMonthTxs(user.uid, ym, bookId);
         window.__renderMonthCategoryChart(txs);
       } catch (e) {
-        // Firestore 失敗：fallback 不影響其他功能
         console.error("統計頁讀取當月明細失敗（fallback localStorage）:", e);
         window.__renderMonthCategoryChart();
       }
