@@ -395,21 +395,5 @@
       });
     });
   </script>
-  <script>
-  // ✅ 每次進到 edit.html 都強制重播進場動畫（含 bfcache 還原）
-  window.addEventListener("pageshow", () => {
-    const page = document.querySelector("main.page");
-    if (!page) return;
-
-    // 保險：避免上一頁留下 leaving
-    page.classList.remove("leaving");
-
-    // 重新觸發 animation
-    page.style.animation = "none";
-    // 強制 reflow
-    void page.offsetHeight;
-    page.style.animation = "";
-  });
-</script>
 </body>
 </html>
