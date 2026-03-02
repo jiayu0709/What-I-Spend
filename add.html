@@ -198,14 +198,13 @@
     // 會從 Firestore 讀回來
     let CUSTOM_CATEGORIES = { expense: [], income: [] };
 
-    // 合併後給 UI 用
+    // 合併後給 UI 用（base 用原本的 CATEGORIES，不要用不存在的 DEFAULT_CATEGORIES）
     function mergedCategories(type){
-      const base = type === "income" ? DEFAULT_CATEGORIES.income : DEFAULT_CATEGORIES.expense;
+      const base = type === "income" ? CATEGORIES.income : CATEGORIES.expense;
       const custom = type === "income" ? CUSTOM_CATEGORIES.income : CUSTOM_CATEGORIES.expense;
       // 去重合併
       return Array.from(new Set([...base, ...custom]));
     }
-
     // =========================
     // Helpers
     // =========================
@@ -255,17 +254,23 @@
     // =========================
     function renderCategoryOptions(type) {
       const list = mergedCategories(type);
+
+      // ✅ 保底：萬一自訂分類讀不到或資料是空，至少還有預設分類
+      const safeList = (Array.isArray(list) && list.length)
+        ? list
+        : (type === "income" ? CATEGORIES.income : CATEGORIES.expense);
+
       const prev = categorySelect.value;
 
       categorySelect.innerHTML = "";
-      for (const name of list) {
+      for (const name of safeList) {
         const opt = document.createElement("option");
         opt.value = name;
         opt.textContent = name;
         categorySelect.appendChild(opt);
       }
 
-      categorySelect.value = list.includes(prev) ? prev : list[0];
+      categorySelect.value = safeList.includes(prev) ? prev : safeList[0];
     }
 
     async function loadCustomCategories(uid){
@@ -341,6 +346,10 @@
       // ✅ 讀自訂分類 → 重新 render 一次（不影響其他功能）
       await loadCustomCategories(uid);
       renderCategoryOptions(currentType);
+      // ✅ 如果網址有帶 category，重 render 後再選回去
+      if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
+        categorySelect.value = qsCategory;
+      }
     }
 
     // 原本邏輯：不論有沒有登入，都先讓按鈕可按；未登入按下才跳登入
