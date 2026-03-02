@@ -165,6 +165,20 @@
     select option{
       color: var(--accent-text);
     }
+
+    /* ✅ iOS/Safari：select 文字真正置中（更穩） */
+    select,
+    select.input{
+      text-align: center;
+      text-align-last: center;      /* ✅ 關鍵：讓選到的那行置中 */
+      padding-left: 12px;           /* ✅ 左右對稱，避免視覺偏移 */
+      padding-right: 12px;
+    }
+
+    /* 有些版本需要把 option 也置中（不影響功能） */
+    select option{
+      text-align: center;
+    }
   </style>
 </head>
 <body>
