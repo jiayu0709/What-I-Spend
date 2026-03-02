@@ -30,7 +30,7 @@
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
 
-     /* ✅ 統一所有白框（input / select / date / time）高度，並修 iOS 溢出 */
+    /* ✅ 統一所有白框（input / select / date / time）高度，並修 iOS 溢出 */
     .input,
     input,
     select {
@@ -130,29 +130,40 @@
       user-select: none;
     }
 
-    /* ✅ select 文字顏色套用主題 */
-    select,
-    select.input{
-      color: var(--accent-text);
-      -webkit-text-fill-color: var(--accent-text);
-    }
-
-    /* ✅ iOS 有時候會把 select 內 option 顏色吃掉，這樣更穩 */
-    select option{
-      color: var(--accent-text);
-    }
-
-    /* ✅ 所有文字欄置中（input / select / date / time） */
+    /* =========================================================
+       ✅ 你要的：所有文字欄「內容置中 + 套用主題色」
+       ========================================================= */
     .input,
     input,
     select{
       text-align: center;
+      color: var(--accent-text);
+      -webkit-text-fill-color: var(--accent-text);
     }
 
-    /* ✅ iOS date/time 內部欄位也置中 */
+    /* ✅ iOS date/time 的內部欄位也要置中 + 套色 */
     input[type="date"]::-webkit-datetime-edit,
     input[type="time"]::-webkit-datetime-edit{
       text-align: center;
+      color: var(--accent-text);
+      -webkit-text-fill-color: var(--accent-text);
+    }
+
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field,
+    input[type="time"]::-webkit-datetime-edit-text,
+    input[type="time"]::-webkit-datetime-edit-hour-field,
+    input[type="time"]::-webkit-datetime-edit-minute-field,
+    input[type="time"]::-webkit-datetime-edit-ampm-field{
+      color: var(--accent-text);
+      -webkit-text-fill-color: var(--accent-text);
+    }
+
+    /* ✅ select option 顏色（更穩） */
+    select option{
+      color: var(--accent-text);
     }
   </style>
 </head>
@@ -201,7 +212,7 @@
 
     </main>
   </div>
-  
+
   <script type="module" src="app.js"></script>
 
   <script type="module">
@@ -313,11 +324,11 @@
         return;
       }
 
-      // 先存本機（保留你原本邏輯，避免你覺得功能被拿掉）
+      // 先存本機（保留你原本邏輯）
       localStorage.setItem("tx:"+id, JSON.stringify(data));
 
       try {
-        // ✅ 存雲端（真正讓 month.html 變更）
+        // ✅ 存雲端
         await window.saveToCloud(id, data);
       } catch (e) {
         console.error("saveToCloud failed:", e);
@@ -366,7 +377,7 @@
 
         setTimeout(() => {
           location.href = href;
-        }, 200); // ⏱ 要和 CSS page-leave 時間一致
+        }, 200);
       });
     });
   </script>
