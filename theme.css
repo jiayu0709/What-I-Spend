@@ -100,7 +100,7 @@ main.page.leaving{ animation: page-leave .2s ease-in forwards; }
    ========================= */
 body.page-edit main.page{
   transform-origin: top center;
-  animation: edit-expand .42s ease-out !important; /* 想慢就改 .55s / .7s */
+  animation: edit-expand .42s ease-out
 }
 
 @keyframes edit-expand{

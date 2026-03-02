@@ -494,5 +494,32 @@
     }
 
   </script>
+  <script>
+  // 假設每筆明細外層有 class="tx"（你目前也有 .tx 的 tap feedback）
+  document.addEventListener("click", (e) => {
+    const tx = e.target.closest(".tx");
+    if (!tx) return;
+
+    // 只攔截「會去 edit.html 的點擊」
+    const link = tx.closest("a") || tx.querySelector("a");
+    const href = link?.getAttribute("href") || "";
+    if (!href.includes("edit.html")) return;
+
+    // 記錄點擊的那筆明細位置（相對於 viewport）
+    const r = tx.getBoundingClientRect();
+    const payload = {
+      left: r.left,
+      top: r.top,
+      width: r.width,
+      height: r.height,
+      // 也可記當下 scrollY，避免過場更像原生
+      scrollY: window.scrollY,
+      ts: Date.now()
+    };
+    sessionStorage.setItem("wis_edit_from_rect", JSON.stringify(payload));
+
+    // 讓原本導頁照走（不要 preventDefault）
+  }, true);
+</script>
 </body>
 </html>
