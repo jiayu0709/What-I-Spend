@@ -19,8 +19,8 @@
     }
     .back{
       text-decoration:none;
-  color: var(--accent-text);
-  font-weight:800;
+      color: var(--accent-text);
+      font-weight:800;
     }
     .title{
       font-size:34px;font-weight:900;margin:6px 0 12px;letter-spacing:-.4px;
@@ -34,105 +34,100 @@
     .input,
     input,
     select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
 
-    height: 52px;              /* ✅ 關鍵：統一高度 */
-    padding: 0 12px;           /* ✅ 垂直置中靠 line-height，不用上下 padding */
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: #fff;
-    font-size: 16px;
-    line-height: 52px;         /* ✅ input 文字垂直置中 */
+      height: 52px;              /* ✅ 關鍵：統一高度 */
+      padding: 0 12px;           /* ✅ 垂直置中靠 line-height，不用上下 padding */
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #fff;
+      font-size: 16px;
+      line-height: 52px;         /* ✅ input 文字垂直置中 */
     }
 
     /* iOS 的 date/time/select 需要特殊處理 */
     input[type="date"],
     input[type="time"],
     select {
-    display: block;
-    appearance: none;
-    -webkit-appearance: none;
+      display: block;
+      appearance: none;
+      -webkit-appearance: none;
     }
 
     /* select 用 line-height: normal，避免 iOS 裁字 */
     select {
-    line-height: normal;
-    padding-top: 0;
-    padding-bottom: 0;
+      line-height: normal;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     /* 防止 grid/flex 子元素撐爆 */
     .field {
-    width: 100%;
-    min-width: 0;
+      width: 100%;
+      min-width: 0;
     }
 
-   .btnbar{margin-top:14px;display:grid;gap:10px}
+    .btnbar{margin-top:14px;display:grid;gap:10px}
 
-  /* ✅ 按鈕跟卡片同圓角、不要任何外框直角線 */
-  .btn{
-    width:100%;
-    padding:14px 16px;
-    border:0;                 /* ✅ 不要框線 */
-    outline:0;
-    border-radius: var(--radius);   /* ✅ 跟卡片同一個圓角變數 */
-    background: var(--btn-secondary-bg, var(--card-bg));
-    color: var(--btn-secondary-text, var(--accent-text));
-    font-size:18px;
-    font-weight:900;
-    cursor:pointer;
-    appearance:none;
-    -webkit-appearance:none;
-  }
+    /* ✅ 按鈕跟卡片同圓角、不要任何外框直角線 */
+    .btn{
+      width:100%;
+      padding:14px 16px;
+      border:0;                 /* ✅ 不要框線 */
+      outline:0;
+      border-radius: var(--radius);   /* ✅ 跟卡片同一個圓角變數 */
+      background: var(--btn-secondary-bg, var(--card-bg));
+      color: var(--btn-secondary-text, var(--accent-text));
+      font-size:18px;
+      font-weight:900;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
 
-  /* ✅ 主按鈕（儲存） */
-  .btn.primary{
-    background: var(--btn-primary-bg, var(--accent-text));
-    color: var(--btn-primary-text, #fff);
-  }
+    /* ✅ 主按鈕（儲存） */
+    .btn.primary{
+      background: var(--btn-primary-bg, var(--accent-text));
+      color: var(--btn-primary-text, #fff);
+    }
 
-  /* ✅ iOS 按壓效果 */
-  .btn:active{
-    opacity:.7;
-    transform:scale(.98);
-  }
+    /* ✅ iOS 按壓效果 */
+    .btn:active{
+      opacity:.7;
+      transform:scale(.98);
+    }
+
     /* ===== iOS-style Button Interaction ===== */
-
-    /* 關閉瀏覽器預設點擊高亮（超重要） */
     button,
     a {
-    -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* 所有按鈕的共同行為 */
     .btn,
     .back {
-    transition:
+      transition:
         background-color 0.15s ease,
         opacity 0.15s ease,
         transform 0.1s ease;
-    user-select: none;
+      user-select: none;
     }
 
-    /* iOS 按下瞬間 */
     .btn:active,
     .back:active {
-    opacity: 0.6;              /* iOS 最像的反黑感 */
-    transform: scale(0.98);    /* 微縮，像原生 */
+      opacity: 0.6;
+      transform: scale(0.98);
     }
 
-    /* primary 按鈕按下（藍色） */
     .btn.primary:active {
-    opacity: 0.75;             /* primary 不要太黑 */
+      opacity: 0.75;
     }
 
-    /* 防止長按選字 */
     .btn,
     .back {
-    -webkit-user-select: none;
-    user-select: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
   </style>
 </head>
@@ -185,32 +180,32 @@
   <script type="module" src="app.js"></script>
 
   <script type="module">
-  import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { auth, db } from "./firebase-config.js";
+    import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from "./firebase-config.js";
 
-  // 給非-module 的 <script> 呼叫
-  window.saveToCloud = async (id, data) => {
-    const user = await window.requireAuth();
-    if (!user) throw new Error("Not logged in");
+    // 給非-module 的 <script> 呼叫
+    window.saveToCloud = async (id, data) => {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
 
-    const ref = doc(db, "users", user.uid, "transactions", id);
-    await updateDoc(ref, {
-      date: data.date,
-      time: data.time,
-      category: data.category,
-      note: data.note,
-      amount: Number(String(data.amount).replace(/,/g, "")),
-    });
-  };
+      const ref = doc(db, "users", user.uid, "transactions", id);
+      await updateDoc(ref, {
+        date: data.date,
+        time: data.time,
+        category: data.category,
+        note: data.note,
+        amount: Number(String(data.amount).replace(/,/g, "")),
+      });
+    };
 
-  window.deleteFromCloud = async (id) => {
-    const user = await window.requireAuth();
-    if (!user) throw new Error("Not logged in");
+    window.deleteFromCloud = async (id) => {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
 
-    const ref = doc(db, "users", user.uid, "transactions", id);
-    await deleteDoc(ref);
-  };
-</script>
+      const ref = doc(db, "users", user.uid, "transactions", id);
+      await deleteDoc(ref);
+    };
+  </script>
 
   <script>
     const qs = new URLSearchParams(location.search);
@@ -219,6 +214,34 @@
     // 回上一頁（可從 ref 帶回去）
     const ref = qs.get("ref") || "month.html";
     document.getElementById("backLink").href = ref;
+
+    // ✅ 分類清單（跟新增頁一樣）
+    const CATEGORIES = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
+
+    function renderCategoryOptions(currentValue){
+      const sel = document.getElementById("category");
+      if (!sel) return;
+
+      sel.innerHTML = "";
+      for (const name of CATEGORIES) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      }
+
+      const cur = (currentValue || "").trim();
+
+      // 如果原本分類不在清單裡，額外加一個 option 保留原值（不破壞原資料）
+      if (cur && !CATEGORIES.includes(cur)) {
+        const opt = document.createElement("option");
+        opt.value = cur;
+        opt.textContent = cur;
+        sel.insertBefore(opt, sel.firstChild);
+      }
+
+      sel.value = cur || CATEGORIES[0];
+    }
 
     function init(){
       const saved = localStorage.getItem("tx:"+id);
@@ -240,7 +263,11 @@
 
       document.getElementById("date").value = data.date || "";
       document.getElementById("time").value = data.time || "";
-      document.getElementById("category").value = data.category || "";
+
+      // ✅ 先渲染分類選單，再把原值選回去
+      renderCategoryOptions(data.category || "");
+      document.getElementById("category").value = (data.category || "").trim() || CATEGORIES[0];
+
       document.getElementById("note").value = data.note || "";
       document.getElementById("amount").value = data.amount || "";
     }
@@ -277,45 +304,46 @@
     }
 
     async function removeTx(){
-  // 先刪本機（保留原本行為）
-  localStorage.removeItem("tx:"+id);
-  localStorage.setItem("tx:deleted:"+id, "1");
+      // 先刪本機（保留原本行為）
+      localStorage.removeItem("tx:"+id);
+      localStorage.setItem("tx:deleted:"+id, "1");
 
-  try {
-      // ✅ 刪雲端
-      await window.deleteFromCloud(id);
-    } catch (e) {
-      console.error("deleteFromCloud failed:", e);
-      alert("刪除失敗（雲端）：" + (e.message || e));
-      return;
-    }
-
-    location.href = ref;
-  }
-
-    init();
-  </script>
-  <script>
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', e => {
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#')) return;
-
-      e.preventDefault();
-
-      const page = document.querySelector('.page');
-      if (!page) {
-        location.href = href;
+      try {
+        // ✅ 刪雲端
+        await window.deleteFromCloud(id);
+      } catch (e) {
+        console.error("deleteFromCloud failed:", e);
+        alert("刪除失敗（雲端）：" + (e.message || e));
         return;
       }
 
-      page.classList.add('leaving');
+      location.href = ref;
+    }
 
-      setTimeout(() => {
-        location.href = href;
-      }, 200); // ⏱ 要和 CSS page-leave 時間一致
+    init();
+  </script>
+
+  <script>
+    document.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', e => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+
+        e.preventDefault();
+
+        const page = document.querySelector('.page');
+        if (!page) {
+          location.href = href;
+          return;
+        }
+
+        page.classList.add('leaving');
+
+        setTimeout(() => {
+          location.href = href;
+        }, 200); // ⏱ 要和 CSS page-leave 時間一致
+      });
     });
-  });
-</script>
+  </script>
 </body>
 </html>
