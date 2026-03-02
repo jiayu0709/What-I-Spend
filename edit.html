@@ -141,6 +141,19 @@
     select option{
       color: var(--accent-text);
     }
+
+    /* ✅ 所有文字欄置中（input / select / date / time） */
+    .input,
+    input,
+    select{
+      text-align: center;
+    }
+
+    /* ✅ iOS date/time 內部欄位也置中 */
+    input[type="date"]::-webkit-datetime-edit,
+    input[type="time"]::-webkit-datetime-edit{
+      text-align: center;
+    }
   </style>
 </head>
 <body>
