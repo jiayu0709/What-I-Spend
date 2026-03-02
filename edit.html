@@ -183,67 +183,6 @@
   </style>
 </head>
 <body class="page-edit">
-  <script>
-  (function () {
-    const key = "wis_edit_from_rect";
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return;
-
-    let rect;
-    try { rect = JSON.parse(raw); } catch { return; }
-
-    // 太久以前就不要演（避免奇怪狀態）
-    if (!rect.ts || (Date.now() - rect.ts) > 3000) return;
-
-    // 用一個 overlay 當「展開的卡片」
-    const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
-    overlay.style.left = rect.left + "px";
-    overlay.style.top = rect.top + "px";
-    overlay.style.width = rect.width + "px";
-    overlay.style.height = rect.height + "px";
-    overlay.style.zIndex = "999999";
-    overlay.style.borderRadius = "18px";
-    overlay.style.background = getComputedStyle(document.documentElement)
-      .getPropertyValue("--card-bg") || "rgba(255,255,255,0.9)";
-    overlay.style.boxShadow = "0 18px 50px rgba(0,0,0,0.18)";
-    overlay.style.transformOrigin = "top left";
-    overlay.style.willChange = "transform, border-radius, opacity";
-    overlay.style.pointerEvents = "none";
-
-    // 避免看到頁面瞬間跳出：先把 main.page 暫時隱藏
-    const page = document.querySelector("main.page");
-    if (page) page.style.opacity = "0";
-
-    document.body.appendChild(overlay);
-
-    // 計算要放大到整個畫面
-    const targetLeft = 0;
-    const targetTop = 0;
-    const targetW = window.innerWidth;
-    const targetH = window.innerHeight;
-
-    const sx = targetW / rect.width;
-    const sy = targetH / rect.height;
-
-    // 先把 overlay 放在起點（已經是），下一 frame 再開始動畫
-    requestAnimationFrame(() => {
-      overlay.style.transition = "transform 520ms cubic-bezier(.2,.9,.2,1), border-radius 520ms cubic-bezier(.2,.9,.2,1), opacity 520ms ease";
-      overlay.style.transform = `translate(${targetLeft - rect.left}px, ${targetTop - rect.top}px) scale(${sx}, ${sy})`;
-      overlay.style.borderRadius = "0px";
-    });
-
-    // 動畫結束 → 顯示真正頁面、移除 overlay、清掉 storage
-    overlay.addEventListener("transitionend", () => {
-      if (page) {
-        page.style.transition = "opacity 120ms ease";
-        page.style.opacity = "1";
-      }
-      overlay.remove();
-      sessionStorage.removeItem(key);
-    }, { once: true });
-  })();
-</script>
   <div class="app">
     <main class="page">
       <div class="nav">
