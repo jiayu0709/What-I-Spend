@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>分類設定</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--app-bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    .app{min-height:100vh;padding-bottom:var(--tab-height)}
+    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .back{color:var(--accent-text);text-decoration:none;font-weight:900}
+    .title{font-size:28px;font-weight:900;margin:6px 0 12px;text-align:center}
+    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .seg{display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.45);
+      border-radius:12px;padding:4px;margin-bottom:12px}
+    .seg button{border:0;background:transparent;padding:10px 0;border-radius:10px;font-weight:900;color:var(--secondary)}
+    .seg button.active{background:#fff;color:var(--text)}
+    .row{display:flex;gap:10px;align-items:center;margin-top:10px}
+    .input{flex:1;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;
+      padding:12px 12px;font-size:16px;font-weight:800;color:var(--accent-text);text-align:center}
+    .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:900;cursor:pointer}
+    .btn.primary{background:var(--accent-text);color:#fff}
+    .list{margin-top:12px;display:grid;gap:10px}
+    .item{display:flex;align-items:center;justify-content:space-between;gap:10px;
+      background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:12px 12px}
+    .name{font-weight:900}
+    .del{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer;
+      background:rgba(217,74,74,0.12);border:1px solid rgba(217,74,74,0.20);color:#b33b3b}
+    .hint{margin-top:12px;color:var(--secondary);font-weight:800;font-size:12px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav">
+        <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        <div style="width:48px;"></div>
+      </div>
+
+      <div class="title">分類設定</div>
+
+      <div class="card">
+        <div class="seg" role="tablist" aria-label="類型">
+          <button id="tabExpense" class="active" type="button">支出</button>
+          <button id="tabIncome" type="button">收入</button>
+        </div>
+
+        <div class="row">
+          <input class="input" id="newName" placeholder="輸入分類（例如：咖啡☕️）" />
+          <button class="btn primary" id="btnAdd" type="button">加入</button>
+        </div>
+
+        <div class="list" id="list"></div>
+
+        <div class="hint">
+          ※ 分類會依帳本分開保存。<br>
+          ※ 新增/編輯頁會自動套用這裡的分類。
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
+
+    await window.firebaseReady;
+    const user = await window.requireAuth();
+    if (!user) throw new Error("Not logged in");
+
+    const LS_BOOK = "wis_currentBookId";
+    const bookId = localStorage.getItem(LS_BOOK);
+    if (!bookId) { location.replace("books.html"); }
+
+    const qs = new URLSearchParams(location.search);
+    const ref = qs.get("ref") || "month.html";
+    document.getElementById("backLink").href = ref;
+
+    const $ = (id) => document.getElementById(id);
+
+    let currentType = "expense";
+    let custom = { expense: [], income: [] };
+
+    async function load(){
+      const bookRef = doc(db, "users", user.uid, "books", bookId);
+      const snap = await getDoc(bookRef);
+      const data = snap.data() || {};
+      const cc = data.customCategories || {};
+      custom = {
+        expense: Array.isArray(cc.expense) ? cc.expense : [],
+        income:  Array.isArray(cc.income) ? cc.income  : [],
+      };
+      render();
+    }
+
+    function render(){
+      const listEl = $("list");
+      listEl.innerHTML = "";
+
+      const arr = (currentType === "income") ? custom.income : custom.expense;
+
+      if (!arr.length){
+        const e = document.createElement("div");
+        e.style.cssText = "margin-top:12px;color:var(--secondary);font-weight:900;text-align:center;";
+        e.textContent = "尚未新增自訂分類";
+        listEl.appendChild(e);
+        return;
+      }
+
+      arr.forEach((name) => {
+        const item = document.createElement("div");
+        item.className = "item";
+
+        const left = document.createElement("div");
+        left.className = "name";
+        left.textContent = name;
+
+        const del = document.createElement("button");
+        del.className = "del";
+        del.type = "button";
+        del.textContent = "刪除";
+        del.addEventListener("click", async () => {
+          const ok = window.ui?.confirm
+            ? await window.ui.confirm(`刪除分類「${name}」？`, { title: "刪除分類", danger:true, okText:"刪除", cancelText:"取消" })
+            : confirm(`刪除分類「${name}」？`);
+          if (!ok) return;
+
+          const next = arr.filter(x => x !== name);
+          await saveType(next);
+        });
+
+        item.appendChild(left);
+        item.appendChild(del);
+        listEl.appendChild(item);
+      });
+    }
+
+    async function saveType(nextArr){
+      const bookRef = doc(db, "users", user.uid, "books", bookId);
+
+      const newCustom = {
+        expense: currentType === "expense" ? nextArr : custom.expense,
+        income:  currentType === "income"  ? nextArr : custom.income,
+      };
+
+      await updateDoc(bookRef, { customCategories: newCustom });
+
+      custom = newCustom;
+      render();
+    }
+
+    $("tabExpense").addEventListener("click", () => {
+      currentType = "expense";
+      $("tabExpense").classList.add("active");
+      $("tabIncome").classList.remove("active");
+      render();
+    });
+
+    $("tabIncome").addEventListener("click", () => {
+      currentType = "income";
+      $("tabIncome").classList.add("active");
+      $("tabExpense").classList.remove("active");
+      render();
+    });
+
+    $("btnAdd").addEventListener("click", async () => {
+      const raw = $("newName").value || "";
+      const nm = raw.trim();
+      if (!nm) { window.ui?.alert ? await window.ui.alert("分類不能空白") : alert("分類不能空白"); return; }
+      if (nm.length > 20) { window.ui?.alert ? await window.ui.alert("分類太長（最多 20 字）") : alert("分類太長"); return; }
+
+      const arr = (currentType === "income") ? custom.income : custom.expense;
+
+      // 去重
+      if (arr.includes(nm)) {
+        window.ui?.alert ? await window.ui.alert("這個分類已存在") : alert("已存在");
+        return;
+      }
+
+      await saveType([...arr, nm]);
+      $("newName").value = "";
+      $("newName").focus();
+    });
+
+    await load();
+  </script>
+</body>
+</html>

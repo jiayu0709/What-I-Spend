@@ -159,7 +159,7 @@
   <script type="module">
     // ✅ 功能不變：只整理結構、去重、讓邏輯更清楚
     import { auth, db } from "./firebase-config.js";
-    import { addDoc, collection, serverTimestamp, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { addDoc, collection, serverTimestamp, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // ✅ 新增：帳本（最小改動）
     const LS_BOOK = "wis_currentBookId";
@@ -193,6 +193,18 @@
       expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"],
       income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"],
     };
+
+
+    // 會從 Firestore 讀回來
+    let CUSTOM_CATEGORIES = { expense: [], income: [] };
+
+    // 合併後給 UI 用
+    function mergedCategories(type){
+      const base = type === "income" ? DEFAULT_CATEGORIES.income : DEFAULT_CATEGORIES.expense;
+      const custom = type === "income" ? CUSTOM_CATEGORIES.income : CUSTOM_CATEGORIES.expense;
+      // 去重合併
+      return Array.from(new Set([...base, ...custom]));
+    }
 
     // =========================
     // Helpers
@@ -242,7 +254,7 @@
     // UI: Categories + Type
     // =========================
     function renderCategoryOptions(type) {
-      const list = type === "income" ? CATEGORIES.income : CATEGORIES.expense;
+      const list = mergedCategories(type);
       const prev = categorySelect.value;
 
       categorySelect.innerHTML = "";
@@ -254,6 +266,21 @@
       }
 
       categorySelect.value = list.includes(prev) ? prev : list[0];
+    }
+
+    async function loadCustomCategories(uid){
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) return;
+
+      const bookRef = doc(db, "users", uid, "books", bookId);
+      const snap = await getDoc(bookRef);
+      const data = snap.data() || {};
+      const cc = data.customCategories || {};
+
+      CUSTOM_CATEGORIES = {
+        expense: Array.isArray(cc.expense) ? cc.expense : [],
+        income:  Array.isArray(cc.income)  ? cc.income  : [],
+      };
     }
 
     function setType(type) {
@@ -310,6 +337,10 @@
     // ✅ 新增：確保有預設帳本（不影響原本流程）
     if (uid) {
       await ensureDefaultBook(uid);
+
+      // ✅ 讀自訂分類 → 重新 render 一次（不影響其他功能）
+      await loadCustomCategories(uid);
+      renderCategoryOptions(currentType);
     }
 
     // 原本邏輯：不論有沒有登入，都先讓按鈕可按；未登入按下才跳登入

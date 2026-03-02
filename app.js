@@ -179,6 +179,9 @@ function injectDrawer(){
       <a class="drawer-link" href="books.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
         <div class="drawer-item">切換帳本</div>
       </a>
+      <a class="drawer-link" href="categories.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
+        <div class="drawer-item">分類設定</div>
+      </a>
     </div>
   `;
 
