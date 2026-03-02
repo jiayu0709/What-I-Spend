@@ -98,7 +98,7 @@ main.page.leaving{ animation: page-leave .2s ease-in forwards; }
 /* =========================
    Edit page: expand enter
    ========================= */
-meta[name="page"][content="edit"] ~ body main.page{
+body.page-edit main.page{
   transform-origin: top center;
   animation: edit-expand .42s ease-out !important; /* 想慢就改 .55s / .7s */
 }
