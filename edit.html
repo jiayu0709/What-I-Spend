@@ -129,6 +129,18 @@
       -webkit-user-select: none;
       user-select: none;
     }
+
+    /* ✅ select 文字顏色套用主題 */
+    select,
+    select.input{
+      color: var(--accent-text);
+      -webkit-text-fill-color: var(--accent-text);
+    }
+
+    /* ✅ iOS 有時候會把 select 內 option 顏色吃掉，這樣更穩 */
+    select option{
+      color: var(--accent-text);
+    }
   </style>
 </head>
 <body>
