@@ -449,7 +449,7 @@
       const amount = parseAmount(amountInput.value);
 
       if (!category) { alert("請選擇分類"); return; }
-      if (!isFinite(amount) || amount <= 0) { alert("請輸入正確金額（> 0）"); return; }
+      if (!isFinite(amount) || amount <= 0) { await window.ui.alert("請輸入正確金額（> 0）"); return; }
 
       const bookId = localStorage.getItem("wis_currentBookId");
       if (!bookId) {
