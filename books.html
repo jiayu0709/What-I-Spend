@@ -125,6 +125,36 @@
 
     .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
     .back{color:var(--accent-text);text-decoration:none;font-weight:900}
+
+    /* ✅ header 同一排：返回 + 標題 同高 */
+    .nav{
+      display:grid;
+      grid-template-columns: 64px 1fr 64px; /* 左返回 / 中標題 / 右占位 */
+      align-items:center;
+      height: 44px;               /* ✅ 跟 iOS header 常見高度一致 */
+      margin-bottom: 10px;
+    }
+
+    .back{
+      justify-self:start;
+      color: var(--accent-text);
+      text-decoration:none;
+      font-weight:900;
+    }
+
+    .nav-title{
+      justify-self:center;
+      margin:0;                   /* ✅ 取消你原本 nav-title 的 margin */
+      transform:none;             /* ✅ 取消 translateY(-4px) */
+      font-size:28px;
+      font-weight:800;
+      letter-spacing:-.5px;
+      text-align:center;
+    }
+
+    .nav-spacer{
+      justify-self:end;
+    }
   </style>
 </head>
 <body>
