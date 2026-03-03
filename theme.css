@@ -216,6 +216,28 @@ button:active{ opacity:.65; transform:scale(.98); }
   z-index: 50;
 }
 
+/* =========================
+   Topbar inside Header (.nav-left) — 跟著捲動、不浮動
+   ========================= */
+.nav-left .topbar{
+  position: static !important;   /* ✅ 關鍵：不要 fixed */
+  left: auto !important;
+  top: auto !important;
+  z-index: auto !important;
+
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+
+  width: 76px;   /* 跟 nav-left 一樣 */
+  height: 44px;  /* 跟 header 一樣 */
+}
+
+/* ✅ 漢堡本體維持原本大小 */
+.nav-left .topbar .hamburger{
+  margin: 0;              /* 避免被預設 margin 影響 */
+}
+
 .hamburger{
   width: var(--hamburger-size);
   height: var(--hamburger-size);
