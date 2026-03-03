@@ -545,8 +545,3 @@ document.addEventListener("click", (e) => {
   tab.classList.add("ripple");
 }, true);
 
-document.addEventListener("click", (e) => {
-  const tab = e.target.closest(".tabbar .tab[data-href]");
-  if (!tab) return;
-  location.href = tab.dataset.href;
-});
