@@ -155,25 +155,22 @@ function injectDrawer(){
 
   // backdrop
   const backdrop = document.createElement("div");
-  backdrop.className = "drawer-backdrop drawer-overlay"; // ✅ 加這個
+  backdrop.className = "drawer-backdrop drawer-overlay";
   backdrop.id = "drawerBackdrop";
   backdrop.hidden = true;
 
   // drawer
   const drawer = document.createElement("aside");
-  drawer.className = "drawer drawer-panel"; // ✅ 加這個
+  drawer.className = "drawer drawer-panel";
   drawer.id = "drawer";
   drawer.setAttribute("aria-hidden","true");
 
-  // ✅ 你可以在這裡放「其他功能欄位」
   drawer.innerHTML = `
     <div class="drawer-inner">
       <div class="drawer-title">功能</div>
 
-      <!-- 登出一定放最上面 -->
       <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
 
-      <!-- ✅ 新增：切換帳本 -->
       <a class="drawer-link" href="books.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
         <div class="drawer-item">切換帳本</div>
       </a>
@@ -183,14 +180,23 @@ function injectDrawer(){
     </div>
   `;
 
-  document.body.appendChild(topbar);
+  // ✅ 改這裡：topbar 塞進 .nav-left（一起捲動）
+  const leftSlot = document.querySelector(".nav .nav-left") || document.querySelector(".nav-left");
+  if (leftSlot) {
+    leftSlot.appendChild(topbar);
+    topbar.style.position = "static";
+    topbar.style.left = "auto";
+    topbar.style.top = "auto";
+  } else {
+    document.body.appendChild(topbar);
+  }
+
   document.body.appendChild(backdrop);
   document.body.appendChild(drawer);
 
   const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // ✅ 保證初始狀態是「關閉」
   drawer.classList.remove("open");
   backdrop.hidden = true;
   drawer.setAttribute("aria-hidden","true");
@@ -201,7 +207,7 @@ function injectDrawer(){
     backdrop.hidden = false;
     drawer.setAttribute("aria-hidden","false");
     menuBtn.setAttribute("aria-expanded","true");
-    document.body.style.overflow = "hidden"; // ✅ 避免背景可滾
+    document.body.style.overflow = "hidden";
   }
 
   function closeDrawer(){
@@ -209,7 +215,7 @@ function injectDrawer(){
     backdrop.hidden = true;
     drawer.setAttribute("aria-hidden","true");
     menuBtn.setAttribute("aria-expanded","false");
-    document.body.style.overflow = ""; // ✅ 還原
+    document.body.style.overflow = "";
   }
 
   function toggleDrawer(){
@@ -217,25 +223,21 @@ function injectDrawer(){
     else openDrawer();
   }
 
-  // ✅ 漢堡按鈕：切換開/關
   menuBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     toggleDrawer();
   });
 
-  // ✅ 點空白處：關閉
   backdrop.addEventListener("click", (e) => {
     e.preventDefault();
     closeDrawer();
   });
 
-  // ✅ ESC：關閉（桌機測試用）
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeDrawer();
   });
 
-  // ✅ 登出：Firebase signOut → 回登入頁（保留你的原邏輯）
   logoutBtn.addEventListener("click", async () => {
     try {
       await signOut(window.auth);
@@ -246,18 +248,10 @@ function injectDrawer(){
     location.replace("index.html");
   });
 
-  // ✅ 點選 drawer 裡連結後自動關閉（保留）
   drawer.addEventListener("click", (e) => {
     const a = e.target.closest("a");
     if (a) closeDrawer();
   });
-}
-
-// 等 DOM 好了再注入
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", injectDrawer);
-} else {
-  injectDrawer();
 }
 // ==========================
 // Themed Modal (alert/confirm/prompt replacement)
