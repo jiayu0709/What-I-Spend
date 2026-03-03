@@ -11,14 +11,14 @@
   <title>本月</title>
 
   <style>
-    *{box-sizing:border-box}
+    /* 本頁專屬：Monthbar + 當月列表排版（其餘交給 theme.css） */
     body{
-      margin:0;background:var(--app-bg, #f2ede9);color:var(--text, #3c3c3c);
+      margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
 
-    .app{min-height:100vh;padding-bottom:var(--tab-height)}
-    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
+    .app{ min-height:100vh; padding-bottom: var(--tab-height); }
+    .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding,16px) 28px; }
 
     .monthbar{
       margin-top:8px;
@@ -36,7 +36,7 @@
       padding:10px 12px;
       border-radius:12px;
       font-weight:900;
-      color: var(--accent-text, #007aff);
+      color: var(--accent-text);
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
@@ -48,12 +48,12 @@
       white-space:nowrap;
     }
 
-    .section{margin-top:18px}
-    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
-    .rows{display:grid;gap:10px;font-size:18px}
-    .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .v.green{color:var(--green);font-weight:800}
-    .v.red{color:var(--red);font-weight:800}
+    .section{ margin-top:18px; }
+    .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
+    .rows{ display:grid; gap:10px; font-size:18px; }
+    .row{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .v.green{ color:var(--green); font-weight:800; }
+    .v.red{ color:var(--red); font-weight:800; }
 
     .day-header{
       display:flex;
@@ -73,23 +73,31 @@
       white-space:nowrap;
       font-size:14px;
     }
-    .day-total .v{font-weight:900;font-size:14px}
+    .day-total .v{ font-weight:900; font-size:14px; }
     .day-total .v.green{ color:var(--green); }
     .day-total .v.red{ color:var(--red); }
 
-    .day-card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden}
+    .day-card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      overflow:hidden;
+    }
 
     .tx{
-      display:grid;grid-template-columns:1fr auto;gap:12px;
-      padding:14px 16px;text-decoration:none;color:var(--text);
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      padding:14px 16px;
+      text-decoration:none;
+      color:var(--text);
       position:relative;
     }
-    .cat{font-size:20px;font-weight:700;line-height:1.2}
-    .note{margin-top:4px;font-size:14px;color:var(--secondary)}
-    .right{text-align:right;display:grid;gap:4px;min-width:90px}
-    .amt{font-size:20px;font-weight:800}
-    .time{font-size:14px;color:var(--secondary)}
-    .divider{height:1px;background:var(--divider);border:0;margin:0}
+    .cat{ font-size:20px; font-weight:700; line-height:1.2; }
+    .note{ margin-top:4px; font-size:14px; color:var(--secondary); }
+    .right{ text-align:right; display:grid; gap:4px; min-width:90px; }
+    .amt{ font-size:20px; font-weight:800; }
+    .time{ font-size:14px; color:var(--secondary); }
+    .divider{ height:1px; background:var(--divider); border:0; margin:0; }
 
     .empty{
       margin-top:18px;
@@ -106,7 +114,7 @@
 <body>
   <div class="app">
     <main class="page">
-      <!-- ✅ 上排同高：抽屜 / 標題 / 帳本 -->
+      <!-- Header：抽屜 / 標題 / 帳本（樣式全由 theme.css 統一） -->
       <div class="nav">
         <div class="nav-left"></div>
         <div class="nav-title">本月</div>
@@ -156,21 +164,24 @@
     await window.firebaseReady;
 
     // =========================
-    // Book / Month State
+    // State
     // =========================
     const LS_BOOK = "wis_currentBookId";
     const qs = new URLSearchParams(location.search);
+
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
+    const $ = (id) => document.getElementById(id);
     const pad2 = (n) => String(n).padStart(2, "0");
+
     const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 
     const parseMonthKey = (key) => {
-      if (!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-      const [y, m] = key.split("-").map((n) => parseInt(n, 10));
-      if (!y || !m || m < 1 || m > 12) return null;
-      return new Date(y, m - 1, 1);
+      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y, m] = key.split("-").map(n => parseInt(n,10));
+      if(!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m-1, 1);
     };
 
     const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth() + delta, 1);
@@ -178,25 +189,25 @@
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const currentKey = monthKeyFromDate(currentMonth);
-    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+    $("monthLabel").textContent = monthLabel(currentMonth);
 
-    // ✅ 帶上 b 參數（如果有）
     const currentBookIdFromLS = () => localStorage.getItem(LS_BOOK) || "";
+
     const buildMonthUrl = (mKey) => {
       const b = currentBookIdFromLS();
       return `month.html?m=${mKey}` + (b ? `&b=${encodeURIComponent(b)}` : "");
     };
 
-    document.getElementById("btnPrev").addEventListener("click", () => {
+    $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
       location.href = buildMonthUrl(monthKeyFromDate(prev));
     });
-    document.getElementById("btnNext").addEventListener("click", () => {
+    $("btnNext").addEventListener("click", () => {
       const next = addMonths(currentMonth, 1);
       location.href = buildMonthUrl(monthKeyFromDate(next));
     });
 
-    // edit 回來用的 ref（保留原功能）
+    // edit 回來用 ref（保留原功能）
     const currentRef = buildMonthUrl(currentKey);
 
     // =========================
@@ -226,10 +237,10 @@
     }
 
     // =========================
-    // Book badge (top-right in header)
+    // Header book badge
     // =========================
     async function showBookBadge(uid){
-      const badge = document.getElementById("bookBadge");
+      const badge = $("bookBadge");
       if (!badge) return;
 
       const bookId = currentBookIdFromLS();
@@ -242,7 +253,7 @@
 
         badge.textContent = name;
         badge.title = name;
-        badge.style.display = "flex";
+        badge.style.display = "inline-flex";
       }catch(e){
         console.warn("showBookBadge failed:", e);
         badge.style.display = "none";
@@ -292,7 +303,7 @@
     // Firestore fetch
     // =========================
     async function fetchMonthTxs(uid){
-      const root = document.getElementById("list-root");
+      const root = $("list-root");
       root.innerHTML = "<div class='empty'>讀取中...</div>";
 
       const bookId = currentBookIdFromLS();
@@ -374,10 +385,9 @@
     }
 
     function renderWithTxs(txs){
-      const root = document.getElementById("list-root");
+      const root = $("list-root");
       root.innerHTML = "";
 
-      // sums
       let income = 0, expense = 0;
       for(const tx of txs){
         const amt = parseAmount(tx.amount);
@@ -386,10 +396,10 @@
       }
       const balance = income - expense;
 
-      document.getElementById("sum-income").textContent = String(income);
-      document.getElementById("sum-expense").textContent = String(expense);
+      $("sum-income").textContent = String(income);
+      $("sum-expense").textContent = String(expense);
 
-      const balEl = document.getElementById("sum-balance");
+      const balEl = $("sum-balance");
       balEl.textContent = String(balance);
       balEl.classList.remove("green","red");
       balEl.classList.add(balance >= 0 ? "green" : "red");
@@ -402,7 +412,6 @@
         return;
       }
 
-      // group by date
       const groups = new Map();
       for(const tx of txs){
         const key = tx.date || "unknown";
@@ -477,8 +486,7 @@
           renderWithTxs(txs);
         } catch (e) {
           console.error("讀取失敗:", e);
-          document.getElementById("list-root").innerHTML =
-            "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+          $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
       } else {
         if (isInitialCheck) {
