@@ -23,9 +23,6 @@
       color: var(--accent-text);
       font-weight:800;
     }
-    .title{
-      font-size:34px;font-weight:900;margin:6px 0 12px;letter-spacing:-.4px;
-    }
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .field{display:grid;gap:8px;margin-top:14px}
     .field:first-child{margin-top:0}
@@ -186,11 +183,14 @@
   <div class="app">
     <main class="page">
       <div class="nav">
-        <a class="back" id="backLink" href="month.html">‹ 返回</a>
-        <div></div>
+        <div class="nav-left">
+          <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        </div>
+        <div class="nav-title">編輯明細</div>
+        <div class="nav-right">
+          <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        </div>
       </div>
-
-      <div class="title">編輯明細</div>
 
       <div class="card">
         <div class="field">
