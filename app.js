@@ -124,7 +124,8 @@ const DRAWER_EXCLUDE = new Set([
   "onboarding.html",
   "login.html",  
   "edit.html",  
-  "waiting.html",  // 如果你有
+  "waiting.html",
+  "categories.html",  // 如果你有
 ]);
 
 function currentPageName(){
