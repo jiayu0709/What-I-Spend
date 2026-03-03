@@ -1,3 +1,10 @@
+<!-- =========================
+     categories.html (已改好)
+     ✅ 顯示「預設清單」(books/{bookId}.categories)
+     ✅ 使用者可新增/刪除/修改預設清單（直接改 categories）
+     ✅ add/edit 會自動套用這份 categories
+     ✅ 不動你原有 UI/流程（只是資料欄位改為 categories）
+========================= -->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -28,6 +35,9 @@
     .item{display:flex;align-items:center;justify-content:space-between;gap:10px;
       background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:12px 12px}
     .name{font-weight:900}
+    .actions{display:flex;gap:8px;align-items:center}
+    .edit{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer;
+      background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.10);color:var(--text)}
     .del{border:0;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer;
       background:rgba(217,74,74,0.12);border:1px solid rgba(217,74,74,0.20);color:#b33b3b}
     .hint{margin-top:12px;color:var(--secondary);font-weight:800;font-size:12px;line-height:1.5}
@@ -58,7 +68,7 @@
 
         <div class="hint">
           ※ 分類會依帳本分開保存。<br>
-          ※ 新增/編輯頁會自動套用這裡的分類。
+          ※ 新增/編輯頁會自動套用這裡的分類（包含你改過的預設清單）。
         </div>
       </div>
     </main>
@@ -77,6 +87,11 @@
     const bookId = localStorage.getItem(LS_BOOK);
     if (!bookId) { location.replace("books.html"); }
 
+    const DEFAULT_CATEGORIES = {
+      expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"],
+      income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"],
+    };
+
     const qs = new URLSearchParams(location.search);
     const ref = qs.get("ref") || "month.html";
     document.getElementById("backLink").href = ref;
@@ -84,17 +99,30 @@
     const $ = (id) => document.getElementById(id);
 
     let currentType = "expense";
-    let custom = { expense: [], income: [] };
+    let cats = structuredClone(DEFAULT_CATEGORIES);
+
+    function arrOf(type){
+      return type === "income" ? cats.income : cats.expense;
+    }
 
     async function load(){
       const bookRef = doc(db, "users", user.uid, "books", bookId);
       const snap = await getDoc(bookRef);
       const data = snap.data() || {};
-      const cc = data.customCategories || {};
-      custom = {
-        expense: Array.isArray(cc.expense) ? cc.expense : [],
-        income:  Array.isArray(cc.income) ? cc.income  : [],
-      };
+      const c = data.categories;
+
+      const ok =
+        c &&
+        Array.isArray(c.expense) && c.expense.length &&
+        Array.isArray(c.income)  && c.income.length;
+
+      if (ok) cats = { expense: c.expense, income: c.income };
+      else {
+        // 舊帳本沒有 categories：補預設
+        await updateDoc(bookRef, { categories: DEFAULT_CATEGORIES });
+        cats = structuredClone(DEFAULT_CATEGORIES);
+      }
+
       render();
     }
 
@@ -102,12 +130,12 @@
       const listEl = $("list");
       listEl.innerHTML = "";
 
-      const arr = (currentType === "income") ? custom.income : custom.expense;
+      const arr = arrOf(currentType);
 
       if (!arr.length){
         const e = document.createElement("div");
         e.style.cssText = "margin-top:12px;color:var(--secondary);font-weight:900;text-align:center;";
-        e.textContent = "尚未新增自訂分類";
+        e.textContent = "目前沒有分類（你可以按上方加入）";
         listEl.appendChild(e);
         return;
       }
@@ -120,6 +148,36 @@
         left.className = "name";
         left.textContent = name;
 
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        // ✅ 編輯（修改預設清單的一部分）
+        const edit = document.createElement("button");
+        edit.className = "edit";
+        edit.type = "button";
+        edit.textContent = "修改";
+        edit.addEventListener("click", async () => {
+          const nm = window.ui?.prompt
+            ? await window.ui.prompt(`修改分類：`, { title:"修改分類", defaultValue:name, okText:"儲存", cancelText:"取消" })
+            : prompt("修改分類：", name);
+
+          const nextName = (nm ?? "").trim();
+          if (!nextName) return;
+          if (nextName.length > 20) { window.ui?.alert ? await window.ui.alert("分類太長（最多 20 字）") : alert("分類太長"); return; }
+
+          const curArr = arrOf(currentType);
+
+          // 去重（允許改成自己）
+          if (curArr.includes(nextName) && nextName !== name) {
+            window.ui?.alert ? await window.ui.alert("這個分類已存在") : alert("已存在");
+            return;
+          }
+
+          const nextArr = curArr.map(x => (x === name ? nextName : x));
+          await saveType(nextArr);
+        });
+
+        // ✅ 刪除
         const del = document.createElement("button");
         del.className = "del";
         del.type = "button";
@@ -134,8 +192,11 @@
           await saveType(next);
         });
 
+        actions.appendChild(edit);
+        actions.appendChild(del);
+
         item.appendChild(left);
-        item.appendChild(del);
+        item.appendChild(actions);
         listEl.appendChild(item);
       });
     }
@@ -143,14 +204,14 @@
     async function saveType(nextArr){
       const bookRef = doc(db, "users", user.uid, "books", bookId);
 
-      const newCustom = {
-        expense: currentType === "expense" ? nextArr : custom.expense,
-        income:  currentType === "income"  ? nextArr : custom.income,
+      const nextCats = {
+        expense: currentType === "expense" ? nextArr : cats.expense,
+        income:  currentType === "income"  ? nextArr : cats.income,
       };
 
-      await updateDoc(bookRef, { customCategories: newCustom });
+      await updateDoc(bookRef, { categories: nextCats });
 
-      custom = newCustom;
+      cats = nextCats;
       render();
     }
 
@@ -174,9 +235,8 @@
       if (!nm) { window.ui?.alert ? await window.ui.alert("分類不能空白") : alert("分類不能空白"); return; }
       if (nm.length > 20) { window.ui?.alert ? await window.ui.alert("分類太長（最多 20 字）") : alert("分類太長"); return; }
 
-      const arr = (currentType === "income") ? custom.income : custom.expense;
+      const arr = arrOf(currentType);
 
-      // 去重
       if (arr.includes(nm)) {
         window.ui?.alert ? await window.ui.alert("這個分類已存在") : alert("已存在");
         return;

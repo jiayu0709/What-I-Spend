@@ -1,3 +1,11 @@
+<!-- =========================
+     add.html (已改好)
+     ✅ 一開始就有預設清單
+     ✅ 新增/設定頁改完會同步
+     ✅ 不動你原有存檔/帳本/登入流程
+     ✅ 抽屜加「分類設定」入口
+     ✅ categories 來源改成 books/{bookId}.categories (唯一來源)
+========================= -->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -97,8 +105,10 @@
         <a class="drawer-link" href="month.html"><button class="drawer-item" type="button">本月</button></a>
         <a class="drawer-link" href="add.html"><button class="drawer-item" type="button">新增</button></a>
         <a class="drawer-link" href="year.html"><button class="drawer-item" type="button">統計</button></a>
-        <!-- ✅ 新增：帳本（只加入口，不影響其他功能） -->
         <a class="drawer-link" href="books.html?ref=add.html"><button class="drawer-item" type="button">帳本</button></a>
+
+        <!-- ✅ 新增：分類設定入口（不影響其他功能） -->
+        <a class="drawer-link" href="categories.html?ref=add.html"><button class="drawer-item" type="button">分類設定</button></a>
 
         <button class="drawer-item danger" id="logoutBtn" type="button">登出</button>
       </div>
@@ -153,16 +163,25 @@
     </nav>
   </div>
 
-  <!-- module 版 app.js（只做 persistence） -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
-    // ✅ 功能不變：只整理結構、去重、讓邏輯更清楚
     import { auth, db } from "./firebase-config.js";
-    import { addDoc, collection, serverTimestamp, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import {
+      addDoc, collection, serverTimestamp,
+      getDocs, query, orderBy, limit,
+      doc, getDoc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ✅ 新增：帳本（最小改動）
+    // ✅ 帳本
     const LS_BOOK = "wis_currentBookId";
+
+    // ✅ 預設分類（第一次使用會寫進書本）
+    const DEFAULT_CATEGORIES = {
+      expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"],
+      income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"],
+    };
+
     async function ensureDefaultBook(uid){
       const existing = localStorage.getItem(LS_BOOK);
       if (existing) return existing;
@@ -177,34 +196,44 @@
         return firstId;
       }
 
+      // ✅ 新帳本：直接存 categories（使用者一開始就有清單）
       const docRef = await addDoc(booksRef, {
         name: "生活",
         archived: false,
         createdAt: serverTimestamp(),
+        categories: DEFAULT_CATEGORIES,
       });
       localStorage.setItem(LS_BOOK, docRef.id);
       return docRef.id;
     }
 
-    // =========================
-    // Constants
-    // =========================
-    const CATEGORIES = {
-      expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"],
-      income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款↩︎","其他"],
-    };
+    // ✅ 從書本讀出 categories（舊帳本沒有就補上）
+    let BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
 
+    async function loadBookCategories(uid){
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) return;
 
-    // 會從 Firestore 讀回來
-    let CUSTOM_CATEGORIES = { expense: [], income: [] };
+      const bookRef = doc(db, "users", uid, "books", bookId);
+      const snap = await getDoc(bookRef);
+      const data = snap.data() || {};
+      const c = data.categories;
 
-    // 合併後給 UI 用（base 用原本的 CATEGORIES，不要用不存在的 DEFAULT_CATEGORIES）
-    function mergedCategories(type){
-      const base = type === "income" ? CATEGORIES.income : CATEGORIES.expense;
-      const custom = type === "income" ? CUSTOM_CATEGORIES.income : CUSTOM_CATEGORIES.expense;
-      // 去重合併
-      return Array.from(new Set([...base, ...custom]));
+      const ok =
+        c &&
+        Array.isArray(c.expense) && c.expense.length &&
+        Array.isArray(c.income)  && c.income.length;
+
+      if (ok) {
+        BOOK_CATEGORIES = { expense: c.expense, income: c.income };
+        return;
+      }
+
+      // ✅ 舊帳本：補寫預設 categories
+      await updateDoc(bookRef, { categories: DEFAULT_CATEGORIES });
+      BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
+
     // =========================
     // Helpers
     // =========================
@@ -249,16 +278,18 @@
     let currentType = "expense";
     let uid = null;
 
+    function categoriesFor(type){
+      return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
+    }
+
     // =========================
     // UI: Categories + Type
     // =========================
     function renderCategoryOptions(type) {
-      const list = mergedCategories(type);
-
-      // ✅ 保底：萬一自訂分類讀不到或資料是空，至少還有預設分類
+      const list = categoriesFor(type);
       const safeList = (Array.isArray(list) && list.length)
         ? list
-        : (type === "income" ? CATEGORIES.income : CATEGORIES.expense);
+        : (type === "income" ? DEFAULT_CATEGORIES.income : DEFAULT_CATEGORIES.expense);
 
       const prev = categorySelect.value;
 
@@ -271,21 +302,6 @@
       }
 
       categorySelect.value = safeList.includes(prev) ? prev : safeList[0];
-    }
-
-    async function loadCustomCategories(uid){
-      const bookId = localStorage.getItem(LS_BOOK);
-      if (!bookId) return;
-
-      const bookRef = doc(db, "users", uid, "books", bookId);
-      const snap = await getDoc(bookRef);
-      const data = snap.data() || {};
-      const cc = data.customCategories || {};
-
-      CUSTOM_CATEGORIES = {
-        expense: Array.isArray(cc.expense) ? cc.expense : [],
-        income:  Array.isArray(cc.income)  ? cc.income  : [],
-      };
     }
 
     function setType(type) {
@@ -302,7 +318,7 @@
     }
 
     // =========================
-    // Prefill (UI first)
+    // Prefill
     // =========================
     dateInput.value = todayYMD();
     setType("expense");
@@ -326,11 +342,6 @@
     if (qsAmount) amountInput.value = qsAmount;
     if (qsNote) noteInput.value = qsNote;
 
-    // category 必須在 options 生成後才選得到
-    if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
-      categorySelect.value = qsCategory;
-    }
-
     // =========================
     // Auth gate (no behavior change)
     // =========================
@@ -339,20 +350,17 @@
     const initialUser = await window.waitForAuthReady();
     uid = initialUser?.uid || null;
 
-    // ✅ 新增：確保有預設帳本（不影響原本流程）
     if (uid) {
       await ensureDefaultBook(uid);
-
-      // ✅ 讀自訂分類 → 重新 render 一次（不影響其他功能）
-      await loadCustomCategories(uid);
+      await loadBookCategories(uid);
       renderCategoryOptions(currentType);
-      // ✅ 如果網址有帶 category，重 render 後再選回去
+
+      // ✅ 若網址有帶 category，等 categories 讀完後再選回去
       if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
         categorySelect.value = qsCategory;
       }
     }
 
-    // 原本邏輯：不論有沒有登入，都先讓按鈕可按；未登入按下才跳登入
     saveBtn.disabled = false;
 
     async function ensureLoginOrRedirect() {
@@ -431,9 +439,6 @@
     // Save flow
     // =========================
     async function saveToFirestore({ redirectAfter = true } = {}) {
-      console.log("firebaseReady:", !!window.firebaseReady);
-      console.log("currentUser:", window.auth?.currentUser?.uid || null);
-
       const user = await ensureLoginOrRedirect();
       if (!user) return;
 
@@ -454,8 +459,7 @@
 
       const payload = { bookId, date, time, type: currentType, amount, category, note };
 
-      const result = await writeTransaction(payload, { prefer: "client" });
-      console.log("writeTransaction via:", result.via);
+      await writeTransaction(payload, { prefer: "client" });
 
       if (redirectAfter) {
         const ym = monthKeyFromDateStr(date);
@@ -475,7 +479,6 @@
       }
     });
 
-    // 捷徑自動儲存：等 UI & auth 都 ready 後才做（行為不變）
     if (autoSave) {
       const ok = qsAmount && qsCategory;
       if (ok) {
