@@ -440,3 +440,51 @@ button:active{ opacity:.65; transform:scale(.98); }
     border: 1px solid rgba(217,74,74,0.20);
     color: #b33b3b;
   }
+
+  /* ✅ Save Button feedback (global) */
+  /* 同時支援：add.html 的 .save、edit.html 的 .btn.primary（也可加上 .btn.save） */
+  .save,
+  .btn.primary{
+    position: relative;
+    overflow: hidden; /* shimmer 不超出圓角 */
+  }
+
+  /* 送出中：文字變淡 + 禁止再按 */
+  .save.loading,
+  .btn.primary.loading{
+    opacity: .9;
+    transform: scale(.995);
+    pointer-events: none;
+  }
+
+  /* shimmer 掃過去的感覺 */
+  .save.loading::after,
+  .btn.primary.loading::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.45) 50%,
+      rgba(255,255,255,0) 100%
+    );
+    transform: translateX(-120%);
+    animation: save-shimmer 900ms ease-in-out infinite;
+  }
+
+  @keyframes save-shimmer{
+    to{ transform: translateX(120%); }
+  }
+
+  /* 成功一下：微彈 */
+  .save.success,
+  .btn.primary.success{
+    animation: save-pop 260ms ease-out;
+  }
+
+  @keyframes save-pop{
+    0%{ transform: scale(.98); }
+    60%{ transform: scale(1.02); }
+    100%{ transform: scale(1); }
+  }

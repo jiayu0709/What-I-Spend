@@ -60,49 +60,6 @@
       color: var(--accent-text);
     }
 
-    /* ✅ Save Button feedback (click -> loading -> success) */
-    .save{
-      position: relative;
-      overflow: hidden; /* 讓 shimmer 不超出按鈕圓角 */
-    }
-
-    /* 送出中：文字變淡 + 禁止再按 */
-    .save.loading{
-      opacity: .9;
-      transform: scale(.995);
-      pointer-events: none;
-    }
-
-    /* shimmer 掃過去的感覺 */
-    .save.loading::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: linear-gradient(
-        90deg,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,.45) 50%,
-        rgba(255,255,255,0) 100%
-      );
-      transform: translateX(-120%);
-      animation: save-shimmer 900ms ease-in-out infinite;
-    }
-
-    @keyframes save-shimmer{
-      to{ transform: translateX(120%); }
-    }
-
-    /* 成功一下：微彈 + 顏色變深一點（不改你主題色） */
-    .save.success{
-      animation: save-pop 260ms ease-out;
-    }
-
-    @keyframes save-pop{
-      0%{ transform: scale(.98); }
-      60%{ transform: scale(1.02); }
-      100%{ transform: scale(1); }
-    }
-
     /* iOS-style tap feedback */
     a, button, .seg-btn, .save, .tab{ -webkit-tap-highlight-color: transparent; }
     .seg-btn, .save, .tab, button{
