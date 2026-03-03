@@ -151,6 +151,24 @@ button:active{ opacity:.65; transform:scale(.98); }
   color: inherit;
 }
 
+/* ===== Tabbar micro-bounce (visual haptic) ===== */
+.tabbar .tab{
+  position: relative;
+  transform: translateZ(0);
+  transition: transform .12s ease, opacity .12s ease;
+  will-change: transform;
+}
+
+.tabbar .tab.tap-bounce{
+  animation: tab-bounce 180ms ease-out;
+}
+
+@keyframes tab-bounce{
+  0%   { transform: scale(1); }
+  40%  { transform: scale(.94); }
+  100% { transform: scale(1); }
+}
+
 .tabbar .tab.active{ color: var(--tabcolor); }
 
 /* =========================

@@ -513,3 +513,23 @@ if (document.readyState === "loading") {
   injectBookBadge();
   updateBookBadge();
 }
+
+// ===== Haptic + micro-bounce for Tabbar =====
+window.hapticTap = function hapticTap() {
+  // Android Chrome / 部分環境可用；iOS Safari 多數不支援
+  if (navigator.vibrate) navigator.vibrate(10);
+};
+
+document.addEventListener("click", (e) => {
+  const tab = e.target.closest(".tabbar .tab");
+  if (!tab) return;
+
+  // 震動（支援才會動）
+  window.hapticTap();
+
+  // 微彈（每次都觸發）
+  tab.classList.remove("tap-bounce");
+  // 逼瀏覽器吃到 reflow，確保連點也會重新播放動畫
+  void tab.offsetWidth;
+  tab.classList.add("tap-bounce");
+}, true);
