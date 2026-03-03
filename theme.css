@@ -550,6 +550,36 @@ button:active{ opacity:.65; transform:scale(.98); }
 /* =========================
    Current book badge (top-right)
    ========================= */
+ .nav{
+      display:grid;
+      grid-template-columns: 76px 1fr 76px;  /* 左右固定 => 中間永遠置中 */
+      align-items:center;
+      height:44px;
+      margin-bottom:10px;
+    }
+
+    .nav-left{ justify-self:start; width:76px; }
+
+    .nav-title{
+      justify-self:center;
+      margin:0;
+      transform:none;
+      font-size:28px;
+      font-weight:800;
+      letter-spacing:-.5px;
+      text-align:center;
+      line-height:1;
+    }
+
+    /* ✅ 右側欄位固定寬（不是 badge 固定寬） */
+    .nav-right{
+      justify-self:end;
+      width:76px;
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
 .book-badge{
   position: static;        /* ✅ 不浮動 */
   top: auto;
