@@ -219,10 +219,22 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* 提示文字 */
-.label{
-  font-size:14px;
-  font-weight:900;
-  color:var(--secondary)
+.hint{
+  margin-top:18px;
+  background:rgba(255,255,255,0.5);
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  color:var(--secondary);
+  font-weight:800;
+  }
+
+/* 標籤文字 */
+.label{ 
+  font-size:14px; 
+  font-weight:800; 
+  color:var(--secondary); 
+  margin:10px 0 8px; 
 }
 
 .hamburger{
