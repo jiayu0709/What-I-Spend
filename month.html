@@ -11,7 +11,7 @@
   <title>本月</title>
 
   <style>
-    /* 本頁專屬：Monthbar + 當月列表排版（其餘交給 theme.css） */
+    /* ✅ month.html 本頁專屬：月份列＋列表排版（全站通用交給 theme.css） */
     body{
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
@@ -114,7 +114,7 @@
 <body>
   <div class="app">
     <main class="page">
-      <!-- Header：抽屜 / 標題 / 帳本（樣式全由 theme.css 統一） -->
+      <!-- Header：抽屜 / 標題 / 帳本（樣式由 theme.css 統一） -->
       <div class="nav">
         <div class="nav-left"></div>
         <div class="nav-title">本月</div>
@@ -151,20 +151,20 @@
     </nav>
   </div>
 
+  <!-- ✅ 全站共用（drawer / badge / modal / tabbar） -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
-      collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp,
-      doc, getDoc
+      collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
     await window.firebaseReady;
 
     // =========================
-    // State
+    // Month state + URL helpers
     // =========================
     const LS_BOOK = "wis_currentBookId";
     const qs = new URLSearchParams(location.search);
@@ -178,16 +178,19 @@
     const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 
     const parseMonthKey = (key) => {
-      if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-      const [y, m] = key.split("-").map(n => parseInt(n,10));
-      if(!y || !m || m < 1 || m > 12) return null;
-      return new Date(y, m-1, 1);
+      if (!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y, m] = key.split("-").map((n) => parseInt(n, 10));
+      if (!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m - 1, 1);
     };
 
     const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth() + delta, 1);
     const monthLabel = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 
-    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let currentMonth =
+      parseMonthKey(qs.get("m")) ||
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
     const currentKey = monthKeyFromDate(currentMonth);
     $("monthLabel").textContent = monthLabel(currentMonth);
 
@@ -199,26 +202,25 @@
     };
 
     $("btnPrev").addEventListener("click", () => {
-      const prev = addMonths(currentMonth, -1);
-      location.href = buildMonthUrl(monthKeyFromDate(prev));
+      location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, -1)));
     });
+
     $("btnNext").addEventListener("click", () => {
-      const next = addMonths(currentMonth, 1);
-      location.href = buildMonthUrl(monthKeyFromDate(next));
+      location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, 1)));
     });
 
     // edit 回來用 ref（保留原功能）
     const currentRef = buildMonthUrl(currentKey);
 
     // =========================
-    // Ensure default book
+    // Book bootstrap
     // =========================
-    async function ensureDefaultBook(uid){
+    async function ensureDefaultBook(uid) {
       const existing = currentBookIdFromLS();
       if (existing) return existing;
 
       const booksRef = collection(db, "users", uid, "books");
-      const q1 = query(booksRef, orderBy("createdAt","asc"), limit(1));
+      const q1 = query(booksRef, orderBy("createdAt", "asc"), limit(1));
       const snap = await getDocs(q1);
 
       if (!snap.empty) {
@@ -232,77 +234,55 @@
         archived: false,
         createdAt: serverTimestamp(),
       });
+
       localStorage.setItem(LS_BOOK, docRef.id);
       return docRef.id;
     }
 
     // =========================
-    // Header book badge
-    // =========================
-    async function showBookBadge(uid){
-      const badge = $("bookBadge");
-      if (!badge) return;
-
-      const bookId = currentBookIdFromLS();
-      if (!bookId) { badge.style.display = "none"; return; }
-
-      try{
-        const bookRef = doc(db, "users", uid, "books", bookId);
-        const snap = await getDoc(bookRef);
-        const name = (snap.data()?.name || "未命名帳本").trim();
-
-        badge.textContent = name;
-        badge.title = name;
-        badge.style.display = "inline-flex";
-      }catch(e){
-        console.warn("showBookBadge failed:", e);
-        badge.style.display = "none";
-      }
-    }
-
-    // =========================
     // Helpers
     // =========================
+    const parseAmount = (v) => {
+      const n = Number(String(v ?? "").replace(/,/g, ""));
+      return isFinite(n) ? n : 0;
+    };
+
     const formatTime12h = (hhmm) => {
-      if(!hhmm) return "";
+      if (!hhmm) return "";
       const [hStr, mStr] = hhmm.split(":");
-      let h = parseInt(hStr,10);
-      const m = parseInt(mStr,10);
+      let h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10);
       const ampm = h >= 12 ? "PM" : "AM";
-      h = h % 12; if(h === 0) h = 12;
+      h = h % 12;
+      if (h === 0) h = 12;
       return `${h}:${pad2(m)} ${ampm}`;
     };
 
     const ymdToDate = (ymd) => {
-      if(!ymd) return null;
-      const [y,m,d] = ymd.split("-").map(n => parseInt(n,10));
-      if(!y || !m || !d) return null;
-      return new Date(y, m-1, d);
+      if (!ymd) return null;
+      const [y, m, d] = ymd.split("-").map((n) => parseInt(n, 10));
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
     };
 
     const formatDayHeader = (ymd) => {
       const dt = ymdToDate(ymd);
-      if(!dt) return ymd || "";
-      const wd = dt.toLocaleDateString("en-US", { weekday:"short" });
-      return `${wd}, ${dt.getMonth()+1}/${dt.getDate()}`;
-    };
-
-    const parseAmount = (v) => {
-      const n = Number(String(v ?? "").replace(/,/g,""));
-      return isFinite(n) ? n : 0;
+      if (!dt) return ymd || "";
+      const wd = dt.toLocaleDateString("en-US", { weekday: "short" });
+      return `${wd}, ${dt.getMonth() + 1}/${dt.getDate()}`;
     };
 
     const nextMonthKey = (ym) => {
-      const [y,m] = ym.split("-").map(n=>parseInt(n,10));
-      const d = new Date(y, m-1, 1);
-      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      const [y, m] = ym.split("-").map((n) => parseInt(n, 10));
+      const d = new Date(y, m - 1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       return monthKeyFromDate(next);
     };
 
     // =========================
     // Firestore fetch
     // =========================
-    async function fetchMonthTxs(uid){
+    async function fetchMonthTxs(uid) {
       const root = $("list-root");
       root.innerHTML = "<div class='empty'>讀取中...</div>";
 
@@ -326,15 +306,13 @@
       );
 
       const snap = await getDocs(q);
-      const txs = [];
-      snap.forEach(d => txs.push({ id: d.id, ...d.data() }));
-      return txs;
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
 
     // =========================
     // Rendering
     // =========================
-    function buildTxRow(tx){
+    function buildTxRow(tx) {
       const rawAmt = parseAmount(tx.amount);
       const isIncome = tx.type === "income";
 
@@ -345,8 +323,8 @@
       const params = new URLSearchParams();
       params.set("id", tx.id);
       params.set("ref", currentRef);
-      if(tx.date) params.set("date", tx.date);
-      if(tx.time) params.set("time", tx.time);
+      if (tx.date) params.set("date", tx.date);
+      if (tx.time) params.set("time", tx.time);
       params.set("type", tx.type || "expense");
       params.set("amount", String(rawAmt));
       params.set("cat", tx.category || "");
@@ -362,7 +340,7 @@
       const noteTxt = (tx.note || "").trim();
       const note = document.createElement("div");
       note.className = "note";
-      if(noteTxt) note.textContent = noteTxt;
+      if (noteTxt) note.textContent = noteTxt;
       else note.style.display = "none";
       left.appendChild(note);
 
@@ -384,16 +362,19 @@
       return a;
     }
 
-    function renderWithTxs(txs){
+    function renderWithTxs(txs) {
       const root = $("list-root");
       root.innerHTML = "";
 
-      let income = 0, expense = 0;
-      for(const tx of txs){
+      let income = 0,
+        expense = 0;
+
+      for (const tx of txs) {
         const amt = parseAmount(tx.amount);
-        if(tx.type === "income") income += amt;
+        if (tx.type === "income") income += amt;
         else expense += amt;
       }
+
       const balance = income - expense;
 
       $("sum-income").textContent = String(income);
@@ -401,10 +382,10 @@
 
       const balEl = $("sum-balance");
       balEl.textContent = String(balance);
-      balEl.classList.remove("green","red");
+      balEl.classList.remove("green", "red");
       balEl.classList.add(balance >= 0 ? "green" : "red");
 
-      if(!txs.length){
+      if (!txs.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
@@ -413,14 +394,15 @@
       }
 
       const groups = new Map();
-      for(const tx of txs){
+      for (const tx of txs) {
         const key = tx.date || "unknown";
-        if(!groups.has(key)) groups.set(key, []);
+        if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(tx);
       }
 
-      const dates = Array.from(groups.keys()).sort((a,b) => b.localeCompare(a));
-      for(const dateKey of dates){
+      const dates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+
+      for (const dateKey of dates) {
         const section = document.createElement("section");
         section.className = "section";
 
@@ -432,7 +414,8 @@
         const leftTitle = document.createElement("div");
         leftTitle.textContent = formatDayHeader(dateKey);
 
-        let dayIncome = 0, dayExpense = 0;
+        let dayIncome = 0,
+          dayExpense = 0;
         for (const tx of list) {
           const amt = parseAmount(tx.amount);
           if (tx.type === "income") dayIncome += amt;
@@ -457,7 +440,7 @@
 
         list.forEach((tx, idx) => {
           card.appendChild(buildTxRow(tx));
-          if(idx !== list.length - 1){
+          if (idx !== list.length - 1) {
             const hr = document.createElement("hr");
             hr.className = "divider";
             card.appendChild(hr);
@@ -470,7 +453,7 @@
     }
 
     // =========================
-    // Auth gate (keep behavior)
+    // Auth gate (保持你原本行為)
     // =========================
     let isInitialCheck = true;
 
@@ -479,7 +462,6 @@
         isInitialCheck = false;
 
         await ensureDefaultBook(user.uid);
-        await showBookBadge(user.uid);
 
         try {
           const txs = await fetchMonthTxs(user.uid);
