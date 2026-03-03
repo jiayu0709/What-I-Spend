@@ -454,9 +454,7 @@ function shouldShowBookBadge(){
   const EXCLUDE = new Set([
   "index.html",
   "login.html",
-  "onboarding.html",
-  "login.html",  
-  "edit.html",  
+  "onboarding.html",    
   "waiting.html",]);
   return !EXCLUDE.has(p);
 }
