@@ -545,3 +545,25 @@ document.addEventListener("click", (e) => {
   tab.classList.add("ripple");
 }, true);
 
+// ==========================
+// Tabbar navigation (use <button class="tab" data-href="...">)
+// ==========================
+function bindTabbarButtons() {
+  document.addEventListener("click", (e) => {
+    const tab = e.target.closest(".tabbar .tab[data-href]");
+    if (!tab) return;
+
+    e.preventDefault(); // 保險
+    const href = tab.dataset.href;
+    if (!href) return;
+
+    location.href = href;
+  });
+}
+
+// DOM ready 後綁定（避免 tabbar 還沒出現）
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bindTabbarButtons);
+} else {
+  bindTabbarButtons();
+}
