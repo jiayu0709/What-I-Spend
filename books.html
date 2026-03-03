@@ -122,11 +122,19 @@
       justify-content:space-between;
       gap:10px;
     }
+
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .back{color:var(--accent-text);text-decoration:none;font-weight:900}
   </style>
 </head>
 <body>
   <div class="app">
     <main class="page">
+      <div class="nav">
+        <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        <div style="width:48px;"></div>
+      </div>
+
       <div class="nav-title">帳本</div>
 
       <section class="section">
@@ -188,6 +196,8 @@
 
     const qs = new URLSearchParams(location.search);
     const ref = qs.get("ref"); // optional return url
+    const back = ref || "month.html";
+    document.getElementById("backLink").href = back;
 
     let showArchived = false;
 
