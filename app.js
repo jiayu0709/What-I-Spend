@@ -1,20 +1,33 @@
+// app.js (GLOBAL)
+// ✅ 目標：全站共用（Auth persistence / auth gate / drawer / modal / tabbar / book badge）集中在這裡
+// ✅ 不改功能、不改樣式：只把重複邏輯整理乾淨、確保每頁都能正常注入
+
 import {
   setPersistence,
   indexedDBLocalPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
   onAuthStateChanged,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
-// 掛到 window，確保所有模組共用同一個 instance
+// 讓各頁共用同一個 instance（保持你原本行為）
 window.auth = auth;
 window.db = db;
 
-/* ---------------------------
-   1️⃣ Firebase Auth 初始化
----------------------------- */
+/* =========================
+   0) Helpers
+========================= */
+const LS_BOOK = "wis_currentBookId";
+const LS_BOOK_NAME = "wis_currentBookName";
+
+function pageName() {
+  return location.pathname.split("/").pop() || "index.html";
+}
+
 function isIOSSafari() {
   const ua = navigator.userAgent;
   const isIOS = /iPhone|iPad|iPod/i.test(ua);
@@ -22,6 +35,9 @@ function isIOSSafari() {
   return isIOS && isSafari;
 }
 
+/* =========================
+   1) Firebase Auth Persistence
+========================= */
 window.firebaseReady = (async () => {
   try {
     if (isIOSSafari()) {
@@ -42,9 +58,9 @@ window.firebaseReady = (async () => {
   }
 })();
 
-/* ---------------------------
-   2️⃣ 等待 Auth 狀態還原完成
----------------------------- */
+/* =========================
+   2) Wait auth restore
+========================= */
 window.waitForAuthReady = async () => {
   if (window.firebaseReady) await window.firebaseReady;
 
@@ -56,14 +72,12 @@ window.waitForAuthReady = async () => {
   });
 };
 
-/* ---------------------------
-   3️⃣ 登入保護（取代你原本的 currentUser 判斷）
----------------------------- */
+/* =========================
+   3) Require auth (redirect)
+========================= */
 window.requireAuth = async () => {
-  // 1) 先等 persistence 設好
   if (window.firebaseReady) await window.firebaseReady;
 
-  // 2) 等待狀態還原（多給 iOS 一點時間）
   const user = await new Promise((resolve) => {
     let done = false;
 
@@ -74,77 +88,105 @@ window.requireAuth = async () => {
       resolve(u);
     });
 
-    // iOS 偶爾需要多一點時間，避免還原前就被導走
+    // iOS 偶爾需要多一點時間
     setTimeout(() => {
       if (done) return;
       done = true;
       unsub();
-      resolve(auth.currentUser); // 可能仍是 null，但至少不會「秒踢走」
+      resolve(auth.currentUser);
     }, 1200);
   });
 
   if (!user) {
-    const next = encodeURIComponent(window.location.href);
-    window.location.replace(`index.html?next=${next}`);
+    const next = encodeURIComponent(location.href);
+    location.replace(`index.html?next=${next}`);
     return null;
   }
   return user;
 };
 
-/* ---------------------------
-   4️⃣ UI（跟 Auth 無關）
----------------------------- */
+/* =========================
+   4) Tabbar highlight + navigation
+========================= */
 function highlightTab() {
-  const currentPath =
-    window.location.pathname.split("/").pop() || "month.html";
-
+  const cur = pageName();
   document.querySelectorAll(".tabbar .tab").forEach((tab) => {
-    const href = tab.getAttribute("href");
-    if (!href) return;
-
-    const cleanHref = href.split("?")[0].split("#")[0];
-    if (currentPath === cleanHref || cleanHref.endsWith(currentPath)) {
-      tab.classList.add("active");
-    } else {
-      tab.classList.remove("active");
-    }
+    const href = tab.getAttribute("href") || tab.dataset.href || "";
+    const clean = href.split("?")[0].split("#")[0];
+    const active = clean && (clean === cur || clean.endsWith(cur));
+    tab.classList.toggle("active", !!active);
   });
 }
 
-document.addEventListener("DOMContentLoaded", highlightTab);
+function bindTabbarButtons() {
+  document.addEventListener(
+    "click",
+    (e) => {
+      const tab = e.target.closest(".tabbar .tab[data-href]");
+      if (!tab) return;
+      e.preventDefault();
+      const href = tab.dataset.href;
+      if (href) location.href = href;
+    },
+    true
+  );
+}
 
-// ================================
-// Global Drawer UI (exclude pages)
-// ================================
-import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// ===== Haptic + micro-bounce + ripple (保持你原本效果) =====
+window.hapticTap = function hapticTap() {
+  if (navigator.vibrate) navigator.vibrate(10);
+};
 
-// 你可以在這裡調整哪些頁面不要顯示（登入/歡迎頁不用）
+function bindTabbarEffects() {
+  document.addEventListener(
+    "click",
+    (e) => {
+      const tab = e.target.closest(".tabbar .tab");
+      if (!tab) return;
+
+      window.hapticTap?.();
+
+      tab.classList.remove("tap-bounce");
+      void tab.offsetWidth;
+      tab.classList.add("tap-bounce");
+
+      const r = tab.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      tab.style.setProperty("--rx", x + "px");
+      tab.style.setProperty("--ry", y + "px");
+
+      tab.classList.remove("ripple");
+      void tab.offsetWidth;
+      tab.classList.add("ripple");
+    },
+    true
+  );
+}
+
+/* =========================
+   5) Drawer (Global)
+   - 注入 hamburger + drawer + backdrop
+   - ✅ 塞進 .nav-left（跟著捲動，不浮動）
+========================= */
 const DRAWER_EXCLUDE = new Set([
   "index.html",
   "onboarding.html",
-  "login.html",  
-  "edit.html",  
+  "login.html",
+  "edit.html",
   "waiting.html",
   "books.html",
-  "categories.html",  // 如果你有
+  "categories.html",
 ]);
 
-function currentPageName(){
-  const p = location.pathname.split("/").pop() || "";
-  // Netlify 有時 root 可能是 "/"，你可視情況改成 index.html
-  return p || "index.html";
+function shouldShowDrawer() {
+  return !DRAWER_EXCLUDE.has(pageName());
 }
 
-function shouldShowDrawer(){
-  const page = currentPageName();
-  return !DRAWER_EXCLUDE.has(page);
-}
-
-function injectDrawer(){
+function injectDrawer() {
   if (!shouldShowDrawer()) return;
-  if (document.getElementById("menuBtn")) return; // 避免重複注入
+  if (document.getElementById("menuBtn")) return;
 
-  // topbar (left hamburger)
   const topbar = document.createElement("div");
   topbar.className = "topbar";
   topbar.innerHTML = `
@@ -153,43 +195,36 @@ function injectDrawer(){
     </button>
   `;
 
-  // backdrop
   const backdrop = document.createElement("div");
   backdrop.className = "drawer-backdrop drawer-overlay";
   backdrop.id = "drawerBackdrop";
   backdrop.hidden = true;
 
-  // drawer
   const drawer = document.createElement("aside");
   drawer.className = "drawer drawer-panel";
   drawer.id = "drawer";
-  drawer.setAttribute("aria-hidden","true");
+  drawer.setAttribute("aria-hidden", "true");
 
+  const ref = encodeURIComponent(pageName() || "month.html");
   drawer.innerHTML = `
     <div class="drawer-inner">
       <div class="drawer-title">功能</div>
 
       <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
 
-      <a class="drawer-link" href="books.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
+      <a class="drawer-link" href="books.html?ref=${ref}">
         <div class="drawer-item">切換帳本</div>
       </a>
-      <a class="drawer-link" href="categories.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
+      <a class="drawer-link" href="categories.html?ref=${ref}">
         <div class="drawer-item">分類設定</div>
       </a>
     </div>
   `;
 
-  // ✅ 改這裡：topbar 塞進 .nav-left（一起捲動）
+  // ✅ 放進 header 左側（如果頁面有 .nav-left）
   const leftSlot = document.querySelector(".nav .nav-left") || document.querySelector(".nav-left");
-  if (leftSlot) {
-    leftSlot.appendChild(topbar);
-    topbar.style.position = "static";
-    topbar.style.left = "auto";
-    topbar.style.top = "auto";
-  } else {
-    document.body.appendChild(topbar);
-  }
+  if (leftSlot) leftSlot.appendChild(topbar);
+  else document.body.appendChild(topbar);
 
   document.body.appendChild(backdrop);
   document.body.appendChild(drawer);
@@ -197,31 +232,32 @@ function injectDrawer(){
   const menuBtn = document.getElementById("menuBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
+  // 初始狀態關閉
   drawer.classList.remove("open");
   backdrop.hidden = true;
-  drawer.setAttribute("aria-hidden","true");
-  menuBtn.setAttribute("aria-expanded","false");
+  drawer.setAttribute("aria-hidden", "true");
+  menuBtn.setAttribute("aria-expanded", "false");
 
-  function openDrawer(){
+  const openDrawer = () => {
     drawer.classList.add("open");
     backdrop.hidden = false;
-    drawer.setAttribute("aria-hidden","false");
-    menuBtn.setAttribute("aria-expanded","true");
+    drawer.setAttribute("aria-hidden", "false");
+    menuBtn.setAttribute("aria-expanded", "true");
     document.body.style.overflow = "hidden";
-  }
+  };
 
-  function closeDrawer(){
+  const closeDrawer = () => {
     drawer.classList.remove("open");
     backdrop.hidden = true;
-    drawer.setAttribute("aria-hidden","true");
-    menuBtn.setAttribute("aria-expanded","false");
+    drawer.setAttribute("aria-hidden", "true");
+    menuBtn.setAttribute("aria-expanded", "false");
     document.body.style.overflow = "";
-  }
+  };
 
-  function toggleDrawer(){
+  const toggleDrawer = () => {
     if (drawer.classList.contains("open")) closeDrawer();
     else openDrawer();
-  }
+  };
 
   menuBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -253,18 +289,12 @@ function injectDrawer(){
     if (a) closeDrawer();
   });
 }
-// ✅ 一定要呼叫，否則抽屜不會注入
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", injectDrawer);
-} else {
-  injectDrawer();
-}
 
-// ==========================
-// Themed Modal (alert/confirm/prompt replacement)
-// ==========================
-(function () {
-  if (window.ui) return; // 避免重複載入
+/* =========================
+   6) Themed Modal (ui.alert/confirm/prompt)
+========================= */
+function injectThemedModal() {
+  if (window.ui) return;
 
   const backdrop = document.createElement("div");
   backdrop.className = "ui-modal-backdrop";
@@ -282,32 +312,19 @@ if (document.readyState === "loading") {
 
   const $ = (id) => backdrop.querySelector("#" + id);
 
-  function open() {
+  const open = () => {
     backdrop.classList.add("show");
     document.body.style.overflow = "hidden";
-  }
-  function close() {
+  };
+  const close = () => {
     backdrop.classList.remove("show");
     document.body.style.overflow = "";
-  }
-
-  // 點背景不關（避免誤觸），你要可關再打開即可
-  backdrop.addEventListener("click", (e) => {
-    if (e.target === backdrop) {
-      // do nothing
-    }
-  });
-
-  // ESC 可關（桌機）
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && backdrop.classList.contains("show")) {
-      // 不自動關，避免誤關；如果你要 ESC 關閉可改成 close()
-    }
-  });
+  };
 
   function render({ title, message, input, buttons }) {
     $("uiTitle").textContent = title || "";
     $("uiMsg").textContent = message || "";
+
     const body = $("uiBody");
     const actions = $("uiActions");
     actions.innerHTML = "";
@@ -323,7 +340,6 @@ if (document.readyState === "loading") {
       inputEl.placeholder = input.placeholder || "";
       inputEl.value = input.value || "";
       body.appendChild(inputEl);
-      // iOS 讓鍵盤彈起後 focus
       setTimeout(() => inputEl.focus(), 50);
     }
 
@@ -353,7 +369,6 @@ if (document.readyState === "loading") {
         buttons: [{ text: opts.okText || "知道了", variant: "primary", value: true }],
       });
     },
-
     confirm(message, opts = {}) {
       return render({
         title: opts.title || "確認",
@@ -364,7 +379,6 @@ if (document.readyState === "loading") {
         ],
       });
     },
-
     prompt(message, opts = {}) {
       return render({
         title: opts.title || "請輸入",
@@ -376,20 +390,16 @@ if (document.readyState === "loading") {
         },
         buttons: [
           { text: opts.cancelText || "取消", value: null },
-          {
-            text: opts.okText || "確定",
-            variant: "primary",
-            onClick: (val) => (val ?? "").trim(),
-          },
+          { text: opts.okText || "確定", variant: "primary", onClick: (val) => (val ?? "").trim() },
         ],
       });
     },
   };
-})();
+}
 
-// ==========================
-// Button Feedback Helper (GLOBAL)
-// ==========================
+/* =========================
+   7) Button feedback helper (global)
+========================= */
 window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = {}) {
   if (!btn) return task();
 
@@ -397,14 +407,13 @@ window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = 
     loadingText = "儲存中…",
     successText = "已儲存 ✓",
     successHoldMs = 800,
-    // 若你會立刻跳轉，success 可能看不到；你可以把這個設 120~200 讓它至少閃一下
     minShowMs = 0,
     onError,
   } = opts;
 
   const prevText = btn.textContent;
-
   const startTs = Date.now();
+
   btn.disabled = true;
   btn.classList.add("loading");
   btn.textContent = loadingText;
@@ -412,17 +421,13 @@ window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = 
   try {
     const result = await task();
 
-    // 保底：至少顯示 loading 一下（避免太快看不到）
     const elapsed = Date.now() - startTs;
-    if (minShowMs > elapsed) {
-      await new Promise(r => setTimeout(r, minShowMs - elapsed));
-    }
+    if (minShowMs > elapsed) await new Promise((r) => setTimeout(r, minShowMs - elapsed));
 
     btn.classList.remove("loading");
     btn.classList.add("success");
     btn.textContent = successText;
 
-    // 有些頁面會 redirect，這裡會來不及跑完也沒關係
     setTimeout(() => {
       btn.classList.remove("success");
       btn.textContent = prevText;
@@ -434,135 +439,95 @@ window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = 
     btn.classList.remove("loading", "success");
     btn.textContent = prevText;
     btn.disabled = false;
-
     if (typeof onError === "function") onError(e);
     throw e;
   }
 };
 
-// ==========================
-// Current Book Name Badge (GLOBAL)
-// ==========================
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const LS_BOOK = "wis_currentBookId";
-const LS_BOOK_NAME = "wis_currentBookName"; // optional cache
-
-function shouldShowBookBadge(){
-  const p = location.pathname.split("/").pop() || "index.html";
-  // 你不想顯示的頁：可自己加
-  const EXCLUDE = new Set([
+/* =========================
+   8) Current Book Badge (Global)
+   - ✅ 優先使用頁面 header 裡的 #bookBadge（如果存在）
+   - ✅ 否則才注入到 body（但你之後會統一用 header，所以基本不會走到注入）
+========================= */
+const BOOK_BADGE_EXCLUDE = new Set([
   "index.html",
   "login.html",
-  "onboarding.html",    
-  "waiting.html",]);
-  return !EXCLUDE.has(p);
+  "onboarding.html",
+  "waiting.html",
+]);
+
+function shouldShowBookBadge() {
+  return !BOOK_BADGE_EXCLUDE.has(pageName());
 }
 
-function injectBookBadge(){
-  if (!shouldShowBookBadge()) return;
-  if (document.getElementById("bookBadge")) return;
+function ensureBookBadgeElement() {
+  if (!shouldShowBookBadge()) return null;
 
+  // ✅ 如果頁面自己已經有 <div id="bookBadge">（放在 .nav-right），就直接用
+  const existing = document.getElementById("bookBadge");
+  if (existing) return existing;
+
+  // fallback：若某頁還沒改成 header 結構，才注入
   const el = document.createElement("div");
   el.id = "bookBadge";
   el.className = "book-badge";
-  el.textContent = localStorage.getItem(LS_BOOK_NAME) || ""; // 先用快取
+  el.textContent = localStorage.getItem(LS_BOOK_NAME) || "";
   el.style.display = el.textContent ? "block" : "none";
   document.body.appendChild(el);
+  return el;
 }
 
-async function updateBookBadge(){
+async function updateBookBadge() {
   if (!shouldShowBookBadge()) return;
 
-  const el = document.getElementById("bookBadge");
+  const el = ensureBookBadgeElement();
   if (!el) return;
 
   const user = await window.waitForAuthReady();
-  if (!user) { el.style.display = "none"; return; }
+  if (!user) {
+    el.style.display = "none";
+    return;
+  }
 
   const bookId = localStorage.getItem(LS_BOOK);
-  if (!bookId) { el.style.display = "none"; return; }
+  if (!bookId) {
+    el.style.display = "none";
+    return;
+  }
 
-  try{
+  try {
     const ref = doc(window.db, "users", user.uid, "books", bookId);
     const snap = await getDoc(ref);
     const name = snap.exists() ? (snap.data()?.name || "未命名帳本") : "未命名帳本";
 
     el.textContent = name;
     el.style.display = "block";
-    localStorage.setItem(LS_BOOK_NAME, name); // 快取
-  }catch(e){
+    localStorage.setItem(LS_BOOK_NAME, name);
+  } catch (e) {
     console.error("updateBookBadge failed:", e);
-    // 讀不到就先用快取，不要讓 UI 消失
     const cached = localStorage.getItem(LS_BOOK_NAME);
-    if (cached){
+    if (cached) {
       el.textContent = cached;
       el.style.display = "block";
     }
   }
 }
 
-// DOM ready -> 注入 + 更新一次
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    injectBookBadge();
-    updateBookBadge();
-  });
-} else {
-  injectBookBadge();
+/* =========================
+   9) Boot
+========================= */
+function boot() {
+  highlightTab();
+  bindTabbarButtons();
+  bindTabbarEffects();
+
+  injectThemedModal();
+  injectDrawer();
   updateBookBadge();
 }
 
-// ===== Haptic + micro-bounce for Tabbar =====
-window.hapticTap = function hapticTap() {
-  // Android Chrome / 部分環境可用；iOS Safari 多數不支援
-  if (navigator.vibrate) navigator.vibrate(10);
-};
-
-document.addEventListener("click", (e) => {
-  const tab = e.target.closest(".tabbar .tab");
-  if (!tab) return;
-
-  // 震動
-  window.hapticTap?.();
-
-  // 微彈
-  tab.classList.remove("tap-bounce");
-  void tab.offsetWidth;
-  tab.classList.add("tap-bounce");
-
-  // ripple：記錄點擊位置（相對於 tab）
-  const r = tab.getBoundingClientRect();
-  const x = (e.clientX - r.left);
-  const y = (e.clientY - r.top);
-  tab.style.setProperty("--rx", x + "px");
-  tab.style.setProperty("--ry", y + "px");
-
-  // 觸發 ripple（連點也要能重播）
-  tab.classList.remove("ripple");
-  void tab.offsetWidth;
-  tab.classList.add("ripple");
-}, true);
-
-// ==========================
-// Tabbar navigation (use <button class="tab" data-href="...">)
-// ==========================
-function bindTabbarButtons() {
-  document.addEventListener("click", (e) => {
-    const tab = e.target.closest(".tabbar .tab[data-href]");
-    if (!tab) return;
-
-    e.preventDefault(); // 保險
-    const href = tab.dataset.href;
-    if (!href) return;
-
-    location.href = href;
-  });
-}
-
-// DOM ready 後綁定（避免 tabbar 還沒出現）
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bindTabbarButtons);
+  document.addEventListener("DOMContentLoaded", boot);
 } else {
-  bindTabbarButtons();
+  boot();
 }
