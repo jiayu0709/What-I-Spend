@@ -253,6 +253,13 @@ function injectDrawer(){
     if (a) closeDrawer();
   });
 }
+// ✅ 一定要呼叫，否則抽屜不會注入
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", injectDrawer);
+} else {
+  injectDrawer();
+}
+
 // ==========================
 // Themed Modal (alert/confirm/prompt replacement)
 // ==========================
