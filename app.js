@@ -441,3 +441,72 @@ window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = 
     throw e;
   }
 };
+
+// ==========================
+// Current Book Name Badge (GLOBAL)
+// ==========================
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const LS_BOOK = "wis_currentBookId";
+const LS_BOOK_NAME = "wis_currentBookName"; // optional cache
+
+function shouldShowBookBadge(){
+  const p = location.pathname.split("/").pop() || "index.html";
+  // 你不想顯示的頁：可自己加
+  const EXCLUDE = new Set(["index.html","login.html","onboarding.html"]);
+  return !EXCLUDE.has(p);
+}
+
+function injectBookBadge(){
+  if (!shouldShowBookBadge()) return;
+  if (document.getElementById("bookBadge")) return;
+
+  const el = document.createElement("div");
+  el.id = "bookBadge";
+  el.className = "book-badge";
+  el.textContent = localStorage.getItem(LS_BOOK_NAME) || ""; // 先用快取
+  el.style.display = el.textContent ? "block" : "none";
+  document.body.appendChild(el);
+}
+
+async function updateBookBadge(){
+  if (!shouldShowBookBadge()) return;
+
+  const el = document.getElementById("bookBadge");
+  if (!el) return;
+
+  const user = await window.waitForAuthReady();
+  if (!user) { el.style.display = "none"; return; }
+
+  const bookId = localStorage.getItem(LS_BOOK);
+  if (!bookId) { el.style.display = "none"; return; }
+
+  try{
+    const ref = doc(window.db, "users", user.uid, "books", bookId);
+    const snap = await getDoc(ref);
+    const name = snap.exists() ? (snap.data()?.name || "未命名帳本") : "未命名帳本";
+
+    el.textContent = name;
+    el.style.display = "block";
+    localStorage.setItem(LS_BOOK_NAME, name); // 快取
+  }catch(e){
+    console.error("updateBookBadge failed:", e);
+    // 讀不到就先用快取，不要讓 UI 消失
+    const cached = localStorage.getItem(LS_BOOK_NAME);
+    if (cached){
+      el.textContent = cached;
+      el.style.display = "block";
+    }
+  }
+}
+
+// DOM ready -> 注入 + 更新一次
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    injectBookBadge();
+    updateBookBadge();
+  });
+} else {
+  injectBookBadge();
+  updateBookBadge();
+}

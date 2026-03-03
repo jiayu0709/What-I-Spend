@@ -343,6 +343,7 @@
         btnSwitch.addEventListener("click", () => {
           setCurrentBookId(b.id);
           location.replace(ref || "month.html");
+          localStorage.removeItem("wis_currentBookName"); // 清快取，避免顯示舊名
         });
 
         const btnRename = document.createElement("button");
