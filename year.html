@@ -9,14 +9,19 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>分析</title>
+
   <style>
+    /* ✅ year.html 本頁專屬：monthbar + donut/legend（其餘交給 theme.css） */
     *{box-sizing:border-box}
+
     body{
-      margin:0;background:var(--app-bg);color:var(--text);
+      margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
     }
+
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
+
     .monthbar{
       margin-top:6px;
       background: var(--card-bg);
@@ -44,23 +49,16 @@
       color: var(--text);
       white-space:nowrap;
     }
-    .monthbar .m-title .bracket{
-      color: var(--secondary);
-      font-weight:900;
-    }
-
-    .card.card--empty{
-      background: transparent;
-      padding: 0;
-    }
 
     .section{margin-top:18px}
     .label{font-size:16px;font-weight:900;color:var(--secondary);margin:12px 0 8px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
+    .card.card--empty{ background:transparent; padding:0; }
 
     .donut-wrap{display:grid;grid-template-columns:1fr;gap:14px;align-items:center;}
     .donut-area{display:grid;place-items:center;padding:8px 0 2px;}
     .donut-legend{margin-top:6px;display:grid;gap:12px;}
+
     .legend-row{
       display:grid;
       grid-template-columns:1fr auto auto;
@@ -79,6 +77,7 @@
     }
     .pct{color:var(--secondary);font-weight:900;width:56px;text-align:right;}
     .amt{font-weight:900;width:110px;text-align:right;}
+
     .empty{
       background:rgba(255,255,255,0.5);
       border:1px solid rgba(0,0,0,0.06);
@@ -93,6 +92,7 @@
     .center-value{font-size:26px;font-weight:900;fill:var(--text);}
   </style>
 </head>
+
 <body>
   <div class="app">
     <main class="page">
@@ -106,7 +106,7 @@
 
       <div class="monthbar" aria-label="月份切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
-        <div class="m-title"><span id="monthLabel">January</span></div>
+        <div class="m-title"><span id="monthLabel">Loading...</span></div>
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
@@ -127,14 +127,15 @@
     </nav>
   </div>
 
+  <!-- ✅ 全站共用：drawer / badge / modal / tabbar / auth helpers -->
   <script type="module" src="app.js"></script>
 
+  <!-- ✅ year.html：UI + chart（保留 localStorage fallback） -->
   <script>
-    // =========================
-    // Utils (no behavior change)
-    // =========================
+    // -------------------------
+    // Utils
+    // -------------------------
     const $ = (id) => document.getElementById(id);
-
     const pad2 = (n) => String(n).padStart(2, "0");
 
     const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
@@ -158,12 +159,11 @@
     };
 
     const moneyNT = (n) => "NT$" + Math.round(n).toLocaleString("en-US");
-
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
-    // =========================
+    // -------------------------
     // Month state: ?m=YYYY-MM
-    // =========================
+    // -------------------------
     const qs = new URLSearchParams(location.search);
     let currentMonth =
       parseMonthKey(qs.get("m")) ||
@@ -171,16 +171,14 @@
 
     const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
 
-    // ✅ 新增：帳本（最小改動）
+    // book
     const LS_BOOK = "wis_currentBookId";
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
     const currentBookId = localStorage.getItem(LS_BOOK) || "";
 
     $("monthLabel").textContent = monthLabel(currentMonth);
-    $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(
-      currentMonth.getMonth() + 1
-    )}）`;
+    $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
 
     $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
@@ -194,9 +192,9 @@
       location.href = `year.html?m=${m}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
     });
 
-    // =========================
-    // LocalStorage helpers (保留原本程式碼，不刪不改)
-    // =========================
+    // -------------------------
+    // LocalStorage helpers (fallback)
+    // -------------------------
     const getTxIndex = () => {
       try {
         const raw = localStorage.getItem("tx:index");
@@ -219,9 +217,9 @@
 
     const isDeleted = (id) => localStorage.getItem("tx:deleted:" + id) === "1";
 
-    // =========================
+    // -------------------------
     // Donut (pure SVG)
-    // =========================
+    // -------------------------
     const polarToCartesian = (cx, cy, r, angleDeg) => {
       const rad = ((angleDeg - 90) * Math.PI) / 180;
       return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
@@ -235,16 +233,8 @@
     };
 
     const palette = [
-      "#f04b3a",
-      "#d61c68",
-      "#7c3aed",
-      "#3b82f6",
-      "#06b6d4",
-      "#22c55e",
-      "#f59e0b",
-      "#a855f7",
-      "#ef4444",
-      "#10b981",
+      "#f04b3a","#d61c68","#7c3aed","#3b82f6","#06b6d4",
+      "#22c55e","#f59e0b","#a855f7","#ef4444","#10b981",
     ];
 
     const buildDonutSVG = (total, slices) => {
@@ -303,14 +293,14 @@
       return svg;
     };
 
-    // =========================
-    // Render chart（原本邏輯保留）
-    // ✅ 只改：讓它可以吃「外部傳入的 txs」（Firestore），不再只靠 localStorage
-    // =========================
-    const renderMonthCategoryChart = (txs) => {
-      const sumsByCat = new Map(); // category -> sum
+    // -------------------------
+    // Render chart
+    // - if txs provided: use Firestore result
+    // - else fallback: localStorage
+    // -------------------------
+    function renderMonthCategoryChart(txs){
+      const sumsByCat = new Map();
 
-      // ✅ 若沒傳入 txs，維持舊行為（localStorage）
       let sourceTxs = Array.isArray(txs) ? txs : [];
       if (!Array.isArray(txs)) {
         const ids = getTxIndex().filter(Boolean);
@@ -325,9 +315,8 @@
 
       for (const tx of sourceTxs) {
         const date = String(tx.date || "");
-        if (!date.startsWith(currentKey)) continue; // only this month (YYYY-MM)
+        if (!date.startsWith(currentKey)) continue;
 
-        // expense only: exclude income; others treated as expense
         if (tx.type === "income") continue;
 
         const amt = parseAmount(tx.amount);
@@ -347,7 +336,6 @@
 
       if (items.length === 0) {
         card.classList.add("card--empty");
-
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent = "這個月份還沒有支出資料，先去新增幾筆吧！";
@@ -359,14 +347,11 @@
 
       const total = items.reduce((s, x) => s + x.value, 0);
 
-      // Top 8 + merge rest into "Other"
       const MAX = 8;
       const main = items.slice(0, MAX);
       const rest = items.slice(MAX);
-
       if (rest.length) {
-        const restSum = rest.reduce((s, x) => s + x.value, 0);
-        main.push({ name: "Other", value: restSum });
+        main.push({ name: "Other", value: rest.reduce((s, x) => s + x.value, 0) });
       }
 
       const slices = main.map((x, i) => ({
@@ -397,8 +382,7 @@
         cat.className = "cat";
         cat.textContent = s.name;
 
-        left.appendChild(dot);
-        left.appendChild(cat);
+        left.append(dot, cat);
 
         const pct = document.createElement("div");
         pct.className = "pct";
@@ -408,29 +392,20 @@
         amt.className = "amt";
         amt.textContent = moneyNT(s.value);
 
-        row.appendChild(left);
-        row.appendChild(pct);
-        row.appendChild(amt);
-
+        row.append(left, pct, amt);
         legend.appendChild(row);
       }
 
-      root.appendChild(donutArea);
-      root.appendChild(legend);
-    };
+      root.append(donutArea, legend);
+    }
 
-    // ✅ 不再在這裡直接 render（因為要等 Firestore 資料）
-    // renderMonthCategoryChart();
-
-    // ✅ 只加：提供 module script 呼叫（不影響其他功能）
+    // expose for module script
     window.__renderMonthCategoryChart = renderMonthCategoryChart;
     window.__currentKeyForStats = currentKey;
-
-    // ✅ 新增：提供 module script 取用目前帳本（最小改動）
     window.__currentBookIdForStats = currentBookId;
   </script>
 
-  <!-- ✅ 修正點：改用 Firestore 抓當月 transactions（跟 month.html 同資料來源） -->
+  <!-- ✅ Firestore 當月資料載入（行為不變：未登入導 login；失敗 fallback localStorage） -->
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -447,8 +422,6 @@
     async function fetchMonthTxs(uid, ym, bookId){
       const start = `${ym}-01`;
       const end = `${nextMonthKey(ym)}-01`;
-
-      // ✅ 用傳進來的 bookId（不要在這裡再 const bookId = ...）
       if (!bookId) return [];
 
       const txRef = collection(db, "users", uid, "transactions");
@@ -467,10 +440,8 @@
       return txs;
     }
 
-    // 1) 等 Firebase persistence ready
     await window.firebaseReady;
 
-    // 2) 監聽登入狀態（你說「只有登入過後才能用」→ 未登入直接去 login）
     onAuthStateChanged(window.auth, async (user) => {
       if (!user) {
         const next = encodeURIComponent(location.href);
@@ -478,10 +449,10 @@
         return;
       }
 
-      const ym = window.__currentKeyForStats;               // "YYYY-MM"
-      const bookId = window.__currentBookIdForStats || "";  // 來自 URL b 或 localStorage
+      const ym = window.__currentKeyForStats;
+      const bookId = window.__currentBookIdForStats || "";
 
-      // 沒有 bookId：先用舊行為（localStorage render）
+      // 沒有 bookId：維持舊行為（localStorage render）
       if (!bookId) {
         window.__renderMonthCategoryChart();
         return;
