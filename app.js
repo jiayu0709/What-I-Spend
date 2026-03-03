@@ -524,12 +524,23 @@ document.addEventListener("click", (e) => {
   const tab = e.target.closest(".tabbar .tab");
   if (!tab) return;
 
-  // 震動（支援才會動）
-  window.hapticTap();
+  // 震動
+  window.hapticTap?.();
 
-  // 微彈（每次都觸發）
+  // 微彈
   tab.classList.remove("tap-bounce");
-  // 逼瀏覽器吃到 reflow，確保連點也會重新播放動畫
   void tab.offsetWidth;
   tab.classList.add("tap-bounce");
+
+  // ripple：記錄點擊位置（相對於 tab）
+  const r = tab.getBoundingClientRect();
+  const x = (e.clientX - r.left);
+  const y = (e.clientY - r.top);
+  tab.style.setProperty("--rx", x + "px");
+  tab.style.setProperty("--ry", y + "px");
+
+  // 觸發 ripple（連點也要能重播）
+  tab.classList.remove("ripple");
+  void tab.offsetWidth;
+  tab.classList.add("ripple");
 }, true);

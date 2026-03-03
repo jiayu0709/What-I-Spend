@@ -171,6 +171,41 @@ button:active{ opacity:.65; transform:scale(.98); }
 
 .tabbar .tab.active{ color: var(--tabcolor); }
 
+/* ===== Tabbar ripple (tap -> spread) ===== */
+.tabbar .tab{
+  position: relative;
+  overflow: hidden; /* 讓 ripple 不超出按鈕 */
+}
+
+/* ripple 圓 */
+.tabbar .tab::after{
+  content:"";
+  position:absolute;
+  left: var(--rx, 50%);
+  top: var(--ry, 50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events:none;
+
+  /* 水波顏色：用文字色做淡淡的白/灰感（跟主題一起變） */
+  background: currentColor;
+  filter: saturate(.8);
+}
+
+/* 觸發動畫 */
+.tabbar .tab.ripple::after{
+  animation: tab-ripple 420ms ease-out;
+}
+
+@keyframes tab-ripple{
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: .18; }
+  60%  { opacity: .12; }
+  100% { transform: translate(-50%, -50%) scale(16); opacity: 0; }
+}
+
 /* =========================
    6) Topbar + Hamburger
    ========================= */
