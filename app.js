@@ -125,6 +125,7 @@ const DRAWER_EXCLUDE = new Set([
   "login.html",  
   "edit.html",  
   "waiting.html",
+  "books.html",
   "categories.html",  // 如果你有
 ]);
 
@@ -455,9 +456,7 @@ function shouldShowBookBadge(){
   "onboarding.html",
   "login.html",  
   "edit.html",  
-  "waiting.html",
-  "books.html",
-  "categories.html",]);
+  "waiting.html",]);
   return !EXCLUDE.has(p);
 }
 
