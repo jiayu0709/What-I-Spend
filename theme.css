@@ -1,8 +1,7 @@
-/* theme.css — 全站統一色彩（Design Tokens） */
-
-/* =========================
+/* theme.css — Global Design Tokens + Shared UI */
+/* ============================================
    0) Design Tokens
-   ========================= */
+   ============================================ */
 :root{
   /* Backgrounds */
   --app-bg: #f0e6e6;
@@ -37,53 +36,31 @@
 
   /* Drawer width (2/3 screen) */
   --drawer-width: 66.6667vw;
+
+  /* Header sizing */
+  --header-height: 44px;
+  --header-side: 76px;
 }
 
-/* =========================
+/* ============================================
    1) Base
-   ========================= */
+   ============================================ */
+*{ box-sizing: border-box; }
+
 body{
   background: var(--app-bg);
   color: var(--text);
-  padding-top: 0; /* 背景要吃滿最上方 */
+  padding-top: 0;
 }
 
 /* iPhone notch safe-area（只推內容，不推背景） */
 main.page{
   padding-top: calc(var(--page-top-pad) + env(safe-area-inset-top, 0px)) !important;
 }
-.topbar{
-  top: calc(var(--topbar-offset) + env(safe-area-inset-top, 0px)) !important;
-}
 
-/* =========================
-   2) iOS input text color
-   ========================= */
-input[type="date"],
-input[type="time"]{
-  color: var(--accent-text);
-  -webkit-text-fill-color: var(--accent-text);
-}
-
-input[type="date"]::-webkit-datetime-edit,
-input[type="time"]::-webkit-datetime-edit{
-  color: var(--accent-text);
-}
-
-input[type="date"]::-webkit-datetime-edit-text,
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field,
-input[type="time"]::-webkit-datetime-edit-text,
-input[type="time"]::-webkit-datetime-edit-hour-field,
-input[type="time"]::-webkit-datetime-edit-minute-field,
-input[type="time"]::-webkit-datetime-edit-ampm-field{
-  color: var(--accent-text);
-}
-
-/* =========================
-   3) Page transition (iOS style)
-   ========================= */
+/* ============================================
+   2) Page transition (iOS style)
+   ============================================ */
 main.page{ animation: page-enter .45s ease-out; }
 
 @keyframes page-enter{
@@ -98,9 +75,9 @@ main.page.leaving{ animation: page-leave .2s ease-in forwards; }
   to  { opacity:0; transform: translateX(-20px); }
 }
 
-/* =========================
-   4) Tap feedback (GLOBAL)
-   ========================= */
+/* ============================================
+   3) Tap feedback (GLOBAL)
+   ============================================ */
 a, button, .tx, .tab{ -webkit-tap-highlight-color: transparent; }
 
 .tx, .tab, button{
@@ -115,9 +92,158 @@ button:active{ opacity:.65; transform:scale(.98); }
 
 .tx:focus, .tab:focus, button:focus{ outline:none; }
 
-/* =========================
-   5) Tabbar (GLOBAL)
-   ========================= */
+/* ============================================
+   4) iOS input text color
+   ============================================ */
+input[type="date"],
+input[type="time"]{
+  color: var(--accent-text);
+  -webkit-text-fill-color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit{
+  color: var(--accent-text);
+}
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field,
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="time"]::-webkit-datetime-edit-ampm-field{
+  color: var(--accent-text);
+}
+
+/* ============================================
+   5) Header (GLOBAL)
+   - .nav: left (drawer) / center (title) / right (book badge)
+   - 標題永遠置中
+   ============================================ */
+.nav{
+  display:grid;
+  grid-template-columns: var(--header-side) 1fr var(--header-side);
+  align-items:center;
+  height: var(--header-height);
+  margin: 0 0 10px;
+}
+
+/* left slot */
+.nav-left{
+  width: var(--header-side);
+  height: var(--header-height);
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+
+/* center title */
+.nav-title{
+  margin:0;
+  transform:none;
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:-.5px;
+  text-align:center;
+  line-height: var(--header-height); /* ✅ 同高關鍵 */
+}
+
+/* right slot */
+.nav-right{
+  width: var(--header-side);
+  height: var(--header-height);
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+}
+
+/* Book badge: 不浮動、跟著捲動、大小一致 */
+.book-badge{
+  position: static;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  padding: 8px 10px;
+  line-height: 1;
+
+  border-radius: 999px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: var(--text);
+  font-weight: 900;
+  font-size: 12px;
+
+  /* ✅ 不要太長擠到標題置中（可調 60~90） */
+  max-width: 72px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================
+   6) Topbar + Hamburger (GLOBAL)
+   - 預設：fixed (給沒有 header 的頁)
+   - 放進 header (.nav-left) 時：自動變 static、跟著捲動
+   ============================================ */
+.topbar{
+  position: fixed;
+  left: 10px;
+  z-index: 50;
+  top: calc(var(--topbar-offset) + env(safe-area-inset-top, 0px)) !important;
+}
+
+/* ✅ 只要 topbar 被放在 .nav-left 裡，就不要 fixed */
+.nav-left .topbar{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: auto !important;
+
+  width: var(--header-side);
+  height: var(--header-height);
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+
+.hamburger{
+  width: var(--hamburger-size);
+  height: var(--hamburger-size);
+  border-radius: 14px;
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  display:flex;
+  flex-direction: column;
+  place-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  padding: 0;
+  cursor: pointer;
+}
+
+.hamburger:active{ opacity:.65; transform:scale(.98); }
+
+.hamburger span{
+  display:block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 999px;
+  opacity: .9;
+  margin:0;
+}
+
+/* ============================================
+   7) Tabbar (GLOBAL)
+   ============================================ */
 .tabbar{
   position:fixed; left:0; right:0; bottom:0;
   height: var(--tab-height);
@@ -138,7 +264,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   align-items:center;
 }
 
-/* tab base + ripple 容器 + 微彈 */
 .tabbar .tab{
   text-decoration:none;
   color: var(--secondary);
@@ -148,17 +273,14 @@ button:active{ opacity:.65; transform:scale(.98); }
   font-weight:800;
   padding:8px 0;
 
-  /* micro-bounce */
   position: relative;
   transform: translateZ(0);
   transition: transform .12s ease, opacity .12s ease;
   will-change: transform;
 
-  /* ripple */
   overflow: hidden;
   border-radius: 16px;
 
-  /* allow <button class="tab"> */
   border:0;
   background:transparent;
 }
@@ -171,19 +293,17 @@ button:active{ opacity:.65; transform:scale(.98); }
 
 .tabbar .tab.active{ color: var(--tabcolor); }
 
-/* ===== Tabbar micro-bounce ===== */
+/* micro-bounce */
 .tabbar .tab.tap-bounce{
   animation: tab-bounce 180ms ease-out;
 }
-
 @keyframes tab-bounce{
   0%   { transform: scale(1); }
   40%  { transform: scale(.94); }
   100% { transform: scale(1); }
 }
 
-/* ===== Tabbar ripple ===== */
-/* ripple 圓 */
+/* ripple */
 .tabbar .tab::after{
   content:"";
   position:absolute;
@@ -201,75 +321,14 @@ button:active{ opacity:.65; transform:scale(.98); }
 .tabbar .tab.ripple::after{
   animation: tab-ripple 480ms ease-out;
 }
-
 @keyframes tab-ripple{
   0%   { transform: translate(-50%, -50%) scale(0); opacity: .20; }
   100% { transform: translate(-50%, -50%) scale(22); opacity: 0; }
 }
 
-/* =========================
-   6) Topbar + Hamburger
-   ========================= */
-.topbar{
-  position: fixed;
-  left: 10px;
-  z-index: 50;
-}
-
-/* =========================
-   Topbar inside Header (.nav-left) — 跟著捲動、不浮動
-   ========================= */
-.nav-left .topbar{
-  position: static !important;   /* ✅ 關鍵：不要 fixed */
-  left: auto !important;
-  top: auto !important;
-  z-index: auto !important;
-
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-
-  width: 76px;   /* 跟 nav-left 一樣 */
-  height: 44px;  /* 跟 header 一樣 */
-}
-
-/* ✅ 漢堡本體維持原本大小 */
-.nav-left .topbar .hamburger{
-  margin: 0;              /* 避免被預設 margin 影響 */
-}
-
-.hamburger{
-  width: var(--hamburger-size);
-  height: var(--hamburger-size);
-  border-radius: 14px;
-  background: transparent;
-  border: 0;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  display: flex;
-  flex-direction: column;
-  place-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0;
-  cursor: pointer;
-}
-
-.hamburger:active{ opacity:.65; transform:scale(.98); }
-
-.hamburger span{
-  display:block;
-  width: 18px;
-  height: 2px;
-  background: var(--text);
-  border-radius: 999px;
-  opacity: .9;
-  margin:0;
-}
-
-/* =========================
-   7) Drawer Overlay + Base Drawer
-   ========================= */
+/* ============================================
+   8) Drawer
+   ============================================ */
 .drawer-backdrop{
   position: fixed;
   inset: 0;
@@ -277,14 +336,12 @@ button:active{ opacity:.65; transform:scale(.98); }
   z-index: 80;
 }
 
-/* overlay polish */
 .drawer-overlay{
   background: rgba(0,0,0,0.24) !important;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
 
-/* drawer base */
 .drawer{
   position: fixed;
   top: 0;
@@ -305,11 +362,8 @@ button:active{ opacity:.65; transform:scale(.98); }
   padding: 0;
 }
 
-.drawer.open{
-  transform: translateX(0) translateZ(0);
-}
+.drawer.open{ transform: translateX(0) translateZ(0); }
 
-/* drawer content */
 .drawer-inner{
   display:grid;
   gap: 12px;
@@ -318,17 +372,9 @@ button:active{ opacity:.65; transform:scale(.98); }
   padding-bottom: calc(var(--drawer-pad) + env(safe-area-inset-bottom));
 }
 
-.drawer-link{
-  display:block;
-  text-decoration:none;
-}
+.drawer-link{ display:block; text-decoration:none; }
 
-/* =========================
-   8) Drawer “Premium” Panel (visual only)
-   ========================= */
 .drawer.drawer-panel{
-  height: 100dvh;
-
   border-top-right-radius: 28px;
   border-bottom-right-radius: 28px;
 
@@ -352,12 +398,10 @@ button:active{ opacity:.65; transform:scale(.98); }
     var(--card-bg);
 
   -webkit-overflow-scrolling: touch;
-
   outline: 1px solid rgba(255,255,255,0.18);
   outline-offset: -1px;
 }
 
-/* handle */
 .drawer.drawer-panel::after{
   content:"";
   position:absolute;
@@ -373,7 +417,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   pointer-events:none;
 }
 
-/* title */
 .drawer-title{
   margin: 0 0 2px 0;
   font-size: 18px;
@@ -388,7 +431,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
 }
 
-/* items */
 .drawer-item{
   width: 100%;
   border-radius: 18px;
@@ -427,9 +469,9 @@ button:active{ opacity:.65; transform:scale(.98); }
     0 1px 0 rgba(255,255,255,0.45) inset;
 }
 
-/* =========================
-   UI Modal (ui.alert / ui.confirm / ui.prompt)
-   ========================= */
+/* ============================================
+   9) UI Modal (ui.alert / ui.confirm / ui.prompt)
+   ============================================ */
 .ui-modal-backdrop{
   position:fixed; inset:0;
   background: rgba(0,0,0,.35);
@@ -483,7 +525,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   color: var(--text, #3c3c3c);
   outline:none;
 }
-
 .ui-modal-input:focus{ border-color: rgba(0,0,0,.18); }
 
 .ui-modal-actions{
@@ -506,7 +547,6 @@ button:active{ opacity:.65; transform:scale(.98); }
   color: var(--text, #3c3c3c);
   -webkit-tap-highlight-color: transparent;
 }
-
 .ui-btn:active{ opacity:.75; transform: scale(.99); }
 
 .ui-btn.primary{
@@ -514,18 +554,15 @@ button:active{ opacity:.65; transform:scale(.98); }
   color:#fff;
   border:0;
 }
-
 .ui-btn.danger{
   background: rgba(217,74,74,0.12);
   border: 1px solid rgba(217,74,74,0.20);
   color: #b33b3b;
 }
 
-/* =========================
-   Save Button feedback (global)
-   - add.html: .save
-   - edit.html: .btn.primary
-   ========================= */
+/* ============================================
+   10) Save Button feedback (global)
+   ============================================ */
 .save,
 .btn.primary{
   position: relative;
@@ -567,73 +604,4 @@ button:active{ opacity:.65; transform:scale(.98); }
   0%{ transform: scale(.98); }
   60%{ transform: scale(1.02); }
   100%{ transform: scale(1); }
-}
-
-/* =========================
-   Current book badge (top-right)
-   ========================= */
- /* =========================
-   Header (GLOBAL) — 同 books：左(抽屜) / 中(標題) / 右(帳本)
-   ========================= */
-.nav{
-  display:grid;
-  grid-template-columns: 76px 1fr 76px; /* 左右固定 => 中間永遠置中 */
-  align-items:center;
-  height:44px;
-  margin: 0 0 10px;
-}
-
-/* 左邊欄位：放抽屜按鈕 */
-.nav-left{
-  width:76px;
-  height:44px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-}
-
-/* 標題：用 44px line-height 確保垂直同高 */
-.nav-title{
-  margin:0;
-  transform:none;
-  font-size:28px;
-  font-weight:800;
-  letter-spacing:-.5px;
-  text-align:center;
-  line-height:44px; /* ✅ 同高關鍵 */
-}
-
-/* 右邊欄位：放帳本 badge */
-.nav-right{
-  width:76px;
-  height:44px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-}
-
-/* 帳本 badge：跟 header 一起捲動（position static），高度感一致 */
-.book-badge{
-  position: static;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-
-  padding:8px 10px;       /* ✅ 跟你現在高度感一致 */
-  line-height:1;
-
-  border-radius:999px;
-  background: rgba(255,255,255,0.62);
-  border: 1px solid rgba(0,0,0,0.08);
-  color: var(--text);
-  font-weight:900;
-  font-size:12px;
-
-  max-width:72px;         /* ✅ 建議用固定小一點，才不會擠到標題置中 */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
