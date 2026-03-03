@@ -1,7 +1,3 @@
-// app.js (GLOBAL)
-// ✅ 目標：全站共用（Auth persistence / auth gate / drawer / modal / tabbar / book badge）集中在這裡
-// ✅ 不改功能、不改樣式：只把重複邏輯整理乾淨、確保每頁都能正常注入
-
 import {
   setPersistence,
   indexedDBLocalPersistence,
