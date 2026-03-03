@@ -453,7 +453,14 @@ const LS_BOOK_NAME = "wis_currentBookName"; // optional cache
 function shouldShowBookBadge(){
   const p = location.pathname.split("/").pop() || "index.html";
   // 你不想顯示的頁：可自己加
-  const EXCLUDE = new Set(["index.html","login.html","onboarding.html"]);
+  const EXCLUDE = new Set([
+  "index.html",
+  "login.html",
+  "onboarding.html",
+  "login.html",  
+  "edit.html",  
+  "waiting.html",
+  "categories.html",]);
   return !EXCLUDE.has(p);
 }
 
