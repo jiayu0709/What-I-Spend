@@ -221,7 +221,7 @@
       </div>
 
       <div class="btnbar">
-        <button class="btn primary" type="button" onclick="save()">儲存</button>
+        <button class="btn primary" id="saveBtn" type="button">儲存</button>
         <button class="btn" type="button" onclick="removeTx()">刪除</button>
       </div>
 
@@ -372,6 +372,23 @@
     }
 
     init();
+    const saveBtn = document.getElementById("saveBtn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        await window.withButtonFeedback(
+          saveBtn,
+          async () => {
+            await save(); // 你原本的儲存流程（裡面會跳轉）
+          },
+          {
+            loadingText: "儲存中…",
+            successText: "已儲存 ✓",
+            minShowMs: 120,
+            onError: (e) => alert("儲存失敗：" + (e.message || e)),
+          }
+        );
+      });
+    }
   </script>
 
   <script>
