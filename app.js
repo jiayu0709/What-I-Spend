@@ -172,10 +172,6 @@ function injectDrawer(){
       <!-- 登出一定放最上面 -->
       <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
 
-      <a class="drawer-link" href="month.html"><div class="drawer-item">本月</div></a>
-      <a class="drawer-link" href="add.html"><div class="drawer-item">新增</div></a>
-      <a class="drawer-link" href="year.html"><div class="drawer-item">統計</div></a>
-
       <!-- ✅ 新增：切換帳本 -->
       <a class="drawer-link" href="books.html?ref=${encodeURIComponent(currentPageName() || 'month.html')}">
         <div class="drawer-item">切換帳本</div>
