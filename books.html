@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  books.html (cleaned)
+  ✅ 功能/行為不變
+  ✅ Header/Tab/Drawer/Modal 都交給 theme.css + app.js
+  ✅ 本頁只保留「帳本清單頁」必要的版面 CSS（其餘全走 theme.css）
+-->
 <html lang="zh-Hant">
 <head>
   <link rel="manifest" href="manifest.json">
@@ -11,53 +17,22 @@
   <title>帳本</title>
 
   <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;background:var(--app-bg);color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-    }
-    .app{min-height:100vh;padding-bottom:var(--tab-height)}
-    .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding,16px) 28px}
+    /* 本頁專屬：清單區塊（header / badge 交給 theme.css） */
+    .app{ min-height:100vh; padding-bottom:var(--tab-height); }
+    .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding,16px) 28px; }
 
-    /* ✅ Header：返回 + 標題 + 當前帳本（同高） */
-    .nav{
-      display:grid;
-      grid-template-columns: 76px 1fr 76px; /* 左 / 中 / 右 */
-      align-items:center;
-      height: 44px;
-      margin-bottom: 10px;
-    }
+    /* books.html 的 header 左邊是「返回」不是抽屜：給它同高容器 */
     .back{
-      justify-self:start;
       color: var(--accent-text);
       text-decoration:none;
       font-weight:900;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
-    .nav-title{
-      justify-self:center;
-      margin:0;
-      transform:none;
-      font-size:28px;
-      font-weight:800;
-      letter-spacing:-.5px;
-      text-align:center;
-      line-height:1;
-    }
 
-    /* 右上角徽章用 theme.css 的 .book-badge */
-    .book-badge{
-      position: static;          /* ✅ 讓它跟 header 同高，不要 fixed */
-      top:auto; right:auto;
-      justify-self:end;
-      max-width: 42vw;
-      padding: 7px 10px;         /* 微調讓高度更像 header */
-      line-height: 1;
-    }
+    .section{ margin-top:14px; }
+    .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
 
-    .section{margin-top:14px}
-    .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .empty{
       margin-top:10px;
       background:rgba(255,255,255,0.5);
@@ -74,8 +49,9 @@
       gap:10px;
       align-items:start;
       padding:12px 0;
+      min-width:0;
     }
-    .divider{height:1px;background:var(--divider);border:0;margin:0}
+    .divider{ height:1px; background:var(--divider); border:0; margin:0; }
 
     .name{
       font-weight:900;
@@ -124,17 +100,13 @@
       -webkit-tap-highlight-color: transparent;
       flex:0 0 auto;
     }
-    .btn.primary{
-      background: var(--accent-text);
-      color:#fff;
-      border:0;
-    }
+    .btn.primary{ background: var(--accent-text); color:#fff; border:0; }
     .btn.danger{
       background: rgba(217,74,74,0.10);
       border: 1px solid rgba(217,74,74,0.18);
       color: #b33b3b;
     }
-    .btn:active{opacity:.7;transform:scale(.99)}
+    .btn:active{ opacity:.7; transform:scale(.99); }
 
     .toolbar{
       display:flex;
@@ -165,14 +137,15 @@
 <body>
   <div class="app">
     <main class="page">
-
-      <!-- ✅ header 同高 -->
+      <!-- ✅ header：同 theme.css 的 .nav / .nav-left / .nav-title / .nav-right -->
       <div class="nav">
-        <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        <div class="nav-left">
+          <a class="back" id="backLink" href="month.html">‹ 返回</a>
+        </div>
         <div class="nav-title">帳本</div>
-
-        <!-- ✅ 右上角：當前帳本徽章（同高） -->
-        <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        <div class="nav-right">
+          <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        </div>
       </div>
 
       <section class="section">
@@ -188,6 +161,7 @@
             <div>封存帳本</div>
             <button class="btn" id="btnToggleArchived" type="button">顯示</button>
           </div>
+
           <div id="archivedWrap" style="display:none;">
             <div id="archivedList"></div>
           </div>
@@ -198,19 +172,22 @@
     </main>
   </div>
 
+  <!-- ✅ 全站共用：Auth persistence / Drawer / Modal / Badge / Tabbar -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
       collection, query, orderBy, getDocs, addDoc, updateDoc, doc,
-      serverTimestamp, where, deleteDoc
+      serverTimestamp, where, deleteDoc, limit
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
     await window.firebaseReady;
 
     const LS_KEY = "wis_currentBookId";
+    const LS_BOOK_NAME = "wis_currentBookName";
+
     const $ = (id) => document.getElementById(id);
 
     const listEl = $("list");
@@ -224,10 +201,10 @@
 
     const qs = new URLSearchParams(location.search);
     const ref = qs.get("ref");
-    const back = ref || "month.html";
-    $("backLink").href = back;
+    $("backLink").href = ref || "month.html";
 
     let showArchived = false;
+
     btnToggleArchived.addEventListener("click", () => {
       showArchived = !showArchived;
       archivedWrap.style.display = showArchived ? "block" : "none";
@@ -243,22 +220,18 @@
       errEl.textContent = "";
     }
 
-    function currentBookId(){
-      return localStorage.getItem(LS_KEY) || "";
-    }
-    function setCurrentBookId(id){
-      localStorage.setItem(LS_KEY, id);
-    }
+    const currentBookId = () => localStorage.getItem(LS_KEY) || "";
+    const setCurrentBookId = (id) => localStorage.setItem(LS_KEY, id);
 
     // ✅ 右上角顯示目前帳本名稱（同高 badge）
     function renderCurrentBookBadge(allBooks){
       const cur = currentBookId();
       const curBook = allBooks.find(b => b.id === cur);
-      const name = curBook?.name || "未命名帳本";
+      const name = (curBook?.name || "未命名帳本").trim();
 
       bookBadge.textContent = name;
-      bookBadge.style.display = "inline-flex"; // 或 block 都可
       bookBadge.title = name;
+      bookBadge.style.display = "inline-flex";
     }
 
     async function deleteBook(uid, book){
@@ -275,15 +248,18 @@
       );
       if (!ok) return;
 
+      // ⚠️ 行為不變：用迴圈分批刪除該帳本交易
       const txRef = collection(db, "users", uid, "transactions");
       while (true) {
-        const qtx = query(txRef, where("bookId", "==", book.id));
+        const qtx = query(txRef, where("bookId", "==", book.id), limit(200));
         const snap = await getDocs(qtx);
         if (snap.empty) break;
 
-        const chunk = snap.docs.slice(0, 200);
-        await Promise.all(chunk.map(d => deleteDoc(doc(db, "users", uid, "transactions", d.id))));
-        if (chunk.length < 200) break;
+        await Promise.all(
+          snap.docs.map(d => deleteDoc(doc(db, "users", uid, "transactions", d.id)))
+        );
+
+        if (snap.size < 200) break;
       }
 
       await deleteDoc(doc(db, "users", uid, "books", book.id));
@@ -306,7 +282,12 @@
       if (existing) return existing;
 
       const booksRef = collection(db, "users", uid, "books");
-      const q1 = query(booksRef, where("archived","==", false), orderBy("createdAt","asc"));
+      const q1 = query(
+        booksRef,
+        where("archived","==", false),
+        orderBy("createdAt","asc"),
+        limit(1)
+      );
       const snap = await getDocs(q1);
 
       if (!snap.empty) {
@@ -383,7 +364,7 @@
         btnSwitch.disabled = (b.id === cur);
         btnSwitch.addEventListener("click", () => {
           setCurrentBookId(b.id);
-          localStorage.removeItem("wis_currentBookName");
+          localStorage.removeItem(LS_BOOK_NAME); // 保持原本：清快取讓 badge 更新
           location.replace(ref || "month.html");
         });
 
@@ -561,6 +542,7 @@
         cancelText: "取消",
       });
       if (name === null) return;
+
       const nm = String(name).trim();
       if (!nm) { await window.ui.alert("名稱不能空白", { title: "提示" }); return; }
 
@@ -572,6 +554,7 @@
       });
 
       setCurrentBookId(docRef.id);
+      localStorage.removeItem(LS_BOOK_NAME);
       location.replace(ref || "month.html");
     });
 
