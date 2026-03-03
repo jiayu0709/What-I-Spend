@@ -31,7 +31,6 @@
       font-weight:800;
     }
 
-    /* ✅ 版面：第一排(名稱+目前) / 第二排(按鈕) */
     .row{
       display:grid;
       grid-template-columns: 1fr;
@@ -65,14 +64,13 @@
       flex:0 0 auto;
     }
 
-    /* ✅ 按鈕一排，大小不變 */
     .actions{
       display:flex;
       gap:8px;
       align-items:center;
       justify-content:flex-start;
       flex-wrap:nowrap;
-      overflow-x:auto;                 /* 手機窄時可橫滑，不壓縮按鈕 */
+      overflow-x:auto;
       -webkit-overflow-scrolling:touch;
       padding-bottom:2px;
     }
@@ -87,7 +85,7 @@
       border:1px solid rgba(0,0,0,0.06);
       color:var(--text);
       -webkit-tap-highlight-color: transparent;
-      flex:0 0 auto;                   /* ✅ 不讓按鈕縮小 */
+      flex:0 0 auto;
     }
     .btn.primary{
       background: var(--accent-text);
@@ -113,6 +111,17 @@
       color:var(--secondary);
       line-height:1.5;
     }
+
+    /* ✅ 封存區塊標題 */
+    .subhead{
+      margin-top:14px;
+      font-weight:900;
+      color:var(--secondary);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
   </style>
 </head>
 <body>
@@ -127,7 +136,17 @@
             <button class="btn primary" id="btnNew" type="button">＋ 新增帳本</button>
           </div>
 
+          <!-- ✅ 作用中的帳本 -->
           <div id="list"></div>
+
+          <!-- ✅ 封存帳本（可收合） -->
+          <div class="subhead">
+            <div>封存帳本</div>
+            <button class="btn" id="btnToggleArchived" type="button">顯示</button>
+          </div>
+          <div id="archivedWrap" style="display:none;">
+            <div id="archivedList"></div>
+          </div>
         </div>
 
         <div id="err" class="empty" style="display:none;"></div>
@@ -159,12 +178,24 @@
     const $ = (id) => document.getElementById(id);
 
     const listEl = $("list");
+    const archivedListEl = $("archivedList");
+    const archivedWrap = $("archivedWrap");
+    const btnToggleArchived = $("btnToggleArchived");
+
     const hintEl = $("hint");
     const errEl = $("err");
     const btnNew = $("btnNew");
 
     const qs = new URLSearchParams(location.search);
     const ref = qs.get("ref"); // optional return url
+
+    let showArchived = false;
+
+    btnToggleArchived.addEventListener("click", () => {
+      showArchived = !showArchived;
+      archivedWrap.style.display = showArchived ? "block" : "none";
+      btnToggleArchived.textContent = showArchived ? "隱藏" : "顯示";
+    });
 
     function showErr(msg){
       errEl.style.display = "block";
@@ -185,7 +216,6 @@
     async function deleteBook(uid, book){
       const cur = currentBookId();
 
-      // ✅ 防呆：不允許刪除目前帳本
       if (book.id === cur) {
         await window.ui.alert("不能刪除目前正在使用的帳本，請先切換到其他帳本再刪除。", { title: "無法刪除" });
         return;
@@ -198,7 +228,6 @@
       );
       if (!ok) return;
 
-      // 1) 先刪 transactions（分批刪）
       const txRef = collection(db, "users", uid, "transactions");
       while (true) {
         const qtx = query(txRef, where("bookId", "==", book.id));
@@ -213,18 +242,26 @@
         if (chunk.length < 200) break;
       }
 
-      // 2) 再刪 books/{bookId}
       await deleteDoc(doc(db, "users", uid, "books", book.id));
-
       await window.ui.alert("刪除完成", { title: "完成" });
     }
 
+    // ✅ 新增：恢復封存
+    async function restoreBook(uid, book){
+      const ok = await window.ui.confirm(
+        `要恢復「${book.name || "未命名"}」嗎？\n恢復後會回到帳本清單。`,
+        { title: "恢復帳本", okText: "恢復", cancelText: "取消" }
+      );
+      if (!ok) return;
+
+      await updateDoc(doc(db, "users", uid, "books", book.id), { archived: false });
+      await window.ui.alert("已恢復", { title: "完成" });
+    }
+
     async function ensureDefaultBook(uid){
-      // 1) 若 localStorage 已有 -> ok
       const existing = currentBookId();
       if (existing) return existing;
 
-      // 2) 若沒有 -> 看 Firestore 有沒有第一本
       const booksRef = collection(db, "users", uid, "books");
       const q1 = query(booksRef, where("archived","==", false), orderBy("createdAt","asc"));
       const snap = await getDocs(q1);
@@ -235,7 +272,6 @@
         return first;
       }
 
-      // 3) 都沒有 -> 建立「生活」
       const docRef = await addDoc(booksRef, {
         name: "生活",
         archived: false,
@@ -255,12 +291,15 @@
       const q1 = query(booksRef, orderBy("createdAt","asc"));
       const snap = await getDocs(q1);
 
-      const books = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .filter(b => b.archived !== true);
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      renderList(uid, books);
+      const activeBooks = all.filter(b => b.archived !== true);
+      const archivedBooks = all.filter(b => b.archived === true);
 
-      hintEl.textContent = books.length
+      renderList(uid, activeBooks);
+      renderArchivedList(uid, archivedBooks);
+
+      hintEl.textContent = activeBooks.length
         ? "點「切換」就會切到該帳本"
         : "尚未建立帳本";
     }
@@ -282,7 +321,6 @@
         const wrap = document.createElement("div");
         wrap.className = "row";
 
-        // ✅ 第一排：名稱 + 目前（不顯示 ID）
         const name = document.createElement("div");
         name.className = "name";
         name.textContent = b.name || "未命名帳本";
@@ -294,7 +332,6 @@
           name.appendChild(badge);
         }
 
-        // ✅ 第二排：按鈕
         const actions = document.createElement("div");
         actions.className = "actions";
 
@@ -376,6 +413,109 @@
           const hr = document.createElement("hr");
           hr.className = "divider";
           listEl.appendChild(hr);
+        }
+      });
+    }
+
+    // ✅ 新增：封存帳本清單（含恢復）
+    function renderArchivedList(uid, books){
+      archivedListEl.innerHTML = "";
+
+      if (!books.length) {
+        const e = document.createElement("div");
+        e.className = "empty";
+        e.textContent = "目前沒有封存的帳本";
+        archivedListEl.appendChild(e);
+        return;
+      }
+
+      const cur = currentBookId();
+
+      books.forEach((b, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "row";
+
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = b.name || "未命名帳本";
+
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "封存";
+        name.appendChild(badge);
+
+        // 封存不可能是目前帳本（你封存目前帳本時會自動切走），但保留防呆
+        if (b.id === cur) {
+          const badge2 = document.createElement("span");
+          badge2.className = "badge";
+          badge2.textContent = "目前";
+          name.appendChild(badge2);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const btnRestore = document.createElement("button");
+        btnRestore.className = "btn primary";
+        btnRestore.type = "button";
+        btnRestore.textContent = "恢復";
+        btnRestore.addEventListener("click", async () => {
+          try{
+            await restoreBook(uid, b);
+            await loadBooks(uid);
+          }catch(e){
+            console.error(e);
+            await window.ui.alert("恢復失敗，請稍後再試", { title: "錯誤" });
+          }
+        });
+
+        const btnRename = document.createElement("button");
+        btnRename.className = "btn";
+        btnRename.type = "button";
+        btnRename.textContent = "重命名";
+        btnRename.addEventListener("click", async () => {
+          const newName = await window.ui.prompt("帳本名稱", {
+            title: "重命名帳本",
+            defaultValue: b.name || "",
+            placeholder: "輸入帳本名稱",
+            okText: "儲存",
+            cancelText: "取消",
+          });
+          if (newName === null) return;
+          const nm = String(newName).trim();
+          if (!nm) { await window.ui.alert("名稱不能空白", { title: "提示" }); return; }
+
+          await updateDoc(doc(db, "users", uid, "books", b.id), { name: nm });
+          await loadBooks(uid);
+        });
+
+        const btnDelete = document.createElement("button");
+        btnDelete.className = "btn danger";
+        btnDelete.type = "button";
+        btnDelete.textContent = "刪除";
+        btnDelete.addEventListener("click", async () => {
+          try{
+            await deleteBook(uid, b);
+            await loadBooks(uid);
+          }catch(e){
+            console.error(e);
+            await window.ui.alert("刪除失敗，請稍後再試（可能是權限/規則/網路問題）", { title: "錯誤" });
+          }
+        });
+
+        actions.appendChild(btnRestore);
+        actions.appendChild(btnRename);
+        actions.appendChild(btnDelete);
+
+        wrap.appendChild(name);
+        wrap.appendChild(actions);
+
+        archivedListEl.appendChild(wrap);
+
+        if (idx !== books.length - 1) {
+          const hr = document.createElement("hr");
+          hr.className = "divider";
+          archivedListEl.appendChild(hr);
         }
       });
     }

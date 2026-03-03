@@ -311,7 +311,7 @@
         </div>
 
         <div class="actions">
-          <button class="btn secondary" onclick="alert('加入完成後，請從桌面圖示打開');">
+          <button class="btn secondary" onclick="window.ui.alert('加入完成後，請從桌面圖示打開');">
             我知道了
           </button>
         </div>
@@ -320,7 +320,7 @@
 
     function copyLink(){
       navigator.clipboard.writeText(location.href);
-      alert("已複製網址，請貼到 Safari 開啟");
+      window.ui.alert("已複製網址，請貼到 Safari 開啟");
     }
   </script>
 

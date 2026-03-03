@@ -335,7 +335,7 @@
 
       const amt = Number(String(data.amount).replace(/,/g,""));
       if(!isFinite(amt) || amt <= 0){
-        alert("請輸入正確金額（> 0）");
+        window.ui.alert("請輸入正確金額（> 0）");
         return;
       }
 
@@ -347,7 +347,7 @@
         await window.saveToCloud(id, data);
       } catch (e) {
         console.error("saveToCloud failed:", e);
-        alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
+        window.ui.alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
         return;
       }
 
@@ -364,7 +364,7 @@
         await window.deleteFromCloud(id);
       } catch (e) {
         console.error("deleteFromCloud failed:", e);
-        alert("刪除失敗（雲端）：" + (e.message || e));
+        window.ui.alert("刪除失敗（雲端）：" + (e.message || e));
         return;
       }
 
@@ -384,7 +384,7 @@
             loadingText: "儲存中…",
             successText: "已儲存 ✓",
             minShowMs: 120,
-            onError: (e) => alert("儲存失敗：" + (e.message || e)),
+            onError: (e) => window.ui.alert("儲存失敗：" + (e.message || e)),
           }
         );
       });
