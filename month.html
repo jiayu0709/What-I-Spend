@@ -20,21 +20,13 @@
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
 
-    /* ✅ Header：返回 + 標題 + 帳本徽章（同高，像 books 一樣） */
+    /* ✅ Header：抽屜(左) + 標題(中) + 帳本徽章(右) 同高，像 books 一樣 */
     .nav{
       display:grid;
-      grid-template-columns: 76px 1fr 76px; /* 左/中/右同寬 => 中間真正置中 */
+      grid-template-columns: 76px 1fr 76px; /* 左/中/右同寬 => 中間真置中 */
       align-items:center;
       height: 44px;
       margin-bottom: 10px;
-    }
-    .back{
-      justify-self:start;
-      color: var(--accent-text, #007aff);
-      text-decoration:none;
-      font-weight:900;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
     }
     .nav-title{
       justify-self:center;
@@ -47,14 +39,22 @@
       line-height:1;
     }
 
-    /* ✅ 右上角帳本徽章：在 header 內同高（覆蓋 theme.css 的 fixed） */
+    /* 左邊：放抽屜按鈕的占位（抽屜本體由 app.js 注入） */
+    .nav-left{
+      justify-self:start;
+      width:76px;
+      display:flex;
+      align-items:center;
+    }
+
+    /* 右邊：帳本徽章（覆蓋 theme.css 的 fixed 讓它進 header） */
     .book-badge{
       position: static !important;
       top:auto !important;
       right:auto !important;
 
       justify-self:end;
-      width: 76px;            /* ✅ 固定右欄寬，讓標題永遠置中 */
+      width: 76px;            /* ✅ 固定右欄寬，標題永遠置中 */
       max-width: 76px;
 
       padding: 7px 10px;
@@ -92,10 +92,6 @@
       color: var(--text);
       white-space:nowrap;
     }
-    .monthbar .m-title .bracket{
-      color: var(--secondary);
-      font-weight:900;
-    }
 
     .section{margin-top:18px}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
@@ -124,10 +120,7 @@
       white-space:nowrap;
       font-size: 14px;
     }
-    .day-total .v{
-      font-weight:900;
-      font-size: 14px;
-    }
+    .day-total .v{ font-weight:900;font-size: 14px; }
     .day-total .v.green{ color:var(--green); }
     .day-total .v.red{ color:var(--red); }
 
@@ -161,9 +154,9 @@
 <body>
   <div class="app">
     <main class="page">
-      <!-- ✅ 上排同高：返回 / 標題 / 帳本 -->
+      <!-- ✅ 上排同高：抽屜 / 標題 / 帳本 -->
       <div class="nav">
-        <a class="back" id="backLink" href="books.html">‹ 返回</a>
+        <div class="nav-left"></div>
         <div class="nav-title">本月</div>
         <div class="book-badge" id="bookBadge" style="display:none;"></div>
       </div>
@@ -234,8 +227,11 @@
       return docRef.id;
     }
 
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function monthKeyFromDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+    // ===== month state (from ?m=YYYY-MM) =====
+    const qs = new URLSearchParams(location.search);
+
+    const pad2 = (n) => String(n).padStart(2,"0");
+    const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
 
     function parseMonthKey(key){
       if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
@@ -243,12 +239,36 @@
       if(!y || !m || m < 1 || m > 12) return null;
       return new Date(y, m-1, 1);
     }
-    function addMonths(dateObj, delta){ return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1); }
-    function monthLabel(dateObj){
-      const y = dateObj.getFullYear();
-      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
-    }
+    const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth()+delta, 1);
+    const monthLabel = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+
+    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const currentKey = monthKeyFromDate(currentMonth);
+
+    // ✅ 從網址或 localStorage 取得 bookId
+    const urlBook = qs.get("b");
+    if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
+    let currentBookId = localStorage.getItem(LS_BOOK) || "";
+
+    // ✅ currentRef 也帶上 b（edit 回來不丟帳本）
+    const currentRef = `month.html?m=${currentKey}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
+
+    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      const prev = addMonths(currentMonth, -1);
+      const m = monthKeyFromDate(prev);
+      const b = localStorage.getItem(LS_BOOK) || "";
+      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
+    });
+
+    document.getElementById("btnNext").addEventListener("click", () => {
+      const next = addMonths(currentMonth, 1);
+      const m = monthKeyFromDate(next);
+      const b = localStorage.getItem(LS_BOOK) || "";
+      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
+    });
+
     function nextMonthKey(ym){
       const [y,m] = ym.split("-").map(n=>parseInt(n,10));
       const d = new Date(y, m-1, 1);
@@ -256,6 +276,29 @@
       return monthKeyFromDate(next);
     }
 
+    // ✅ 顯示右上角帳本名（同高徽章）
+    async function showBookBadge(uid){
+      const badge = document.getElementById("bookBadge");
+      if (!badge) return;
+
+      const bookId = localStorage.getItem(LS_BOOK) || "";
+      if (!bookId) { badge.style.display = "none"; return; }
+
+      try{
+        const bookRef = doc(db, "users", uid, "books", bookId);
+        const snap = await getDoc(bookRef);
+        const name = (snap.data()?.name || "未命名帳本").trim();
+
+        badge.textContent = name;
+        badge.title = name;
+        badge.style.display = "flex";
+      }catch(e){
+        console.warn("showBookBadge failed:", e);
+        badge.style.display = "none";
+      }
+    }
+
+    // ===== helpers =====
     function formatTime12h(hhmm){
       if(!hhmm) return "";
       const [hStr, mStr] = hhmm.split(":");
@@ -284,61 +327,7 @@
       return (isFinite(n) ? n : 0);
     }
 
-    const qs = new URLSearchParams(location.search);
-
-    let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const currentKey = monthKeyFromDate(currentMonth);
-
-    // ✅ 從網址或 localStorage 取得 bookId
-    const urlBook = qs.get("b");
-    if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
-
-    let currentBookId = localStorage.getItem(LS_BOOK) || "";
-
-    // ✅ currentRef 帶 b，edit 回來不丟帳本
-    const currentRef = `month.html?m=${currentKey}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
-
-    // ✅ 返回到 books，並帶 ref 回來
-    const backLink = document.getElementById("backLink");
-    if (backLink) backLink.href = `books.html?ref=${encodeURIComponent(currentRef)}`;
-
-    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
-
-    document.getElementById("btnPrev").addEventListener("click", () => {
-      const prev = addMonths(currentMonth, -1);
-      const m = monthKeyFromDate(prev);
-      const b = localStorage.getItem(LS_BOOK) || "";
-      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
-    });
-
-    document.getElementById("btnNext").addEventListener("click", () => {
-      const next = addMonths(currentMonth, 1);
-      const m = monthKeyFromDate(next);
-      const b = localStorage.getItem(LS_BOOK) || "";
-      location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
-    });
-
-    async function showBookBadge(uid){
-      const badge = document.getElementById("bookBadge");
-      if (!badge) return;
-
-      const bookId = localStorage.getItem(LS_BOOK) || "";
-      if (!bookId) { badge.style.display = "none"; return; }
-
-      try{
-        const bookRef = doc(db, "users", uid, "books", bookId);
-        const snap = await getDoc(bookRef);
-        const name = (snap.data()?.name || "未命名帳本").trim();
-
-        badge.textContent = name;
-        badge.title = name;
-        badge.style.display = "flex";
-      }catch(e){
-        console.warn("showBookBadge failed:", e);
-        badge.style.display = "none";
-      }
-    }
-
+    // ===== rendering =====
     function buildTxRow(tx){
       const rawAmt = parseAmount(tx.amount);
       const isIncome = tx.type === "income";
@@ -512,6 +501,7 @@
       return txs;
     }
 
+    // ===== auth gate =====
     let isInitialCheck = true;
 
     onAuthStateChanged(window.auth, async (user) => {
@@ -521,7 +511,7 @@
         // ✅ 確保一定有 bookId
         currentBookId = await ensureDefaultBook(user.uid);
 
-        // ✅ 顯示右上角帳本名（不影響原本流程）
+        // ✅ 顯示右上角帳本
         await showBookBadge(user.uid);
 
         try {
