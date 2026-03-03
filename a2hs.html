@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  a2hs.html (cleaned)
+  ✅ 功能不變：standalone → 進 login.html；非 Safari → 提示複製；Safari → 顯示教學
+  ✅ 視覺不變：保留你原本的卡片/玻璃效果（仍是本頁專屬 CSS）
+  ✅ 全站共用 UI（ui.alert / modal）交給 app.js，不再重複寫兩段 standalone 判斷
+-->
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
@@ -16,7 +22,7 @@
   <title>加入主畫面</title>
 
   <style>
-    /* ====== 只改樣式：照抄 index.html 的視覺語言 ====== */
+    /* ====== 本頁專屬視覺（維持你原本樣式） ====== */
     *{ box-sizing:border-box; }
 
     body{
@@ -46,39 +52,30 @@
 
     .card{
       width: min(680px, calc(100% - 48px));
-      background: var(--card-bg);              /* ✅ 背景色維持不動 */
+      background: var(--card-bg);
       border-radius: var(--radius, 22px);
       padding: 18px 16px;
 
       position: relative;
       overflow: hidden;
 
-      /* ✅ 控制中心那種「曲面玻璃邊」 */
       border: 1px solid rgba(255,255,255,0.18);
 
       box-shadow:
-        /* 外圍亮邊（像壓克力折射） */
         0 0 0 1px rgba(255,255,255,0.10),
-
-        /* 內側高光 + 內側暗邊：產生曲面厚度 */
         inset 0 1px 0 rgba(255,255,255,0.55),
         inset 0 -1px 0 rgba(0,0,0,0.10),
         inset 0 0 0 1px rgba(255,255,255,0.12),
-
-        /* 浮起來的柔陰影（Control Center 風格） */
         0 30px 80px rgba(0,0,0,0.18),
         0 12px 26px rgba(0,0,0,0.12);
     }
 
-    /* ✅ 玻璃霧面高光（不改背景色，只是加一層光） */
     .card::before{
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
       pointer-events:none;
-
-      /* 上方亮、下方暗一點點，像玻璃弧面 */
       background:
         radial-gradient(120% 90% at 50% 0%,
           rgba(255,255,255,0.28),
@@ -90,20 +87,16 @@
       mix-blend-mode: soft-light;
     }
 
-    /* ✅ 內圈亮邊（讓邊緣更像 iOS 那圈「玻璃厚度」） */
     .card::after{
       content:"";
       position:absolute;
       inset:1px;
       border-radius: calc(var(--radius, 22px) - 1px);
       pointer-events:none;
-
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
       opacity: .9;
     }
 
-    /* Header */
     .head{
       display:flex;
       align-items:center;
@@ -111,7 +104,6 @@
       margin-bottom:12px;
     }
 
-    /* 左側 icon 小卡（照 index 的玻璃白） */
     .icon{
       width:56px;height:56px;
       border-radius:18px;
@@ -125,7 +117,7 @@
     .ttl{
       font-weight:900;
       letter-spacing:-.5px;
-      font-size:30px;   /* index title 視覺更大 */
+      font-size:30px;
       line-height:1.1;
       margin:0;
     }
@@ -135,10 +127,9 @@
       color:var(--secondary, #8e8e93);
       font-weight:800;
       line-height:1.4;
-      font-size:14px;   /* index subtitle */
+      font-size:14px;
     }
 
-    /* Steps 區塊（照 index 的 step 卡） */
     .steps{
       display:grid;
       gap:10px;
@@ -181,7 +172,6 @@
       line-height:1.4;
     }
 
-    /* chip（照 index 的圓角小膠囊） */
     .chip{
       display:inline-block;
       padding:2px 8px;
@@ -198,7 +188,6 @@
       gap:10px;
     }
 
-    /* 按鈕（照 index：主按鈕=accent，次按鈕=玻璃白邊框） */
     .btn{
       width:100%;
       padding:16px 16px;
@@ -220,7 +209,6 @@
 
     .btn:active{ transform:scale(.99); opacity:.85; }
 
-    /* hint 文字（照 index 的 note 味道） */
     .hint{
       margin-top:10px;
       font-size:12px;
@@ -228,18 +216,20 @@
       color:var(--secondary, #8e8e93);
       line-height:1.5;
     }
-
   </style>
 </head>
 
 <body>
   <div class="app">
-    <div class="card" id="content">
-      <!-- 動態填入 -->
-    </div>
+    <div class="card" id="content"></div>
   </div>
 
+  <!-- ✅ 讓 window.ui.alert 可用（全站共用 modal/工具） -->
+  <script type="module" src="app.js"></script>
+
   <script>
+    const LOGIN_URL = "login.html";
+
     const isStandalone =
       window.navigator.standalone === true ||
       window.matchMedia("(display-mode: standalone)").matches;
@@ -251,15 +241,14 @@
         && !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|Line|FBAN|FBAV|Instagram/i.test(ua);
     }
 
-    // ✅ 已從主畫面打開 → 直接進 login.html
+    // ✅ 已從主畫面打開 → 直接進 login.html（保留你原本行為）
     if (isStandalone) {
-      location.replace("login.html");
+      location.replace(LOGIN_URL);
     }
 
     const el = document.getElementById("content");
 
-    // ❌ 非 Safari
-    if (!isRealSafari()) {
+    function renderNonSafari(){
       el.innerHTML = `
         <div class="head">
           <div class="icon">🌐</div>
@@ -268,15 +257,17 @@
             <div class="sub">才能加入主畫面</div>
           </div>
         </div>
-        <p class="hint">
-          請複製此網址，貼到 Safari 開啟後再繼續。
-        </p>
+        <p class="hint">請複製此網址，貼到 Safari 開啟後再繼續。</p>
         <div class="actions">
-          <button class="btn secondary" onclick="copyLink()">複製目前網址</button>
+          <button class="btn secondary" type="button" id="copyBtn">複製目前網址</button>
         </div>
       `;
-    } else {
-      // ✅ Safari 教學
+
+      const btn = document.getElementById("copyBtn");
+      btn?.addEventListener("click", copyLink);
+    }
+
+    function renderSafariGuide(){
       el.innerHTML = `
         <div class="head">
           <div class="icon">➕</div>
@@ -311,36 +302,28 @@
         </div>
 
         <div class="actions">
-          <button class="btn secondary" onclick="window.ui.alert('加入完成後，請從桌面圖示打開');">
-            我知道了
-          </button>
+          <button class="btn secondary" type="button" id="okBtn">我知道了</button>
         </div>
       `;
+
+      document.getElementById("okBtn")?.addEventListener("click", () => {
+        window.ui?.alert?.("加入完成後，請從桌面圖示打開");
+      });
     }
 
-    function copyLink(){
-      navigator.clipboard.writeText(location.href);
-      window.ui.alert("已複製網址，請貼到 Safari 開啟");
-    }
-  </script>
-
-  <script>
-  (function () {
-    // iOS standalone 判斷
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-
-    // ✅ 如果是從主畫面打開（standalone），不要顯示提示頁，直接進入口
-    if (isStandalone) {
-      // 用 replace 避免返回鍵回到 a2hs.html
-      location.replace('/login.html'); // ←改成你真正入口頁
-      return;
+    async function copyLink(){
+      try{
+        await navigator.clipboard.writeText(location.href);
+        window.ui?.alert?.("已複製網址，請貼到 Safari 開啟");
+      }catch(e){
+        // iOS 有時 clipboard 失敗：給使用者提示
+        window.ui?.alert?.("複製失敗，請手動長按網址列複製");
+      }
     }
 
-    // ✅ 如果是在 Safari 裡，才顯示「加入主畫面」提示內容
-    // （你原本的 UI 照常顯示即可）
-  })();
+    // render
+    if (!isRealSafari()) renderNonSafari();
+    else renderSafariGuide();
   </script>
 </body>
 </html>
