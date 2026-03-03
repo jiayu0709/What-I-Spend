@@ -388,3 +388,56 @@ if (document.readyState === "loading") {
     },
   };
 })();
+
+// ==========================
+// Button Feedback Helper (GLOBAL)
+// ==========================
+window.withButtonFeedback = async function withButtonFeedback(btn, task, opts = {}) {
+  if (!btn) return task();
+
+  const {
+    loadingText = "儲存中…",
+    successText = "已儲存 ✓",
+    successHoldMs = 800,
+    // 若你會立刻跳轉，success 可能看不到；你可以把這個設 120~200 讓它至少閃一下
+    minShowMs = 0,
+    onError,
+  } = opts;
+
+  const prevText = btn.textContent;
+
+  const startTs = Date.now();
+  btn.disabled = true;
+  btn.classList.add("loading");
+  btn.textContent = loadingText;
+
+  try {
+    const result = await task();
+
+    // 保底：至少顯示 loading 一下（避免太快看不到）
+    const elapsed = Date.now() - startTs;
+    if (minShowMs > elapsed) {
+      await new Promise(r => setTimeout(r, minShowMs - elapsed));
+    }
+
+    btn.classList.remove("loading");
+    btn.classList.add("success");
+    btn.textContent = successText;
+
+    // 有些頁面會 redirect，這裡會來不及跑完也沒關係
+    setTimeout(() => {
+      btn.classList.remove("success");
+      btn.textContent = prevText;
+      btn.disabled = false;
+    }, successHoldMs);
+
+    return result;
+  } catch (e) {
+    btn.classList.remove("loading", "success");
+    btn.textContent = prevText;
+    btn.disabled = false;
+
+    if (typeof onError === "function") onError(e);
+    throw e;
+  }
+};

@@ -512,49 +512,24 @@
     }
 
     saveBtn.addEventListener("click", async () => {
-      // ✅ 按下立刻有感
-      saveBtn.disabled = true;
-      const prevText = saveBtn.textContent;
-      saveBtn.classList.add("loading");
-      saveBtn.textContent = "儲存中…";
-
-      try {
-        await saveToFirestore({ redirectAfter: true });
-
-        // ✅ 如果你立刻跳轉 month.html，下面 success 只會短暫出現（但仍可見）
-        saveBtn.classList.remove("loading");
-        saveBtn.classList.add("success");
-        saveBtn.textContent = "已儲存 ✓";
-
-        // 如果有某些情況不會 redirect（你未來可能用 redirectAfter=false），這裡保底還原
-        setTimeout(() => {
-          saveBtn.classList.remove("success");
-          saveBtn.textContent = prevText;
-          saveBtn.disabled = false;
-        }, 800);
-
-      } catch (e) {
-        console.error("save failed:", e);
-        alert(`儲存失敗: ${e.message || e}`);
-
-        // ✅ 失敗還原
-        saveBtn.classList.remove("loading","success");
-        saveBtn.textContent = prevText;
-        saveBtn.disabled = false;
-      }
-    });
-
-    if (autoSave) {
-      const ok = qsAmount && qsCategory;
-      if (ok) {
-        try {
+      await window.withButtonFeedback(
+        saveBtn,
+        async () => {
           await saveToFirestore({ redirectAfter: true });
-        } catch (e) {
-          console.error("autosave failed:", e);
-          alert(`自動儲存失敗: ${e.message || e}`);
+        },
+        {
+          loadingText: "儲存中…",
+          successText: "已儲存 ✓",
+          // 你會立刻跳轉，給它至少閃一下比較有感（可調 120~200）
+          minShowMs: 120,
+          successHoldMs: 800,
+          onError: (e) => {
+            console.error("save failed:", e);
+            alert(`儲存失敗: ${e.message || e}`);
+          },
         }
-      }
-    }
+      );
+    });
   </script>
 
   <script>
