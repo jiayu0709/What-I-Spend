@@ -9,7 +9,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>本月</title>
-
   <style>
     *{box-sizing:border-box}
     body{
@@ -20,50 +19,7 @@
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
 
-    /* ✅ Header：抽屜(左) + 標題(中) + 帳本徽章(右) 同高，像 books 一樣 */
-    .nav{
-      display:grid;
-      grid-template-columns: 76px 1fr 76px; /* 左/中/右同寬 => 中間真置中 */
-      align-items:center;
-      height: 44px;
-      margin-bottom: 10px;
-    }
-    .nav-title{
-      justify-self:center;
-      margin:0;
-      transform:none;
-      font-size:28px;
-      font-weight:800;
-      letter-spacing:-.5px;
-      text-align:center;
-      line-height:1;
-    }
-
-    /* 左邊：放抽屜按鈕的占位（抽屜本體由 app.js 注入） */
-    .nav-left{
-      justify-self:start;
-      width:76px;
-      display:flex;
-      align-items:center;
-    }
-
-    /* 右邊：帳本徽章（覆蓋 theme.css 的 fixed 讓它進 header） */
-    .book-badge{
-      position: static !important;
-      top:auto !important;
-      right:auto !important;
-
-      justify-self:end;
-      width: 76px;            /* ✅ 固定右欄寬，標題永遠置中 */
-      max-width: 76px;
-
-      padding: 7px 10px;
-      line-height: 1;
-
-      display:flex;
-      justify-content:flex-end;
-      align-items:center;
-    }
+    .nav-title{font-size:28px;font-weight:800;margin:0px 0 14px;transform: translateY(-4px);letter-spacing:-.5px;text-align:center}
 
     .monthbar{
       margin-top:8px;
@@ -91,6 +47,10 @@
       letter-spacing:-.2px;
       color: var(--text);
       white-space:nowrap;
+    }
+    .monthbar .m-title .bracket{
+      color: var(--secondary);
+      font-weight:900;
     }
 
     .section{margin-top:18px}
@@ -120,7 +80,10 @@
       white-space:nowrap;
       font-size: 14px;
     }
-    .day-total .v{ font-weight:900;font-size: 14px; }
+    .day-total .v{
+      font-weight:900;
+      font-size: 14px;
+    }
     .day-total .v.green{ color:var(--green); }
     .day-total .v.red{ color:var(--red); }
 
@@ -148,22 +111,19 @@
       color:var(--secondary);
       font-weight:800;
     }
+
   </style>
 </head>
-
 <body>
   <div class="app">
     <main class="page">
-      <!-- ✅ 上排同高：抽屜 / 標題 / 帳本 -->
-      <div class="nav">
-        <div class="nav-left"></div>
-        <div class="nav-title">本月</div>
-        <div class="book-badge" id="bookBadge" style="display:none;"></div>
-      </div>
+      <div class="nav-title">本月</div>
 
       <div class="monthbar" aria-label="月份切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
-        <div class="m-title"><span id="monthLabel">Loading...</span></div>
+        <div class="m-title">
+          <span id="monthLabel">Loading...</span>
+        </div>
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
@@ -193,17 +153,14 @@
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import {
-      collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp,
-      doc, getDoc
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, getDocs, orderBy, limit, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
-
+    
+    // 1. 先等待 Firebase 核心初始化完成 (Persistence 設定)
     await window.firebaseReady;
 
-    // ✅ 帳本
+    // ✅ 新增：帳本（最小改動）
     const LS_BOOK = "wis_currentBookId";
-
     async function ensureDefaultBook(uid){
       const existing = localStorage.getItem(LS_BOOK);
       if (existing) return existing;
@@ -227,30 +184,39 @@
       return docRef.id;
     }
 
+    let isInitialCheck = true;
+
     // ===== month state (from ?m=YYYY-MM) =====
     const qs = new URLSearchParams(location.search);
 
-    const pad2 = (n) => String(n).padStart(2,"0");
-    const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function monthKeyFromDate(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    }
     function parseMonthKey(key){
       if(!key || !/^\d{4}-\d{2}$/.test(key)) return null;
       const [y,m] = key.split("-").map(n => parseInt(n,10));
       if(!y || !m || m < 1 || m > 12) return null;
       return new Date(y, m-1, 1);
     }
-    const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth()+delta, 1);
-    const monthLabel = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    function addMonths(dateObj, delta){
+      return new Date(dateObj.getFullYear(), dateObj.getMonth()+delta, 1);
+    }
+    function monthLabel(dateObj){
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}`;
+    }
 
     let currentMonth = parseMonthKey(qs.get("m")) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const currentKey = monthKeyFromDate(currentMonth);
 
-    // ✅ 從網址或 localStorage 取得 bookId
+    // ✅ 新增：從網址或 localStorage 取得 bookId（最小改動）
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
     let currentBookId = localStorage.getItem(LS_BOOK) || "";
 
-    // ✅ currentRef 也帶上 b（edit 回來不丟帳本）
+    // ✅ currentRef 也帶上 b，避免 edit 回來丟失帳本
     const currentRef = `month.html?m=${currentKey}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
 
     document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
@@ -261,7 +227,6 @@
       const b = localStorage.getItem(LS_BOOK) || "";
       location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
     });
-
     document.getElementById("btnNext").addEventListener("click", () => {
       const next = addMonths(currentMonth, 1);
       const m = monthKeyFromDate(next);
@@ -269,34 +234,41 @@
       location.href = `month.html?m=${m}` + (b ? `&b=${encodeURIComponent(b)}` : "");
     });
 
-    function nextMonthKey(ym){
-      const [y,m] = ym.split("-").map(n=>parseInt(n,10));
-      const d = new Date(y, m-1, 1);
-      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
-      return monthKeyFromDate(next);
-    }
+    // 2. 監聽登入狀態
+    onAuthStateChanged(window.auth, async (user) => {
+      if (user) {
+        isInitialCheck = false;
 
-    // ✅ 顯示右上角帳本名（同高徽章）
-    async function showBookBadge(uid){
-      const badge = document.getElementById("bookBadge");
-      if (!badge) return;
+        // ✅ 確保一定有 bookId
+        currentBookId = await ensureDefaultBook(user.uid);
 
-      const bookId = localStorage.getItem(LS_BOOK) || "";
-      if (!bookId) { badge.style.display = "none"; return; }
-
-      try{
-        const bookRef = doc(db, "users", uid, "books", bookId);
-        const snap = await getDoc(bookRef);
-        const name = (snap.data()?.name || "未命名帳本").trim();
-
-        badge.textContent = name;
-        badge.title = name;
-        badge.style.display = "flex";
-      }catch(e){
-        console.warn("showBookBadge failed:", e);
-        badge.style.display = "none";
+        // 登入成功，開始抓資料
+        try {
+          const txs = await fetchMonthTxs(user.uid);
+          renderWithTxs(txs);
+        } catch (e) {
+          console.error("讀取失敗:", e);
+          document.getElementById("list-root").innerHTML =
+            "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+        }
+      } else {
+        // 這裡是最關鍵的修改：
+        // 如果是剛重新整理頁面 (isInitialCheck)，先等個 1.5 秒確認是不是真的沒登入
+        // 避免 Firebase 還在從 IndexedDB 恢復 session 時就被 replace 掉
+        if (isInitialCheck) {
+          setTimeout(() => {
+            if (!window.auth.currentUser) {
+              console.log("確定無使用者資訊，跳轉至登入頁");
+              location.replace("index.html");
+            }
+          }, 1500); 
+          isInitialCheck = false;
+        } else {
+          // 如果不是初始狀態（例如使用者手動登出），則直接跳轉
+          location.replace("index.html");
+        }
       }
-    }
+    });
 
     // ===== helpers =====
     function formatTime12h(hhmm){
@@ -345,6 +317,7 @@
       params.set("amount", String(rawAmt));
       params.set("cat", tx.category || "");
       params.set("note", tx.note || "");
+      // 保持原始邏輯，連結到 edit.html
       a.href = "edit.html?" + params.toString();
 
       const left = document.createElement("div");
@@ -356,8 +329,11 @@
       const noteTxt = (tx.note || "").trim();
       const note = document.createElement("div");
       note.className = "note";
-      if(noteTxt) note.textContent = noteTxt;
-      else note.style.display = "none";
+      if(noteTxt){
+        note.textContent = noteTxt;
+      }else{
+        note.style.display = "none";
+      }
       left.appendChild(note);
 
       const right = document.createElement("div");
@@ -374,7 +350,9 @@
       time.textContent = formatTime12h(tx.time || "");
       right.appendChild(time);
 
-      a.append(left, right);
+      a.appendChild(left);
+      a.appendChild(right);
+
       return a;
     }
 
@@ -435,7 +413,8 @@
         const leftTitle = document.createElement("div");
         leftTitle.textContent = formatDayHeader(dateKey);
 
-        let dayIncome = 0, dayExpense = 0;
+        let dayIncome = 0;
+        let dayExpense = 0;
         for (const tx of list) {
           const amt = parseAmount(tx.amount);
           if (tx.type === "income") dayIncome += amt;
@@ -452,7 +431,8 @@
         v.textContent = String(dayNet);
         rightTotal.appendChild(v);
 
-        header.append(leftTitle, rightTotal);
+        header.appendChild(leftTitle);
+        header.appendChild(rightTotal);
         section.appendChild(header);
 
         const card = document.createElement("div");
@@ -472,20 +452,30 @@
       }
     }
 
+    function nextMonthKey(ym){
+      const [y,m] = ym.split("-").map(n=>parseInt(n,10));
+      const d = new Date(y, m-1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      return monthKeyFromDate(next);
+    }
+
     async function fetchMonthTxs(uid){
       const root = document.getElementById("list-root");
       root.innerHTML = "<div class='empty'>讀取中...</div>";
 
-      const bookId = localStorage.getItem(LS_BOOK);
+      const bookId = localStorage.getItem("wis_currentBookId");
       if (!bookId) {
         location.replace("books.html");
         return [];
       }
 
+      // 修正：使用匯入的 db 變數，而不是 window.db
       const txRef = collection(db, "users", uid, "transactions");
+
       const start = `${currentKey}-01`;
       const end = `${nextMonthKey(currentKey)}-01`;
 
+      // ✅ 修改：多一個 bookId 條件（最小改動）
       const q = query(
         txRef,
         where("bookId", "==", bookId),
@@ -497,45 +487,12 @@
 
       const snap = await getDocs(q);
       const txs = [];
-      snap.forEach(d => txs.push({ id: d.id, ...d.data() }));
+      snap.forEach(doc => {
+        txs.push({ id: doc.id, ...doc.data() });
+      });
       return txs;
     }
 
-    // ===== auth gate =====
-    let isInitialCheck = true;
-
-    onAuthStateChanged(window.auth, async (user) => {
-      if (user) {
-        isInitialCheck = false;
-
-        // ✅ 確保一定有 bookId
-        currentBookId = await ensureDefaultBook(user.uid);
-
-        // ✅ 顯示右上角帳本
-        await showBookBadge(user.uid);
-
-        try {
-          const txs = await fetchMonthTxs(user.uid);
-          renderWithTxs(txs);
-        } catch (e) {
-          console.error("讀取失敗:", e);
-          document.getElementById("list-root").innerHTML =
-            "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
-        }
-      } else {
-        if (isInitialCheck) {
-          setTimeout(() => {
-            if (!window.auth.currentUser) {
-              console.log("確定無使用者資訊，跳轉至登入頁");
-              location.replace("index.html");
-            }
-          }, 1500);
-          isInitialCheck = false;
-        } else {
-          location.replace("index.html");
-        }
-      }
-    });
   </script>
 </body>
 </html>
