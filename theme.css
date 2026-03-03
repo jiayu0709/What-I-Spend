@@ -493,7 +493,7 @@ button:active{ opacity:.65; transform:scale(.98); }
 .book-badge{
   position: fixed;
   right: 12px;
-  top: calc(10px + env(safe-area-inset-top, 0px));
+  top: calc(12px + env(safe-area-inset-top, 0px));
   z-index: 60;
   padding: 8px 10px;
   border-radius: 999px;
