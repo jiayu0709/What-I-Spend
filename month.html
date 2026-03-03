@@ -20,21 +20,17 @@
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding, 16px) 28px}
 
-    /* ✅ Header：抽屜(左) + 標題(中) + 帳本徽章(右) 同高（像 books） */
+    /* ✅ Header：抽屜(左) + 標題(中) + 右側(固定欄位) */
     .nav{
       display:grid;
-      grid-template-columns: 76px 1fr 76px;  /* 左右固定，標題永遠置中 */
+      grid-template-columns: 76px 1fr 76px;  /* 左右固定 => 中間永遠置中 */
       align-items:center;
       height:44px;
       margin-bottom:10px;
     }
-    .nav-left{
-      justify-self:start;
-      width:76px;
-      display:flex;
-      align-items:center;
-      /* 抽屜按鈕由 app.js 注入在 body（.topbar），這裡只保留佈局 */
-    }
+
+    .nav-left{ justify-self:start; width:76px; }
+
     .nav-title{
       justify-self:center;
       margin:0;
@@ -45,22 +41,25 @@
       text-align:center;
       line-height:1;
     }
-    /* 右上角徽章使用 theme.css 的 .book-badge，但在本頁改成跟 header 同高 */
-    .book-badge{
-      position: static !important;
-      top:auto !important;
-      right:auto !important;
 
+    /* ✅ 右側欄位固定寬（不是 badge 固定寬） */
+    .nav-right{
       justify-self:end;
-      width:76px;              /* ✅ 固定欄寬 => 中間真置中 */
-      max-width:76px;
-
-      padding:7px 10px;        /* 微調高度感 */
-      line-height:1;
-
+      width:76px;
       display:flex;
-      align-items:center;
       justify-content:flex-end;
+      align-items:center;
+    }
+
+    /* ✅ badge 本體：不要固定寬，跟文字長度走 */
+    .book-badge{
+      position: static;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 10px;     /* 保持你現在的高度感 */
+      line-height:1;
+      max-width:72px;       /* 避免太長爆版（可調 60~90） */
     }
 
     .monthbar{
@@ -153,7 +152,9 @@
       <div class="nav">
         <div class="nav-left"></div>
         <div class="nav-title">本月</div>
-        <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        <div class="nav-right">
+          <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        </div>
       </div>
 
       <div class="monthbar" aria-label="月份切換">
