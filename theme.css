@@ -491,6 +491,8 @@ button:active{ opacity:.65; transform:scale(.98); }
 
   /* Current book badge (top-right) */
 .book-badge{
+  height: 32px;        /* ✅ 你要的高度 */
+  line-height: 32px;   /* ✅ 讓文字垂直置中 */
   position: fixed;
   right: 12px;
   top: calc(10px + env(safe-area-inset-top, 0px));
