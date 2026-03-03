@@ -212,13 +212,13 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 
 /* 副標題 */
 .sub-title{
+  font-size:18px;
   font-weight:900;
-  letter-spacing:-.2px;
-  color: var(--text);
-  white-space:nowrap;
+  color:var(--text);
+  margin:12px 0 8px
 }
 
-/* 提示文字 */
+/* 提示文字 灰色大字 */
  .hint{
   font-size:16px;
   font-weight:900;

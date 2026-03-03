@@ -51,7 +51,6 @@
     .section{ margin-top:18px; }
     .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
     .rows{ display:grid; gap:10px; font-size:18px; }
-    .row{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
     .v.green{ color:var(--green); font-weight:800; }
     .v.red{ color:var(--red); font-weight:800; }
 
@@ -132,9 +131,9 @@
       <section class="section">
         <div class="card">
           <div class="rows">
-            <div class="row"><div>收入</div><div class="v green" id="sum-income">0</div></div>
-            <div class="row"><div>支出</div><div class="v red" id="sum-expense">0</div></div>
-            <div class="row"><div>結餘</div><div class="v red" id="sum-balance">0</div></div>
+            <div class="sub-title"><div>收入</div><div class="v green" id="sum-income">0</div></div>
+            <div class="sub-title"><div>支出</div><div class="v red" id="sum-expense">0</div></div>
+            <div class="sub-title"><div>結餘</div><div class="v red" id="sum-balance">0</div></div>
           </div>
         </div>
       </section>
