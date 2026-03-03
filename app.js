@@ -456,6 +456,7 @@ function shouldShowBookBadge(){
   "login.html",  
   "edit.html",  
   "waiting.html",
+  "books.html",
   "categories.html",]);
   return !EXCLUDE.has(p);
 }
