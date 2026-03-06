@@ -284,15 +284,6 @@
         return first;
       }
 
-      const docRef = await addDoc(booksRef, {
-        name: "生活",
-        archived: false,
-        createdAt: serverTimestamp(),
-      });
-      setCurrentBookId(docRef.id);
-      return docRef.id;
-    }
-
     async function loadBooks(uid){
       clearErr();
       hintEl.textContent = "讀取中...";

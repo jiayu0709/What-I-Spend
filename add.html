@@ -222,14 +222,6 @@
         return firstId;
       }
 
-      // ✅ 新帳本：直接存 categories（使用者一開始就有清單）
-      const docRef = await addDoc(booksRef, {
-        name: "生活",
-        archived: false,
-        createdAt: serverTimestamp(),
-        categories: DEFAULT_CATEGORIES,
-      });
-
       localStorage.setItem(LS_BOOK, docRef.id);
       return docRef.id;
     }

@@ -229,12 +229,6 @@
         return firstId;
       }
 
-      const docRef = await addDoc(booksRef, {
-        name: "生活",
-        archived: false,
-        createdAt: serverTimestamp(),
-      });
-
       localStorage.setItem(LS_BOOK, docRef.id);
       return docRef.id;
     }
