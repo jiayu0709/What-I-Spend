@@ -87,18 +87,15 @@ window.ensureDefaultBookAndCategories = async function ensureDefaultBookAndCateg
     localStorage.removeItem(LS_BOOK_NAME);
   }
 
-  // 2) 先找「現有未封存帳本」
+  // 2) 找現有未封存帳本（先不要用 where + orderBy，避免索引問題）
   const booksRef = collection(db, "users", uid, "books");
-  const q1 = query(
-    booksRef,
-    where("archived", "==", false),
-    orderBy("createdAt", "asc"),
-    limit(1)
-  );
+  const q1 = query(booksRef, orderBy("createdAt", "asc"), limit(20));
   const snap = await getDocs(q1);
 
-  if (!snap.empty) {
-    const firstDoc = snap.docs[0];
+  const activeDocs = snap.docs.filter(d => d.data()?.archived !== true);
+
+  if (activeDocs.length) {
+    const firstDoc = activeDocs[0];
     const firstId = firstDoc.id;
     const firstData = firstDoc.data() || {};
 
@@ -114,7 +111,7 @@ window.ensureDefaultBookAndCategories = async function ensureDefaultBookAndCateg
     return firstId;
   }
 
-  // 3) 完全沒有帳本：固定建立同一份 default，避免重複新增
+  // 3) 完全沒有帳本：固定建立 default
   const defaultBookRef = doc(db, "users", uid, "books", "default");
   const defaultSnap = await getDoc(defaultBookRef);
 
