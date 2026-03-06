@@ -461,7 +461,7 @@
       if (user) {
         isInitialCheck = false;
 
-        await ensureDefaultBook(user.uid);
+        await window.ensureDefaultBookAndCategories(user.uid);
 
         try {
           const txs = await fetchMonthTxs(user.uid);

@@ -449,6 +449,8 @@
         return;
       }
 
+      await window.ensureDefaultBookAndCategories(user.uid);
+
       const ym = window.__currentKeyForStats;
       const bookId = window.__currentBookIdForStats || "";
 

@@ -297,7 +297,7 @@
       clearErr();
       hintEl.textContent = "讀取中...";
 
-      await ensureDefaultBook(uid);
+      await window.ensureDefaultBookAndCategories(uid);
 
       const booksRef = collection(db, "users", uid, "books");
       const q1 = query(booksRef, orderBy("createdAt","asc"));

@@ -332,7 +332,7 @@
     const uid = initialUser?.uid || null;
 
     if (uid) {
-      await ensureDefaultBook(uid);
+      await window.ensureDefaultBookAndCategories(uid);
       await loadBookCategories(uid);
       renderCategoryOptions(currentType);
 
