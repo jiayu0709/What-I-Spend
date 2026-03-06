@@ -63,10 +63,10 @@ function hasValidCategories(categories) {
 /* =========================
    1) Ensure default book + categories
 ========================= */
-window.ensureDefaultBookAndCategories = async function ensureDefaultBookAndCategories(uid) {
+window.ensureDefaultBookAndCategories = async function (uid) {
   const existingBookId = localStorage.getItem(LS_BOOK);
 
-  // 1. localStorage 已有 bookId，就先檢查這本
+  // 1. localStorage 已有目前帳本：先檢查這本是否存在、分類是否完整
   if (existingBookId) {
     const bookRef = doc(db, "users", uid, "books", existingBookId);
     const snap = await getDoc(bookRef);
@@ -82,18 +82,18 @@ window.ensureDefaultBookAndCategories = async function ensureDefaultBookAndCateg
       return existingBookId;
     }
 
-    // localStorage 指到不存在帳本就清掉
+    // localStorage 指到不存在的帳本就清掉
     localStorage.removeItem(LS_BOOK);
     localStorage.removeItem(LS_BOOK_NAME);
   }
 
-  // 2. 找第一本帳本
+  // 2. 先找現有第一本未封存帳本
   const booksRef = collection(db, "users", uid, "books");
-  const q1 = query(booksRef, orderBy("createdAt", "asc"), limit(1));
-  const snap = await getDocs(q1);
+  const q1 = query(booksRef, where("archived", "==", false), orderBy("createdAt", "asc"), limit(1));
+  const firstSnap = await getDocs(q1);
 
-  if (!snap.empty) {
-    const firstDoc = snap.docs[0];
+  if (!firstSnap.empty) {
+    const firstDoc = firstSnap.docs[0];
     const firstId = firstDoc.id;
     const firstData = firstDoc.data() || {};
 
@@ -109,18 +109,30 @@ window.ensureDefaultBookAndCategories = async function ensureDefaultBookAndCateg
     return firstId;
   }
 
-  // 3. 完全沒有帳本，就建立一個
-  const docRef = await addDoc(booksRef, {
-    name: "生活",
-    archived: false,
-    createdAt: serverTimestamp(),
-    categories: DEFAULT_CATEGORIES,
-  });
+  // 3. 如果完全沒有帳本：固定建立 default，避免競態重複新增
+  const defaultBookRef = doc(db, "users", uid, "books", "default");
+  const defaultSnap = await getDoc(defaultBookRef);
 
-  localStorage.setItem(LS_BOOK, docRef.id);
+  if (!defaultSnap.exists()) {
+    await setDoc(defaultBookRef, {
+      name: "生活",
+      archived: false,
+      createdAt: serverTimestamp(),
+      categories: DEFAULT_CATEGORIES,
+    });
+  } else {
+    const defaultData = defaultSnap.data() || {};
+    if (!hasValidCategories(defaultData.categories)) {
+      await updateDoc(defaultBookRef, {
+        categories: DEFAULT_CATEGORIES,
+      });
+    }
+  }
+
+  localStorage.setItem(LS_BOOK, "default");
   localStorage.setItem(LS_BOOK_NAME, "生活");
 
-  return docRef.id;
+  return "default";
 };
 
 /* =========================
