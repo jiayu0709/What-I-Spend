@@ -648,10 +648,40 @@ function boot() {
   injectThemedModal();
   injectDrawer();
   updateBookBadge();
+  bindAppResumeRefresh();
 }
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", boot);
 } else {
   boot();
+}
+
+/* =========================
+   11) Refresh when app resumes
+========================= */
+function bindAppResumeRefresh() {
+  let lastHiddenAt = 0;
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      lastHiddenAt = Date.now();
+      return;
+    }
+
+    if (document.visibilityState === "visible") {
+      // 避免只是很短暫切換也一直重整
+      const gap = Date.now() - lastHiddenAt;
+      if (gap > 800) {
+        location.reload();
+      }
+    }
+  });
+
+  window.addEventListener("pageshow", (e) => {
+    // 從 bfcache / 返回前景時也刷新
+    if (e.persisted) {
+      location.reload();
+    }
+  });
 }
