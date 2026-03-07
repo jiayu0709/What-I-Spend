@@ -325,7 +325,7 @@ function injectDrawer() {
       </a>
 
           <a class="drawer-link" href="onboarding.html?ref=${ref}">
-      <div class="drawer-item">捷徑設定</div>
+      <div class="drawer-item">快速記帳設定</div>
     </a>
     </div>
   `;
