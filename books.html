@@ -265,26 +265,6 @@
       await window.ui.alert("已恢復", { title: "完成" });
     }
 
-    async function ensureDefaultBook(uid){
-      const existing = currentBookId();
-      if (existing) return existing;
-
-      const booksRef = collection(db, "users", uid, "books");
-      const q1 = query(
-        booksRef,
-        where("archived","==", false),
-        orderBy("createdAt","asc"),
-        limit(1)
-      );
-      const snap = await getDocs(q1);
-
-      if (!snap.empty) {
-        const first = snap.docs[0].id;
-        setCurrentBookId(first);
-        return first;
-      }
-    }
-
     async function loadBooks(uid){
       clearErr();
       hintEl.textContent = "讀取中...";
@@ -526,11 +506,11 @@
       const nm = String(name).trim();
       if (!nm) { await window.ui.alert("名稱不能空白", { title: "提示" }); return; }
 
-      const booksRef = collection(db, "users", user.uid, "books");
       const docRef = await addDoc(booksRef, {
-        name: nm,
+        name: books,
         archived: false,
         createdAt: serverTimestamp(),
+        categories: window.DEFAULT_CATEGORIES,
       });
 
       setCurrentBookId(docRef.id);
