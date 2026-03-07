@@ -323,6 +323,10 @@ function injectDrawer() {
       <a class="drawer-link" href="categories.html?ref=${ref}">
         <div class="drawer-item">分類設定</div>
       </a>
+
+          <a class="drawer-link" href="onboarding.html?ref=${ref}">
+      <div class="drawer-item">捷徑設定</div>
+    </a>
     </div>
   `;
 
