@@ -139,8 +139,6 @@
       </div>
 
       <section class="section">
-        <div class="label" id="rangeLabel">支出分析</div>
-
         <div class="seg" aria-label="統計類型切換">
           <button class="seg-btn active" type="button" id="btnExpense">支出</button>
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
@@ -207,17 +205,9 @@
 
     $("monthLabel").textContent = monthLabel(currentMonth);
 
-    function updateRangeLabel() {
-      const ym = `${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}`;
-      $("rangeLabel").textContent = currentMode === "income"
-        ? `收入分析（${ym}）`
-        : `支出分析（${ym}）`;
-    }
-
     function updateSegUI() {
       $("btnExpense").classList.toggle("active", currentMode === "expense");
       $("btnIncome").classList.toggle("active", currentMode === "income");
-      updateRangeLabel();
     }
 
     $("btnExpense").addEventListener("click", () => {
