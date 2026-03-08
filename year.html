@@ -54,6 +54,35 @@
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .card.card--empty{ background:transparent; padding:0; }
 
+    .seg{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:12px;
+      padding:6px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+    .seg-btn{
+      border:0;
+      background:transparent;
+      border-radius:12px;
+      padding:12px 10px;
+      font-size:15px;
+      font-weight:900;
+      color:var(--secondary);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      transition:all .15s ease;
+    }
+    .seg-btn.active{
+      background:var(--accent-text);
+      color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+
     .donut-wrap{display:grid;grid-template-columns:1fr;gap:14px;align-items:center;}
     .donut-area{display:grid;place-items:center;padding:8px 0 2px;}
     .donut-legend{margin-top:6px;display:grid;gap:12px;}
@@ -110,16 +139,15 @@
       </div>
 
       <section class="section">
-        <div class="label" id="expenseRangeLabel">支出分析</div>
-        <div class="card" id="expenseChartCard">
-          <div id="expenseChartRoot" class="donut-wrap"></div>
-        </div>
-      </section>
+        <div class="label" id="rangeLabel">支出分析</div>
 
-      <section class="section">
-        <div class="label" id="incomeRangeLabel">收入分析</div>
-        <div class="card" id="incomeChartCard">
-          <div id="incomeChartRoot" class="donut-wrap"></div>
+        <div class="seg" aria-label="統計類型切換">
+          <button class="seg-btn active" type="button" id="btnExpense">支出</button>
+          <button class="seg-btn" type="button" id="btnIncome">收入</button>
+        </div>
+
+        <div class="card" id="chartCard">
+          <div id="chartRoot" class="donut-wrap"></div>
         </div>
       </section>
     </main>
@@ -170,12 +198,41 @@
     const currentKey = monthKeyFromDate(currentMonth);
 
     const LS_BOOK = "wis_currentBookId";
+    const LS_STATS_MODE = "wis_stats_mode";
+
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
+    let currentMode = localStorage.getItem(LS_STATS_MODE) || "expense";
+
     $("monthLabel").textContent = monthLabel(currentMonth);
-    $("expenseRangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
-    $("incomeRangeLabel").textContent = `收入分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
+
+    function updateRangeLabel() {
+      const ym = `${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}`;
+      $("rangeLabel").textContent = currentMode === "income"
+        ? `收入分析（${ym}）`
+        : `支出分析（${ym}）`;
+    }
+
+    function updateSegUI() {
+      $("btnExpense").classList.toggle("active", currentMode === "expense");
+      $("btnIncome").classList.toggle("active", currentMode === "income");
+      updateRangeLabel();
+    }
+
+    $("btnExpense").addEventListener("click", () => {
+      currentMode = "expense";
+      localStorage.setItem(LS_STATS_MODE, currentMode);
+      updateSegUI();
+      window.__renderCurrentStatsMode();
+    });
+
+    $("btnIncome").addEventListener("click", () => {
+      currentMode = "income";
+      localStorage.setItem(LS_STATS_MODE, currentMode);
+      updateSegUI();
+      window.__renderCurrentStatsMode();
+    });
 
     $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
@@ -190,6 +247,8 @@
       const bookId = localStorage.getItem(LS_BOOK) || "";
       location.href = `year.html?m=${m}` + (bookId ? `&b=${encodeURIComponent(bookId)}` : "");
     });
+
+    updateSegUI();
 
     const getTxIndex = () => {
       try {
@@ -305,24 +364,22 @@
       return svg;
     }
 
-    function pickPalette(kind) {
-      return kind === "income" ? incomePalette : expensePalette;
+    function getSourceTxs(txs) {
+      if (Array.isArray(txs)) return txs;
+
+      const ids = getTxIndex().filter(Boolean);
+      const tmp = [];
+      for (const id of ids) {
+        if (isDeleted(id)) continue;
+        const tx = readTx(id);
+        if (tx) tmp.push(tx);
+      }
+      return tmp;
     }
 
-    function renderCategoryChart(kind, txs){
+    function renderCategoryChart(kind, txs) {
       const sumsByCat = new Map();
-
-      let sourceTxs = Array.isArray(txs) ? txs : [];
-      if (!Array.isArray(txs)) {
-        const ids = getTxIndex().filter(Boolean);
-        const tmp = [];
-        for (const id of ids) {
-          if (isDeleted(id)) continue;
-          const tx = readTx(id);
-          if (tx) tmp.push(tx);
-        }
-        sourceTxs = tmp;
-      }
+      const sourceTxs = getSourceTxs(txs);
 
       for (const tx of sourceTxs) {
         const date = String(tx.date || "");
@@ -340,9 +397,8 @@
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
 
-      const root = kind === "income" ? $("incomeChartRoot") : $("expenseChartRoot");
-      const card = kind === "income" ? $("incomeChartCard") : $("expenseChartCard");
-
+      const root = $("chartRoot");
+      const card = $("chartCard");
       root.innerHTML = "";
 
       if (items.length === 0) {
@@ -370,7 +426,8 @@
         });
       }
 
-      const palette = pickPalette(kind);
+      const palette = kind === "income" ? incomePalette : expensePalette;
+
       const slices = main.map((x, i) => ({
         ...x,
         color: palette[i % palette.length],
@@ -418,12 +475,18 @@
       root.append(donutArea, legend);
     }
 
-    function renderBothCharts(txs) {
-      renderCategoryChart("expense", txs);
-      renderCategoryChart("income", txs);
+    let latestStatsTxs = null;
+
+    function renderCurrentStatsMode() {
+      renderCategoryChart(currentMode, latestStatsTxs);
     }
 
-    window.__renderBothCharts = renderBothCharts;
+    window.__setStatsTxs = (txs) => {
+      latestStatsTxs = Array.isArray(txs) ? txs : null;
+      renderCurrentStatsMode();
+    };
+
+    window.__renderCurrentStatsMode = renderCurrentStatsMode;
     window.__currentKeyForStats = currentKey;
   </script>
 
@@ -479,7 +542,7 @@
     function watchMonthTxs(uid, ym, bookId) {
       if (!bookId) {
         stopWatchingStats();
-        window.__renderBothCharts();
+        window.__setStatsTxs(null);
         return;
       }
 
@@ -507,11 +570,11 @@
         q,
         (snap) => {
           const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          window.__renderBothCharts(txs);
+          window.__setStatsTxs(txs);
         },
         (e) => {
           console.error("統計頁即時監聽失敗（fallback localStorage）:", e);
-          window.__renderBothCharts();
+          window.__setStatsTxs(null);
         }
       );
     }
@@ -545,7 +608,7 @@
         watchMonthTxs(user.uid, ym, bookId);
       } catch (e) {
         console.error("統計頁初始化失敗（fallback localStorage）:", e);
-        window.__renderBothCharts();
+        window.__setStatsTxs(null);
       }
     });
 
