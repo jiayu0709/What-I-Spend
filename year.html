@@ -222,7 +222,7 @@
       "#E7B56A", "#C6A0E1", "#E38A8A", "#7FB7A3", "#A89F91",
     ];
 
-    const buildDonutSVG = (total, slices) => {
+    function buildDonutSVG(total, slices) {
       const size = 260;
       const cx = size / 2;
       const cy = size / 2;
@@ -245,8 +245,23 @@
       svg.appendChild(bg);
 
       for (const s of slices) {
-        const sweep = 360 * (s.value / total);
+        const ratio = total > 0 ? s.value / total : 0;
+        const sweep = 360 * ratio;
         const end = start + sweep;
+
+        // ✅ 單一分類 100%：直接畫完整圓
+        if (ratio >= 0.999999) {
+          const circle = document.createElementNS(svg.namespaceURI, "circle");
+          circle.setAttribute("cx", cx);
+          circle.setAttribute("cy", cy);
+          circle.setAttribute("r", r);
+          circle.setAttribute("fill", "none");
+          circle.setAttribute("stroke", s.color);
+          circle.setAttribute("stroke-width", stroke);
+          svg.appendChild(circle);
+          start = end;
+          continue;
+        }
 
         const path = document.createElementNS(svg.namespaceURI, "path");
         path.setAttribute("d", describeArc(cx, cy, r, start, end));
@@ -276,7 +291,7 @@
       svg.appendChild(t2);
 
       return svg;
-    };
+    }
 
     function renderMonthCategoryChart(txs){
       const sumsByCat = new Map();
