@@ -205,13 +205,6 @@
 
     $("monthLabel").textContent = monthLabel(currentMonth);
 
-    function updateRangeLabel() {
-      const ym = `${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}`;
-      $("rangeLabel").textContent = currentMode === "income"
-        ? `收入分析（${ym}）`
-        : `支出分析（${ym}）`;
-    }
-
     function updateSegUI() {
       $("btnExpense").classList.toggle("active", currentMode === "expense");
       $("btnIncome").classList.toggle("active", currentMode === "income");
