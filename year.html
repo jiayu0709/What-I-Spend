@@ -11,7 +11,6 @@
   <title>分析</title>
 
   <style>
-    /* ✅ year.html 本頁專屬：monthbar + donut/legend（其餘交給 theme.css） */
     *{box-sizing:border-box}
 
     body{
@@ -127,14 +126,9 @@
     </nav>
   </div>
 
-  <!-- ✅ 全站共用：drawer / badge / modal / tabbar / auth helpers -->
   <script type="module" src="app.js"></script>
 
-  <!-- ✅ year.html：UI + chart（保留 localStorage fallback） -->
   <script>
-    // -------------------------
-    // Utils
-    // -------------------------
     const $ = (id) => document.getElementById(id);
     const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -161,21 +155,16 @@
     const moneyNT = (n) => "NT$" + Math.round(n).toLocaleString("en-US");
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
-    // -------------------------
-    // Month state: ?m=YYYY-MM
-    // -------------------------
     const qs = new URLSearchParams(location.search);
     let currentMonth =
       parseMonthKey(qs.get("m")) ||
       new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-    const currentKey = monthKeyFromDate(currentMonth); // YYYY-MM
+    const currentKey = monthKeyFromDate(currentMonth);
 
-    // book
     const LS_BOOK = "wis_currentBookId";
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
-    const currentBookId = localStorage.getItem(LS_BOOK) || "";
 
     $("monthLabel").textContent = monthLabel(currentMonth);
     $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
@@ -183,18 +172,17 @@
     $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
       const m = monthKeyFromDate(prev);
-      location.href = `year.html?m=${m}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
+      const bookId = localStorage.getItem(LS_BOOK) || "";
+      location.href = `year.html?m=${m}` + (bookId ? `&b=${encodeURIComponent(bookId)}` : "");
     });
 
     $("btnNext").addEventListener("click", () => {
       const next = addMonths(currentMonth, 1);
       const m = monthKeyFromDate(next);
-      location.href = `year.html?m=${m}` + (currentBookId ? `&b=${encodeURIComponent(currentBookId)}` : "");
+      const bookId = localStorage.getItem(LS_BOOK) || "";
+      location.href = `year.html?m=${m}` + (bookId ? `&b=${encodeURIComponent(bookId)}` : "");
     });
 
-    // -------------------------
-    // LocalStorage helpers (fallback)
-    // -------------------------
     const getTxIndex = () => {
       try {
         const raw = localStorage.getItem("tx:index");
@@ -217,9 +205,6 @@
 
     const isDeleted = (id) => localStorage.getItem("tx:deleted:" + id) === "1";
 
-    // -------------------------
-    // Donut (pure SVG)
-    // -------------------------
     const polarToCartesian = (cx, cy, r, angleDeg) => {
       const rad = ((angleDeg - 90) * Math.PI) / 180;
       return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
@@ -293,11 +278,6 @@
       return svg;
     };
 
-    // -------------------------
-    // Render chart
-    // - if txs provided: use Firestore result
-    // - else fallback: localStorage
-    // -------------------------
     function renderMonthCategoryChart(txs){
       const sumsByCat = new Map();
 
@@ -316,7 +296,6 @@
       for (const tx of sourceTxs) {
         const date = String(tx.date || "");
         if (!date.startsWith(currentKey)) continue;
-
         if (tx.type === "income") continue;
 
         const amt = parseAmount(tx.amount);
@@ -399,30 +378,73 @@
       root.append(donutArea, legend);
     }
 
-    // expose for module script
     window.__renderMonthCategoryChart = renderMonthCategoryChart;
     window.__currentKeyForStats = currentKey;
-    window.__currentBookIdForStats = currentBookId;
   </script>
 
-  <!-- ✅ Firestore 當月資料載入（行為不變：未登入導 login；失敗 fallback localStorage） -->
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
     function nextMonthKey(ym){
-      const [y,m] = ym.split("-").map(n => parseInt(n,10));
-      const d = new Date(y, m-1, 1);
-      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
-      const mm = String(next.getMonth()+1).padStart(2,"0");
+      const [y, m] = ym.split("-").map(n => parseInt(n, 10));
+      const d = new Date(y, m - 1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const mm = String(next.getMonth() + 1).padStart(2, "0");
       return `${next.getFullYear()}-${mm}`;
     }
 
-    async function fetchMonthTxs(uid, ym, bookId){
+    async function renderCurrentBookBadge(uid) {
+      const badge = document.getElementById("bookBadge");
+      const bookId = localStorage.getItem("wis_currentBookId") || "";
+
+      if (!bookId) {
+        badge.style.display = "none";
+        return;
+      }
+
+      try {
+        const booksRef = collection(db, "users", uid, "books");
+        const q1 = query(booksRef, orderBy("createdAt", "asc"));
+        const snap = await getDocs(q1);
+        const books = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const current = books.find(b => b.id === bookId);
+
+        badge.textContent = (current?.name || "未命名帳本").trim();
+        badge.title = badge.textContent;
+        badge.style.display = "inline-flex";
+      } catch (e) {
+        console.error("讀取帳本 badge 失敗:", e);
+        badge.style.display = "none";
+      }
+    }
+
+    let unsubscribeStats = null;
+    let currentWatchKey = "";
+
+    function stopWatchingStats() {
+      if (unsubscribeStats) {
+        unsubscribeStats();
+        unsubscribeStats = null;
+      }
+      currentWatchKey = "";
+    }
+
+    function watchMonthTxs(uid, ym, bookId) {
+      if (!bookId) {
+        stopWatchingStats();
+        window.__renderMonthCategoryChart();
+        return;
+      }
+
+      const watchKey = `${uid}__${bookId}__${ym}`;
+      if (unsubscribeStats && currentWatchKey === watchKey) return;
+
+      stopWatchingStats();
+
       const start = `${ym}-01`;
       const end = `${nextMonthKey(ym)}-01`;
-      if (!bookId) return [];
 
       const txRef = collection(db, "users", uid, "transactions");
       const q = query(
@@ -434,39 +456,70 @@
         orderBy("time", "desc")
       );
 
-      const snap = await getDocs(q);
-      const txs = [];
-      snap.forEach(d => txs.push({ id: d.id, ...d.data() }));
-      return txs;
+      currentWatchKey = watchKey;
+
+      unsubscribeStats = onSnapshot(
+        q,
+        (snap) => {
+          const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          window.__renderMonthCategoryChart(txs);
+        },
+        (e) => {
+          console.error("統計頁即時監聽失敗（fallback localStorage）:", e);
+          window.__renderMonthCategoryChart();
+        }
+      );
+    }
+
+    function resumeWatchIfNeeded() {
+      const user = window.auth.currentUser;
+      if (!user) return;
+
+      const ym = window.__currentKeyForStats;
+      const bookId = localStorage.getItem("wis_currentBookId") || "";
+      watchMonthTxs(user.uid, ym, bookId);
     }
 
     await window.firebaseReady;
 
     onAuthStateChanged(window.auth, async (user) => {
       if (!user) {
+        stopWatchingStats();
         const next = encodeURIComponent(location.href);
         location.replace(`login.html?next=${next}`);
         return;
       }
 
-      await window.ensureDefaultBookAndCategories(user.uid);
-
-      const ym = window.__currentKeyForStats;
-      const bookId = window.__currentBookIdForStats || "";
-
-      // 沒有 bookId：維持舊行為（localStorage render）
-      if (!bookId) {
-        window.__renderMonthCategoryChart();
-        return;
-      }
-
       try {
-        const txs = await fetchMonthTxs(user.uid, ym, bookId);
-        window.__renderMonthCategoryChart(txs);
+        await window.ensureDefaultBookAndCategories(user.uid);
+        await renderCurrentBookBadge(user.uid);
+
+        const ym = window.__currentKeyForStats;
+        const bookId = localStorage.getItem("wis_currentBookId") || "";
+
+        watchMonthTxs(user.uid, ym, bookId);
       } catch (e) {
-        console.error("統計頁讀取當月明細失敗（fallback localStorage）:", e);
+        console.error("統計頁初始化失敗（fallback localStorage）:", e);
         window.__renderMonthCategoryChart();
       }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        resumeWatchIfNeeded();
+      }
+    });
+
+    window.addEventListener("focus", () => {
+      resumeWatchIfNeeded();
+    });
+
+    window.addEventListener("pageshow", () => {
+      resumeWatchIfNeeded();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      stopWatchingStats();
     });
   </script>
 </body>
