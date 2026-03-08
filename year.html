@@ -110,9 +110,16 @@
       </div>
 
       <section class="section">
-        <div class="label" id="rangeLabel">支出分析</div>
-        <div class="card" id="chartCard">
-          <div id="chartRoot" class="donut-wrap"></div>
+        <div class="label" id="expenseRangeLabel">支出分析</div>
+        <div class="card" id="expenseChartCard">
+          <div id="expenseChartRoot" class="donut-wrap"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label" id="incomeRangeLabel">收入分析</div>
+        <div class="card" id="incomeChartCard">
+          <div id="incomeChartRoot" class="donut-wrap"></div>
         </div>
       </section>
     </main>
@@ -167,7 +174,8 @@
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
     $("monthLabel").textContent = monthLabel(currentMonth);
-    $("rangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
+    $("expenseRangeLabel").textContent = `支出分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
+    $("incomeRangeLabel").textContent = `收入分析（${currentMonth.getFullYear()}-${pad2(currentMonth.getMonth() + 1)}）`;
 
     $("btnPrev").addEventListener("click", () => {
       const prev = addMonths(currentMonth, -1);
@@ -217,12 +225,17 @@
       return ["M", start.x, start.y, "A", r, r, 0, largeArcFlag, 0, end.x, end.y].join(" ");
     };
 
-    const palette = [
+    const expensePalette = [
       "#D97B66", "#C98BB9", "#8FA7D6", "#7FC8C2", "#9BCB8F",
       "#E7B56A", "#C6A0E1", "#E38A8A", "#7FB7A3", "#A89F91",
     ];
 
-    function buildDonutSVG(total, slices) {
+    const incomePalette = [
+      "#69B578", "#6CC3A0", "#7EC8E3", "#8FA7D6", "#A7D49B",
+      "#F0C36E", "#B8A1E3", "#73C0AE", "#9FD3C7", "#B7C9F2",
+    ];
+
+    function buildDonutSVG(total, slices, centerTitle) {
       const size = 260;
       const cx = size / 2;
       const cy = size / 2;
@@ -249,7 +262,6 @@
         const sweep = 360 * ratio;
         const end = start + sweep;
 
-        // ✅ 單一分類 100%：直接畫完整圓
         if (ratio >= 0.999999) {
           const circle = document.createElementNS(svg.namespaceURI, "circle");
           circle.setAttribute("cx", cx);
@@ -279,7 +291,7 @@
       t1.setAttribute("y", cy - 4);
       t1.setAttribute("text-anchor", "middle");
       t1.setAttribute("class", "center-title");
-      t1.textContent = "Expenses";
+      t1.textContent = centerTitle;
       svg.appendChild(t1);
 
       const t2 = document.createElementNS(svg.namespaceURI, "text");
@@ -293,7 +305,11 @@
       return svg;
     }
 
-    function renderMonthCategoryChart(txs){
+    function pickPalette(kind) {
+      return kind === "income" ? incomePalette : expensePalette;
+    }
+
+    function renderCategoryChart(kind, txs){
       const sumsByCat = new Map();
 
       let sourceTxs = Array.isArray(txs) ? txs : [];
@@ -311,7 +327,7 @@
       for (const tx of sourceTxs) {
         const date = String(tx.date || "");
         if (!date.startsWith(currentKey)) continue;
-        if (tx.type === "income") continue;
+        if (String(tx.type || "expense") !== kind) continue;
 
         const amt = parseAmount(tx.amount);
         if (amt <= 0) continue;
@@ -324,15 +340,18 @@
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
 
-      const root = $("chartRoot");
-      const card = $("chartCard");
+      const root = kind === "income" ? $("incomeChartRoot") : $("expenseChartRoot");
+      const card = kind === "income" ? $("incomeChartCard") : $("expenseChartCard");
+
       root.innerHTML = "";
 
       if (items.length === 0) {
         card.classList.add("card--empty");
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "這個月份還沒有支出資料，先去新增幾筆吧！";
+        empty.textContent = kind === "income"
+          ? "這個月份還沒有收入資料，先去新增幾筆吧！"
+          : "這個月份還沒有支出資料，先去新增幾筆吧！";
         root.appendChild(empty);
         return;
       }
@@ -345,9 +364,13 @@
       const main = items.slice(0, MAX);
       const rest = items.slice(MAX);
       if (rest.length) {
-        main.push({ name: "Other", value: rest.reduce((s, x) => s + x.value, 0) });
+        main.push({
+          name: "Other",
+          value: rest.reduce((s, x) => s + x.value, 0)
+        });
       }
 
+      const palette = pickPalette(kind);
       const slices = main.map((x, i) => ({
         ...x,
         color: palette[i % palette.length],
@@ -356,7 +379,9 @@
 
       const donutArea = document.createElement("div");
       donutArea.className = "donut-area";
-      donutArea.appendChild(buildDonutSVG(total, slices));
+      donutArea.appendChild(
+        buildDonutSVG(total, slices, kind === "income" ? "Income" : "Expenses")
+      );
 
       const legend = document.createElement("div");
       legend.className = "donut-legend";
@@ -393,7 +418,12 @@
       root.append(donutArea, legend);
     }
 
-    window.__renderMonthCategoryChart = renderMonthCategoryChart;
+    function renderBothCharts(txs) {
+      renderCategoryChart("expense", txs);
+      renderCategoryChart("income", txs);
+    }
+
+    window.__renderBothCharts = renderBothCharts;
     window.__currentKeyForStats = currentKey;
   </script>
 
@@ -449,7 +479,7 @@
     function watchMonthTxs(uid, ym, bookId) {
       if (!bookId) {
         stopWatchingStats();
-        window.__renderMonthCategoryChart();
+        window.__renderBothCharts();
         return;
       }
 
@@ -477,11 +507,11 @@
         q,
         (snap) => {
           const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          window.__renderMonthCategoryChart(txs);
+          window.__renderBothCharts(txs);
         },
         (e) => {
           console.error("統計頁即時監聽失敗（fallback localStorage）:", e);
-          window.__renderMonthCategoryChart();
+          window.__renderBothCharts();
         }
       );
     }
@@ -515,7 +545,7 @@
         watchMonthTxs(user.uid, ym, bookId);
       } catch (e) {
         console.error("統計頁初始化失敗（fallback localStorage）:", e);
-        window.__renderMonthCategoryChart();
+        window.__renderBothCharts();
       }
     });
 
