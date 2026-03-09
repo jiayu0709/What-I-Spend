@@ -833,3 +833,11 @@ textarea.input:focus{
   border:1px solid rgba(217,74,74,0.20);
   color:#b33b3b;
 }
+
+.inline-form{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+}
