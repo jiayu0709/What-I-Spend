@@ -1,5 +1,5 @@
 exports.handler = async function (event) {
-  const VERSION = "fx-v4-html-parser-2026-03-09";
+  const VERSION = "fx-v5-slice-parser-2026-03-09";
 
   try {
     const currency = String(
@@ -24,7 +24,7 @@ exports.handler = async function (event) {
     const res = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW", {
       headers: {
         "User-Agent": "Mozilla/5.0",
-        "Accept": "text/html,text/plain;q=0.9,*/*;q=0.8",
+        Accept: "text/html,text/plain;q=0.9,*/*;q=0.8",
       },
     });
 
@@ -60,6 +60,7 @@ exports.handler = async function (event) {
     return json(500, {
       error: err.message || "Unknown error",
       version: VERSION,
+      stack: err.stack || null,
     });
   }
 };
@@ -76,20 +77,19 @@ function extractSpotSellFromBotHtml(html, currency) {
     .replace(/\s+/g, " ")
     .trim();
 
-  // 目標格式類似：
-  // 美金 (USD) 美金 (USD) 31.49 32.16 31.84 31.94 查詢 查詢 ...
-  // 歐元 (EUR) 歐元 (EUR) 35.98 37.32 36.60 37.00 查詢 查詢 ...
-  const regex = new RegExp(
-    `\$begin:math:text$\$\{upper\}\\$end:math:text$[\\s\\S]{0,120}?([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)`,
-    "i"
-  );
+  const marker = `(${upper})`;
+  const start = text.indexOf(marker);
+  if (start === -1) return null;
 
-  const match = text.match(regex);
-  if (!match) return null;
+  // 只看幣別後面一小段，避免抓到後面別的幣別
+  const chunk = text.slice(start, start + 220);
 
-  // 四個數字依序是：
-  // 現金買入、現金賣出、即期買入、即期賣出
-  const spotSell = Number(match[4]);
+  // 抓這段裡前 4 個數字
+  const nums = chunk.match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length < 4) return null;
+
+  // 順序：現金買入、現金賣出、即期買入、即期賣出
+  const spotSell = Number(nums[3]);
 
   return Number.isFinite(spotSell) && spotSell > 0 ? spotSell : null;
 }
