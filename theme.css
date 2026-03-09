@@ -1,4 +1,5 @@
 /* theme.css — Global Design Tokens + Shared UI */
+
 /* ============================================
    0) Design Tokens
    ============================================ */
@@ -32,9 +33,9 @@
   --header-height: 44px;
   --header-side: 76px;
 
-  /* shared ui */
   --panel-soft-bg: rgba(255,255,255,0.62);
   --panel-soft-border: 1px solid rgba(0,0,0,0.06);
+
   --danger-soft-bg: rgba(217,74,74,0.10);
   --danger-soft-border: 1px solid rgba(217,74,74,0.18);
   --danger-text: #b33b3b;
@@ -56,26 +57,32 @@ main.page{
 }
 
 /* ============================================
-   2) Page transition
+   2) Page Transition
    ============================================ */
-main.page{ animation: page-enter .45s ease-out; }
+main.page{
+  animation: page-enter .45s ease-out;
+}
 
 @keyframes page-enter{
   from{ opacity:0; transform: translateX(20px); }
-  to  { opacity:1; transform: translateX(0); }
+  to{ opacity:1; transform: translateX(0); }
 }
 
-main.page.leaving{ animation: page-leave .2s ease-in forwards; }
+main.page.leaving{
+  animation: page-leave .2s ease-in forwards;
+}
 
 @keyframes page-leave{
   from{ opacity:1; transform: translateX(0); }
-  to  { opacity:0; transform: translateX(-20px); }
+  to{ opacity:0; transform: translateX(-20px); }
 }
 
 /* ============================================
-   3) Global tap feedback
+   3) Global Tap Feedback
    ============================================ */
-a, button, .tx, .tab{ -webkit-tap-highlight-color: transparent; }
+a, button, .tx, .tab{
+  -webkit-tap-highlight-color: transparent;
+}
 
 .tx, .tab, button{
   user-select:none;
@@ -87,20 +94,24 @@ a, button, .tx, .tab{ -webkit-tap-highlight-color: transparent; }
 .tab:active{ opacity:.6; transform:scale(.98); }
 button:active{ opacity:.65; transform:scale(.98); }
 
-.tx:focus, .tab:focus, button:focus{ outline:none; }
+.tx:focus, .tab:focus, button:focus{
+  outline:none;
+}
 
 /* ============================================
-   4) iOS input text color
+   4) iOS Input Text Color
    ============================================ */
 input[type="date"],
 input[type="time"]{
   color: var(--accent-text);
   -webkit-text-fill-color: var(--accent-text);
 }
+
 input[type="date"]::-webkit-datetime-edit,
 input[type="time"]::-webkit-datetime-edit{
   color: var(--accent-text);
 }
+
 input[type="date"]::-webkit-datetime-edit-text,
 input[type="date"]::-webkit-datetime-edit-month-field,
 input[type="date"]::-webkit-datetime-edit-day-field,
@@ -113,7 +124,41 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* ============================================
-   5) Header
+   5) Shared Layout
+   ============================================ */
+.app{
+  min-height:100vh;
+  padding-bottom:var(--tab-height);
+}
+
+.page{
+  max-width:520px;
+  margin:0 auto;
+  padding:18px var(--page-padding,16px) 28px;
+}
+
+.section{
+  margin-top:14px;
+}
+
+.card{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  padding:16px;
+}
+
+.empty{
+  margin-top:10px;
+  background:rgba(255,255,255,0.5);
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  color:var(--secondary);
+  font-weight:800;
+}
+
+/* ============================================
+   6) Header / Nav
    ============================================ */
 .nav{
   display:grid;
@@ -148,24 +193,47 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding: 8px 10px;
-  line-height: 1;
-  border-radius: 999px;
-  background: var(--panel-soft-bg);
-  border: 1px solid rgba(0,0,0,0.08);
-  color: var(--text);
-  font-weight: 900;
-  font-size: 12px;
-  max-width: 72px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding:8px 10px;
+  line-height:1;
+  border-radius:999px;
+  background:var(--panel-soft-bg);
+  border:1px solid rgba(0,0,0,0.08);
+  color:var(--text);
+  font-weight:900;
+  font-size:12px;
+  max-width:72px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
+.back-btn{
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  color: var(--accent-text);
+  text-decoration:none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select:none;
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+.back-btn:disabled{
+  opacity:.5;
+  cursor:default;
+}
+
 /* ============================================
-   6) Topbar + Hamburger
+   7) Topbar + Hamburger
    ============================================ */
 .topbar{
   position: fixed;
@@ -186,36 +254,6 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   justify-content:flex-start;
 }
 
-.sub-title{
-  font-size:18px;
-  font-weight:900;
-  color:var(--text);
-  margin:12px 0 8px;
-}
-
-/* 大提示 */
-.hint-lg{
-  font-size:16px;
-  font-weight:900;
-  color:var(--secondary);
-  margin:12px 0 8px;
-}
-
-/* 小提示／表單說明 */
-.hint{
-  font-size:12px;
-  color:var(--secondary);
-  line-height:1.5;
-  font-weight:700;
-}
-
-.label{
-  font-size:14px;
-  font-weight:800;
-  color:var(--secondary);
-  margin:10px 0 8px;
-}
-
 .hamburger{
   width: var(--hamburger-size);
   height: var(--hamburger-size);
@@ -233,16 +271,47 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 
 .hamburger span{
   display:block;
-  width: 18px;
-  height: 2px;
+  width:18px;
+  height:2px;
   background: var(--text);
-  border-radius: 999px;
-  opacity: .9;
+  border-radius:999px;
+  opacity:.9;
   margin:0;
 }
 
 /* ============================================
-   7) Tabbar
+   8) Typography Helpers
+   ============================================ */
+.sub-title{
+  font-size:18px;
+  font-weight:900;
+  color:var(--text);
+  margin:12px 0 8px;
+}
+
+.label{
+  font-size:14px;
+  font-weight:800;
+  color:var(--secondary);
+  margin:10px 0 8px;
+}
+
+.hint-lg{
+  font-size:16px;
+  font-weight:900;
+  color:var(--secondary);
+  margin:12px 0 8px;
+}
+
+.hint{
+  font-size:12px;
+  color:var(--secondary);
+  line-height:1.5;
+  font-weight:700;
+}
+
+/* ============================================
+   9) Tabbar
    ============================================ */
 .tabbar{
   position:fixed;
@@ -291,15 +360,18 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   color: inherit;
 }
 
-.tabbar .tab.active{ color: var(--tabcolor); }
+.tabbar .tab.active{
+  color: var(--tabcolor);
+}
 
 .tabbar .tab.tap-bounce{
   animation: tab-bounce 180ms ease-out;
 }
+
 @keyframes tab-bounce{
-  0%   { transform: scale(1); }
-  40%  { transform: scale(.94); }
-  100% { transform: scale(1); }
+  0%{ transform: scale(1); }
+  40%{ transform: scale(.94); }
+  100%{ transform: scale(1); }
 }
 
 .tabbar .tab::after{
@@ -307,9 +379,9 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   position:absolute;
   left: var(--rx, 50%);
   top: var(--ry, 50%);
-  width: 12px;
-  height: 12px;
-  border-radius: 9999px;
+  width:12px;
+  height:12px;
+  border-radius:9999px;
   transform: translate(-50%, -50%) scale(0);
   opacity: 0;
   pointer-events:none;
@@ -319,13 +391,14 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 .tabbar .tab.ripple::after{
   animation: tab-ripple 480ms ease-out;
 }
+
 @keyframes tab-ripple{
-  0%   { transform: translate(-50%, -50%) scale(0); opacity: .20; }
-  100% { transform: translate(-50%, -50%) scale(22); opacity: 0; }
+  0%{ transform: translate(-50%, -50%) scale(0); opacity:.20; }
+  100%{ transform: translate(-50%, -50%) scale(22); opacity:0; }
 }
 
 /* ============================================
-   8) Drawer
+   10) Drawer
    ============================================ */
 .drawer-backdrop{
   position: fixed;
@@ -356,17 +429,22 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   padding: 0;
 }
 
-.drawer.open{ transform: translateX(0) translateZ(0); }
+.drawer.open{
+  transform: translateX(0) translateZ(0);
+}
 
 .drawer-inner{
   display:grid;
-  gap: 12px;
+  gap:12px;
   padding: var(--drawer-pad);
   padding-top: calc(var(--drawer-pad) + env(safe-area-inset-top));
   padding-bottom: calc(var(--drawer-pad) + env(safe-area-inset-bottom));
 }
 
-.drawer-link{ display:block; text-decoration:none; }
+.drawer-link{
+  display:block;
+  text-decoration:none;
+}
 
 .drawer.drawer-panel{
   border-top-right-radius: 28px;
@@ -395,11 +473,11 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 .drawer.drawer-panel::after{
   content:"";
   position:absolute;
-  left: 18px;
+  left:18px;
   top: calc(env(safe-area-inset-top) + 10px);
-  width: 44px;
-  height: 5px;
-  border-radius: 999px;
+  width:44px;
+  height:5px;
+  border-radius:999px;
   background: rgba(0,0,0,0.10);
   box-shadow:
     0 1px 0 rgba(255,255,255,0.60) inset,
@@ -408,28 +486,28 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 .drawer-title{
-  margin: 0 0 2px 0;
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: -0.2px;
+  margin:0 0 2px 0;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:-0.2px;
   color: var(--text);
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding:10px 12px;
+  border-radius:16px;
   background: rgba(255,255,255,0.38);
   border: 1px solid rgba(0,0,0,0.06);
   box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset;
 }
 
 .drawer-item{
-  width: 100%;
-  border-radius: 18px;
-  padding: 14px 14px;
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: -0.2px;
+  width:100%;
+  border-radius:18px;
+  padding:14px;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:-0.2px;
   color: var(--text);
-  text-align: left;
-  cursor: pointer;
+  text-align:left;
+  cursor:pointer;
   background: var(--panel-soft-bg);
   border: var(--panel-soft-border);
   box-shadow:
@@ -448,122 +526,130 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* ============================================
-   9) UI Modal
+   11) Form / Input
    ============================================ */
-.ui-modal-backdrop{
-  position:fixed;
-  inset:0;
-  background: rgba(0,0,0,.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display:none;
-  z-index: 99999;
-  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
+.form-grid{
+  display:grid;
+  gap:14px;
 }
 
-.ui-modal-backdrop.show{ display:grid; place-items:center; }
-
-.ui-modal{
-  width: min(520px, 100%);
-  background: var(--card-bg, rgba(255,255,255,.78));
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: calc(var(--radius, 22px) + 6px);
-  box-shadow: 0 18px 50px rgba(0,0,0,.18);
-  overflow:hidden;
+.field{
+  display:grid;
+  gap:8px;
+  min-width:0;
 }
 
-.ui-modal-head{ padding: 16px 16px 10px; }
-
-.ui-modal-title{
-  margin:0;
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:-.2px;
-  color: var(--text, #3c3c3c);
-}
-
-.ui-modal-msg{
-  margin:8px 0 0;
-  font-size:14px;
-  font-weight:800;
-  line-height:1.5;
-  color: var(--secondary, #8e8e93);
-  white-space:pre-wrap;
-}
-
-.ui-modal-body{ padding: 0 16px 14px; }
-
-.ui-modal-input{
+.input{
   width:100%;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,.10);
-  background: rgba(255,255,255,.65);
-  padding: 12px 12px;
-  font-weight:900;
+  max-width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
   font-size:16px;
-  color: var(--text, #3c3c3c);
+  color:var(--text);
   outline:none;
 }
-.ui-modal-input:focus{ border-color: rgba(0,0,0,.18); }
 
-.ui-modal-actions{
-  display:flex;
+.input:focus,
+select.input:focus,
+textarea.input:focus{
+  border-color: rgba(0,0,0,0.18);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.40);
+}
+
+.inline-form{
+  display:grid;
+  grid-template-columns:1fr auto;
   gap:10px;
-  padding: 14px 16px 16px;
-  justify-content:flex-end;
-  border-top: 1px solid rgba(0,0,0,.06);
-  background: rgba(255,255,255,.40);
+  align-items:center;
+  margin-top:10px;
 }
 
-.ui-btn{
-  color: var(--text, #3c3c3c);
-}
-
-.ui-btn.primary{
-  background: var(--accent-text, #d61c68);
-  color:#fff;
-  border:0;
-}
-.ui-btn.danger{
-  background: rgba(217,74,74,0.12);
-  border: 1px solid rgba(217,74,74,0.20);
-  color: #b33b3b;
+.add-btn{
+  min-width:64px;
+  min-height:40px;
+  padding:12px 20px;
+  white-space:nowrap;
+  border-radius:16px;
 }
 
 /* ============================================
-   10) Shared layout + form + button
+   12) Buttons
    ============================================ */
-.app{
-  min-height:100vh;
-  padding-bottom:var(--tab-height);
+.btn,
+.ui-btn,
+.save{
+  border:0;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
 }
 
-.page{
-  max-width:520px;
-  margin:0 auto;
-  padding:18px var(--page-padding,16px) 28px;
+.btn,
+.ui-btn{
+  padding:10px 12px;
+  background: var(--panel-soft-bg);
+  border: var(--panel-soft-border);
+  color:var(--text);
 }
 
-.section{
+.btn{
+  flex:0 0 auto;
+}
+
+.btn.primary{
+  background:var(--accent-text);
+  color:#fff;
+  border:0;
+}
+
+.btn.danger{
+  background:var(--danger-soft-bg);
+  border:var(--danger-soft-border);
+  color:var(--danger-text);
+}
+
+.edit,
+.del{
+  border:0;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.edit{
+  background:rgba(0,0,0,0.06);
+  border:1px solid rgba(0,0,0,0.10);
+  color:var(--text);
+}
+
+.del{
+  background:rgba(217,74,74,0.12);
+  border:1px solid rgba(217,74,74,0.20);
+  color:#b33b3b;
+}
+
+.save{
   margin-top:14px;
-}
-
-.card{
-  background:var(--card-bg);
-  border-radius:var(--radius);
-  padding:16px;
-}
-
-.empty{
-  margin-top:10px;
-  background:rgba(255,255,255,0.5);
-  border:1px solid rgba(0,0,0,0.06);
-  border-radius:var(--radius);
+  width:100%;
   padding:14px 16px;
-  color:var(--secondary);
-  font-weight:800;
+  background: var(--btn-primary-bg, var(--accent-text));
+  color: var(--btn-primary-text, #fff);
+  font-size:18px;
 }
 
+.save:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+/* ============================================
+   13) List / Row / Item
+   ============================================ */
 .row{
   display:grid;
   grid-template-columns:1fr;
@@ -573,11 +659,21 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   min-width:0;
 }
 
-.divider{
-  height:1px;
-  background:var(--divider);
-  border:0;
-  margin:0;
+.list{
+  margin-top:12px;
+  display:grid;
+  gap:10px;
+}
+
+.item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:14px;
+  padding:12px;
 }
 
 .name{
@@ -615,47 +711,11 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   padding-bottom:2px;
 }
 
-.btn,
-.ui-btn,
-.save{
+.divider{
+  height:1px;
+  background:var(--divider);
   border:0;
-  border-radius:12px;
-  font-weight:900;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-
-.btn,
-.ui-btn{
-  padding:10px 12px;
-  background: var(--panel-soft-bg);
-  border: var(--panel-soft-border);
-  color:var(--text);
-}
-
-.btn{
-  flex:0 0 auto;
-}
-
-.save{
-  margin-top:14px;
-  width:100%;
-  padding:14px 16px;
-  background: var(--btn-primary-bg, var(--accent-text));
-  color: var(--btn-primary-text, #fff);
-  font-size:18px;
-}
-
-.btn.primary{
-  background:var(--accent-text);
-  color:#fff;
-  border:0;
-}
-
-.btn.danger{
-  background:var(--danger-soft-bg);
-  border:var(--danger-soft-border);
-  color:var(--danger-text);
+  margin:0;
 }
 
 .toolbar{
@@ -676,36 +736,128 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   gap:10px;
 }
 
-.form-grid{
+/* ============================================
+   14) Segmented Controls
+   ============================================ */
+.seg{
   display:grid;
-  gap:14px;
-}
-
-.field{
-  display:grid;
-  gap:8px;
-}
-
-.input{
-  width:100%;
-  padding:12px;
+  grid-template-columns:1fr 1fr;
+  background:rgba(255,255,255,.45);
   border-radius:12px;
-  border:1px solid rgba(0,0,0,0.10);
-  background:#fff;
-  font-size:16px;
-  color:var(--text);
-  outline:none;
+  padding:4px;
+  margin-bottom:12px;
 }
 
-.input:focus,
-select.input:focus,
-textarea.input:focus{
-  border-color: rgba(0,0,0,0.18);
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.40);
+.seg button{
+  border:0;
+  background:transparent;
+  padding:10px 0;
+  border-radius:10px;
+  font-weight:900;
+  color:var(--secondary);
+}
+
+.seg button.active{
+  background:#fff;
+  color:var(--text);
 }
 
 /* ============================================
-   11) Save Button feedback
+   15) UI Modal
+   ============================================ */
+.ui-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display:none;
+  z-index: 99999;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+
+.ui-modal-backdrop.show{
+  display:grid;
+  place-items:center;
+}
+
+.ui-modal{
+  width: min(520px, 100%);
+  background: var(--card-bg, rgba(255,255,255,.78));
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: calc(var(--radius, 22px) + 6px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  overflow:hidden;
+}
+
+.ui-modal-head{
+  padding:16px 16px 10px;
+}
+
+.ui-modal-title{
+  margin:0;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:-.2px;
+  color: var(--text, #3c3c3c);
+}
+
+.ui-modal-msg{
+  margin:8px 0 0;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.5;
+  color: var(--secondary, #8e8e93);
+  white-space:pre-wrap;
+}
+
+.ui-modal-body{
+  padding:0 16px 14px;
+}
+
+.ui-modal-input{
+  width:100%;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.65);
+  padding:12px;
+  font-weight:900;
+  font-size:16px;
+  color: var(--text, #3c3c3c);
+  outline:none;
+}
+
+.ui-modal-input:focus{
+  border-color: rgba(0,0,0,.18);
+}
+
+.ui-modal-actions{
+  display:flex;
+  gap:10px;
+  padding:14px 16px 16px;
+  justify-content:flex-end;
+  border-top:1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.40);
+}
+
+.ui-btn{
+  color: var(--text, #3c3c3c);
+}
+
+.ui-btn.primary{
+  background: var(--accent-text, #d61c68);
+  color:#fff;
+  border:0;
+}
+
+.ui-btn.danger{
+  background: rgba(217,74,74,0.12);
+  border: 1px solid rgba(217,74,74,0.20);
+  color: #b33b3b;
+}
+
+/* ============================================
+   16) Save Button Feedback
    ============================================ */
 .save,
 .btn.primary{
@@ -715,9 +867,9 @@ textarea.input:focus{
 
 .save.loading,
 .btn.primary.loading{
-  opacity: .9;
-  transform: scale(.995);
-  pointer-events: none;
+  opacity:.9;
+  transform:scale(.995);
+  pointer-events:none;
 }
 
 .save.loading::after,
@@ -748,104 +900,4 @@ textarea.input:focus{
   0%{ transform: scale(.98); }
   60%{ transform: scale(1.02); }
   100%{ transform: scale(1); }
-}
-
-.back-btn{
-  border:0;
-  background:transparent;
-  padding:0;
-  margin:0;
-  color: var(--accent-text);
-  text-decoration:none;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1;
-  cursor:pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select:none;
-  -webkit-appearance:none;
-  appearance:none;
-}
-
-.back-btn:disabled{
-  opacity:.5;
-  cursor:default;
-}
-
-.seg{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  background:rgba(255,255,255,.45);
-  border-radius:12px;
-  padding:4px;
-  margin-bottom:12px;
-}
-
-.seg button{
-  border:0;
-  background:transparent;
-  padding:10px 0;
-  border-radius:10px;
-  font-weight:900;
-  color:var(--secondary);
-}
-
-.seg button.active{
-  background:#fff;
-  color:var(--text);
-}
-
-.list{
-  margin-top:12px;
-  display:grid;
-  gap:10px;
-}
-
-.item{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  background:rgba(255,255,255,.55);
-  border:1px solid rgba(0,0,0,.06);
-  border-radius:14px;
-  padding:12px 12px;
-}
-
-.edit,
-.del{
-  border:0;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  cursor:pointer;
-}
-
-.edit{
-  background:rgba(0,0,0,0.06);
-  border:1px solid rgba(0,0,0,0.10);
-  color:var(--text);
-}
-
-.del{
-  background:rgba(217,74,74,0.12);
-  border:1px solid rgba(217,74,74,0.20);
-  color:#b33b3b;
-}
-
-.inline-form{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:10px;
-  align-items:center;
-  margin-top:10px;
-}
-
-.add-btn{
-  min-width:64px;
-  min-height:40px;
-  padding:12px 20px;
-  white-space:nowrap;
-  border-radius:16px;
 }
