@@ -57,6 +57,10 @@
     border:1px solid rgba(0,0,0,0.06);
   }
 
+  .seg.seg-3{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+
   .seg-btn{
     border:0;
     background:transparent;
@@ -159,6 +163,13 @@
     font-weight:900;
     fill:var(--text);
   }
+
+  .stats-hint{
+    margin-bottom:10px;
+    font-size:12px;
+    color:var(--secondary);
+    font-weight:700;
+  }
 </style>
 </head>
 
@@ -185,7 +196,14 @@
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
         </div>
 
+        <div class="seg seg-3" aria-label="顯示幣別切換">
+          <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
+          <button class="seg-btn" type="button" id="btnCurUSD">USD</button>
+          <button class="seg-btn" type="button" id="btnCurEUR">EUR</button>
+        </div>
+
         <div class="card" id="chartCard">
+          <div class="stats-hint" id="statsHint">顯示幣別：TWD</div>
           <div id="chartRoot" class="donut-wrap"></div>
         </div>
       </section>
@@ -229,6 +247,72 @@
     const moneyNT = (n) => "NT$" + Math.round(n).toLocaleString("en-US");
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
+    function formatMoney(currency, amount) {
+      const n = Number(amount || 0);
+
+      if (currency === "TWD") {
+        return "NT$" + Math.round(n).toLocaleString("en-US");
+      }
+
+      if (currency === "USD") {
+        return "US$" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      if (currency === "EUR") {
+        return "€" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      return `${currency} ${n.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    async function fetchDisplayRate(from, to) {
+      const f = String(from || "").toUpperCase();
+      const t = String(to || "").toUpperCase();
+
+      if (!f || !t) throw new Error("Missing currency");
+      if (f === t) return 1;
+
+      const res = await fetch(
+        `/.netlify/functions/getDisplayRate?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}`
+      );
+
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(text || `Rate fetch failed (${res.status})`);
+      }
+
+      const data = JSON.parse(text);
+      const rate = Number(data?.rate);
+
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error("Invalid rate");
+      }
+
+      return rate;
+    }
+
+    const displayRateCache = new Map();
+
+    async function getDisplayRateCached(from, to) {
+      const key = `${String(from).toUpperCase()}_${String(to).toUpperCase()}`;
+      if (displayRateCache.has(key)) {
+        return displayRateCache.get(key);
+      }
+
+      const rate = await fetchDisplayRate(from, to);
+      displayRateCache.set(key, rate);
+      return rate;
+    }
+
     const qs = new URLSearchParams(location.search);
     let currentMonth =
       parseMonthKey(qs.get("m")) ||
@@ -238,17 +322,26 @@
 
     const LS_BOOK = "wis_currentBookId";
     const LS_STATS_MODE = "wis_stats_mode";
+    const LS_DISPLAY_CURRENCY = "wis_display_currency";
 
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
     let currentMode = localStorage.getItem(LS_STATS_MODE) || "expense";
+    let displayCurrency = localStorage.getItem(LS_DISPLAY_CURRENCY) || "TWD";
 
     $("monthLabel").textContent = monthLabel(currentMonth);
 
     function updateSegUI() {
       $("btnExpense").classList.toggle("active", currentMode === "expense");
       $("btnIncome").classList.toggle("active", currentMode === "income");
+    }
+
+    function updateCurrencyUI() {
+      $("btnCurTWD").classList.toggle("active", displayCurrency === "TWD");
+      $("btnCurUSD").classList.toggle("active", displayCurrency === "USD");
+      $("btnCurEUR").classList.toggle("active", displayCurrency === "EUR");
+      $("statsHint").textContent = `顯示幣別：${displayCurrency}`;
     }
 
     $("btnExpense").addEventListener("click", () => {
@@ -262,6 +355,27 @@
       currentMode = "income";
       localStorage.setItem(LS_STATS_MODE, currentMode);
       updateSegUI();
+      window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurTWD").addEventListener("click", () => {
+      displayCurrency = "TWD";
+      localStorage.setItem(LS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+      window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurUSD").addEventListener("click", () => {
+      displayCurrency = "USD";
+      localStorage.setItem(LS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+      window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurEUR").addEventListener("click", () => {
+      displayCurrency = "EUR";
+      localStorage.setItem(LS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
       window.__renderCurrentStatsMode();
     });
 
@@ -280,6 +394,7 @@
     });
 
     updateSegUI();
+    updateCurrencyUI();
 
     const getTxIndex = () => {
       try {
@@ -408,7 +523,7 @@
       return tmp;
     }
 
-    function renderCategoryChart(kind, txs) {
+    async function renderCategoryChart(kind, txs) {
       const sumsByCat = new Map();
       const sourceTxs = getSourceTxs(txs);
 
@@ -417,7 +532,7 @@
         if (!date.startsWith(currentKey)) continue;
         if (String(tx.type || "expense") !== kind) continue;
 
-        const amt = parseAmount(tx.amount);
+        const amt = Number(tx.amountTWD || tx.amount || 0);
         if (amt <= 0) continue;
 
         const cat = (tx.category || "Uncategorized").trim() || "Uncategorized";
@@ -447,6 +562,12 @@
 
       const total = items.reduce((s, x) => s + x.value, 0);
 
+      let shownTotal = total;
+      if (displayCurrency !== "TWD") {
+        const rate = await getDisplayRateCached("TWD", displayCurrency);
+        shownTotal = total * rate;
+      }
+
       const MAX = 8;
       const main = items.slice(0, MAX);
       const rest = items.slice(MAX);
@@ -467,12 +588,21 @@
 
       const donutArea = document.createElement("div");
       donutArea.className = "donut-area";
-      donutArea.appendChild(
-        buildDonutSVG(total, slices, kind === "income" ? "Income" : "Expenses")
-      );
+
+      const donutSvg = buildDonutSVG(total, slices, kind === "income" ? "Income" : "Expenses");
+      const centerValue = donutSvg.querySelector(".center-value");
+      if (centerValue) {
+        centerValue.textContent = formatMoney(displayCurrency, shownTotal);
+      }
+      donutArea.appendChild(donutSvg);
 
       const legend = document.createElement("div");
       legend.className = "donut-legend";
+
+      let twdToDisplayRate = 1;
+      if (displayCurrency !== "TWD") {
+        twdToDisplayRate = await getDisplayRateCached("TWD", displayCurrency);
+      }
 
       for (const s of slices) {
         const row = document.createElement("div");
@@ -497,7 +627,13 @@
 
         const amt = document.createElement("div");
         amt.className = "amt";
-        amt.textContent = moneyNT(s.value);
+
+        let shownValue = s.value;
+        if (displayCurrency !== "TWD") {
+          shownValue = s.value * twdToDisplayRate;
+        }
+
+        amt.textContent = formatMoney(displayCurrency, shownValue);
 
         row.append(left, pct, amt);
         legend.appendChild(row);
@@ -508,8 +644,8 @@
 
     let latestStatsTxs = null;
 
-    function renderCurrentStatsMode() {
-      renderCategoryChart(currentMode, latestStatsTxs);
+    async function renderCurrentStatsMode() {
+      await renderCategoryChart(currentMode, latestStatsTxs);
     }
 
     window.__setStatsTxs = (txs) => {
