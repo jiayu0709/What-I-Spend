@@ -844,7 +844,7 @@ textarea.input:focus{
 
 .add-btn{
   min-width:72px;
-  min-height:48px;
+  min-height:40px;
   padding:12px 20px;
   white-space:nowrap;
   border-radius:16px;
