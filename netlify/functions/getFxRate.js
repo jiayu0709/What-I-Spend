@@ -3,28 +3,20 @@ export async function handler(event) {
     const currency = String(event.queryStringParameters?.currency || "TWD").toUpperCase();
 
     if (!["TWD", "USD", "EUR"].includes(currency)) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ error: "Unsupported currency" }),
-      };
+      return json(400, { error: "Unsupported currency" });
     }
 
     if (currency === "TWD") {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({
-          currency: "TWD",
-          rate: 1,
-          rateType: "self",
-          source: "local",
-          fetchedAt: new Date().toISOString(),
-        }),
-      };
+      return json(200, {
+        currency: "TWD",
+        rate: 1,
+        rateType: "self",
+        source: "local",
+        fetchedAt: new Date().toISOString(),
+      });
     }
 
-    const res = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW", {
+    const res = await fetch("https://www.bot.com.tw/tw/personal-banking/foreign-exchange", {
       headers: {
         "User-Agent": "Mozilla/5.0",
       },
@@ -35,83 +27,45 @@ export async function handler(event) {
     }
 
     const html = await res.text();
-
-    const rate = extractSpotSellRate(html, currency);
+    const rate = extractSpotSellRateFromBot(html, currency);
 
     if (!rate) {
       throw new Error(`Rate not found for ${currency}`);
     }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        currency,
-        rate,
-        rateType: "spot_sell",
-        source: "Bank of Taiwan",
-        fetchedAt: new Date().toISOString(),
-      }),
-    };
+    return json(200, {
+      currency,
+      rate,
+      rateType: "spot_sell",
+      source: "Bank of Taiwan",
+      fetchedAt: new Date().toISOString(),
+    });
   } catch (err) {
     console.error("getFxRate error:", err);
-
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        error: err.message || "Unknown error",
-      }),
-    };
+    return json(500, { error: err.message || "Unknown error" });
   }
 }
 
-function extractSpotSellRate(html, currency) {
+function json(statusCode, body) {
+  return {
+    statusCode,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(body),
+  };
+}
+
+function extractSpotSellRateFromBot(html, currency) {
   const upper = String(currency || "").toUpperCase();
 
-  // 先抓包含幣別代碼的整列，例如 (USD) / (EUR)
-  const rowRegex = new RegExp(
-    `<tr[^>]*>[\\s\\S]*?\$begin:math:text$\$\{upper\}\\$end:math:text$[\\s\\S]*?<\\/tr>`,
+  // 先抓該幣別區塊，例如 USD / EUR
+  const blockRegex = new RegExp(
+    `${upper}[\\s\\S]{0,800}?即期賣出[\\s\\S]{0,120}?([0-9]+(?:\\.[0-9]+)?)`,
     "i"
   );
-  const rowMatch = html.match(rowRegex);
-  if (!rowMatch) return null;
+  const match = html.match(blockRegex);
 
-  const rowHtml = rowMatch[0];
+  if (!match) return null;
 
-  // 抓該列所有 td
-  const tdRegex = /<td[^>]*data-table="([^"]+)"[^>]*>([\s\S]*?)<\/td>/gi;
-  const cells = [];
-  let m;
-
-  while ((m = tdRegex.exec(rowHtml)) !== null) {
-    const key = stripTags(m[1]).trim();
-    const value = stripTags(m[2]).trim().replace(/,/g, "");
-    cells.push({ key, value });
-  }
-
-  // 優先找：即期匯率 / 本行賣出
-  let target = cells.find(
-    (x) => x.key.includes("即期匯率") && x.key.includes("本行賣出")
-  );
-
-  // 有些頁面結構可能不是這個文字，退而求其次抓只包含「本行賣出」
-  if (!target) {
-    target = cells.find((x) => x.key.includes("本行賣出"));
-  }
-
-  if (!target) return null;
-
-  const n = Number(target.value);
+  const n = Number(match[1]);
   return Number.isFinite(n) ? n : null;
-}
-
-function stripTags(str) {
-  return String(str)
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#160;/g, " ")
-    .replace(/\s+/g, " ");
 }
