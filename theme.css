@@ -785,3 +785,44 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   justify-content:space-between;
   gap:10px;
 }
+
+.form-grid{
+  display:grid;
+  gap:14px;
+}
+
+.field{
+  display:grid;
+  gap:8px;
+}
+
+.input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  font-size:16px;
+  color:var(--text);
+  outline:none;
+}
+
+.input:focus,
+select.input:focus,
+textarea.input:focus{
+  border-color: rgba(0,0,0,0.18);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.40);
+}
+
+.save{
+  margin-top:14px;
+  width:100%;
+  padding:14px 16px;
+  border:0;
+  border-radius:16px;
+  background: var(--btn-primary-bg, var(--accent-text));
+  color: var(--btn-primary-text, #fff);
+  font-size:18px;
+  font-weight:800;
+  cursor:pointer;
+}
