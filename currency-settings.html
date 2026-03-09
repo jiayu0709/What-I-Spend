@@ -69,24 +69,6 @@
       cursor:pointer;
     }
 
-    .back{
-      border:0;
-      background:transparent;
-      padding:0;
-      margin:0;
-      color: var(--accent-text);
-      text-decoration:none;
-      font-family: inherit;
-      font-size: 16px;
-      font-weight: 900;
-      line-height: 1;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-appearance:none;
-      appearance:none;
-    }
-
     .hint{
       font-size:12px;
       color:var(--secondary, #7d7272);
@@ -95,12 +77,10 @@
     }
   </style>
 </head>
-<body>
+<body data-back="true" data-back-href="month.html">
   <main class="page">
     <div class="nav">
       <div class="nav-left">
-        <button class="back" id="backLink" type="button">‹ 返回</button>
-      </div>
       <div class="nav-title">幣別設定</div>
       <div class="nav-right">
         <div class="book-badge" id="bookBadge" style="display:none;"></div>
@@ -144,14 +124,6 @@
 
     const LS_BOOK = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
-
-    const qs = new URLSearchParams(location.search);
-    const ref = qs.get("ref");
-    const backTarget = ref || "month.html";
-
-    $("backLink").addEventListener("click", () => {
-      location.href = backTarget;
-    });
 
     const DEFAULT_SETTINGS = {
       defaultCurrency: "TWD",

@@ -285,6 +285,7 @@ const DRAWER_EXCLUDE = new Set([
 ]);
 
 function shouldShowDrawer() {
+  if (document.body?.dataset?.back === "true") return false;
   return !DRAWER_EXCLUDE.has(pageName());
 }
 
@@ -659,6 +660,7 @@ function boot() {
   bindTabbarButtons();
   bindTabbarEffects();
   injectThemedModal();
+  injectBackButton();
   injectDrawer();
   updateBookBadge();
 }
@@ -667,4 +669,46 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", boot);
 } else {
   boot();
+}
+
+function shouldShowBackButton() {
+  return document.body?.dataset?.back === "true";
+}
+
+function getBackTarget() {
+  const qs = new URLSearchParams(location.search);
+  const qsRef = qs.get("ref");
+  const bodyRef = document.body?.dataset?.backHref;
+  return qsRef || bodyRef || "month.html";
+}
+
+function injectBackButton() {
+  if (!shouldShowBackButton()) return;
+
+  const navLeft =
+    document.querySelector(".nav .nav-left") ||
+    document.querySelector(".nav-left");
+
+  if (!navLeft) return;
+  if (navLeft.querySelector("[data-role='back-button']")) return;
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "back-btn";
+  btn.dataset.role = "back-button";
+  btn.textContent = "‹ 返回";
+
+  btn.addEventListener("click", () => {
+    const mode = document.body?.dataset?.backMode || "href";
+    const target = getBackTarget();
+
+    if (mode === "history") {
+      history.back();
+      return;
+    }
+
+    location.href = target;
+  });
+
+  navLeft.appendChild(btn);
 }

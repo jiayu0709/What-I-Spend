@@ -630,7 +630,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   100%{ transform: scale(1); }
 }
 
-.back{
+.back-btn{
   border:0;
   background:transparent;
   padding:0;
@@ -646,4 +646,9 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   user-select:none;
   -webkit-appearance:none;
   appearance:none;
+}
+
+.back-btn:disabled{
+  opacity:.5;
+  cursor:default;
 }
