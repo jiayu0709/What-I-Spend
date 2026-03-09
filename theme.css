@@ -3,43 +3,41 @@
    0) Design Tokens
    ============================================ */
 :root{
-  /* Backgrounds */
   --app-bg: #f0e6e6;
   --card-bg: #e0cdcc;
 
-  /* Text */
   --text: #735f5c;
   --secondary: rgba(0,0,0,0.45);
 
-  /* Lines */
   --divider: rgba(0,0,0,0.10);
 
-  /* Status */
   --green: #2e9e4b;
   --red: #d94a4a;
 
-  /* Accent */
   --accent: #4f55d8;
   --accent-text: #7b6a6c;
 
-  /* Layout tokens */
   --page-padding: 16px;
   --radius: 16px;
   --tab-height: 84px;
   --tabcolor: #503d32;
 
-  /* UI sizing */
   --topbar-offset: 10px;
   --page-top-pad: 18px;
   --drawer-pad: 14px;
   --hamburger-size: 44px;
 
-  /* Drawer width (2/3 screen) */
   --drawer-width: 66.6667vw;
 
-  /* Header sizing */
   --header-height: 44px;
   --header-side: 76px;
+
+  /* shared ui */
+  --panel-soft-bg: rgba(255,255,255,0.62);
+  --panel-soft-border: 1px solid rgba(0,0,0,0.06);
+  --danger-soft-bg: rgba(217,74,74,0.10);
+  --danger-soft-border: 1px solid rgba(217,74,74,0.18);
+  --danger-text: #b33b3b;
 }
 
 /* ============================================
@@ -53,13 +51,12 @@ body{
   padding-top: 0;
 }
 
-/* iPhone notch safe-area（只推內容，不推背景） */
 main.page{
   padding-top: calc(var(--page-top-pad) + env(safe-area-inset-top, 0px)) !important;
 }
 
 /* ============================================
-   2) Page transition (iOS style)
+   2) Page transition
    ============================================ */
 main.page{ animation: page-enter .45s ease-out; }
 
@@ -76,7 +73,7 @@ main.page.leaving{ animation: page-leave .2s ease-in forwards; }
 }
 
 /* ============================================
-   3) Tap feedback (GLOBAL)
+   3) Global tap feedback
    ============================================ */
 a, button, .tx, .tab{ -webkit-tap-highlight-color: transparent; }
 
@@ -116,9 +113,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* ============================================
-   5) Header (GLOBAL)
-   - .nav: left (drawer) / center (title) / right (book badge)
-   - 標題永遠置中
+   5) Header
    ============================================ */
 .nav{
   display:grid;
@@ -128,66 +123,49 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   margin: 0 0 10px;
 }
 
-/* left slot */
-.nav-left{
-  width: var(--header-side);
-  height: var(--header-height);
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-}
-
-/* center title */
-.nav-title{
-  margin:0;
-  transform:none;
-  font-size:28px;
-  font-weight:800;
-  letter-spacing:-.5px;
-  text-align:center;
-  line-height: var(--header-height); /* ✅ 同高關鍵 */
-}
-
-/* right slot */
+.nav-left,
 .nav-right{
   width: var(--header-side);
   height: var(--header-height);
   display:flex;
   align-items:center;
-  justify-content:flex-end;
 }
 
-/* Book badge: 不浮動、跟著捲動、大小一致 */
+.nav-left{ justify-content:flex-start; }
+.nav-right{ justify-content:flex-end; }
+
+.nav-title{
+  margin:0;
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:-.5px;
+  text-align:center;
+  line-height: var(--header-height);
+}
+
 .book-badge{
   position: static;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-
   padding: 8px 10px;
   line-height: 1;
-
   border-radius: 999px;
-  background: rgba(255,255,255,0.62);
+  background: var(--panel-soft-bg);
   border: 1px solid rgba(0,0,0,0.08);
   color: var(--text);
   font-weight: 900;
   font-size: 12px;
-
-  /* ✅ 不要太長擠到標題置中（可調 60~90） */
   max-width: 72px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 /* ============================================
-   6) Topbar + Hamburger (GLOBAL)
-   - 預設：fixed (給沒有 header 的頁)
-   - 放進 header (.nav-left) 時：自動變 static、跟著捲動
+   6) Topbar + Hamburger
    ============================================ */
 .topbar{
   position: fixed;
@@ -196,13 +174,11 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   top: calc(var(--topbar-offset) + env(safe-area-inset-top, 0px)) !important;
 }
 
-/* ✅ 只要 topbar 被放在 .nav-left 裡，就不要 fixed */
 .nav-left .topbar{
   position: static !important;
   left: auto !important;
   top: auto !important;
   z-index: auto !important;
-
   width: var(--header-side);
   height: var(--header-height);
   display:flex;
@@ -210,28 +186,34 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   justify-content:flex-start;
 }
 
-/* 副標題 */
 .sub-title{
   font-size:18px;
   font-weight:900;
   color:var(--text);
-  margin:12px 0 8px
+  margin:12px 0 8px;
 }
 
-/* 提示文字 灰色大字 */
- .hint{
+/* 大提示 */
+.hint-lg{
   font-size:16px;
   font-weight:900;
   color:var(--secondary);
-  margin:12px 0 8px
+  margin:12px 0 8px;
 }
 
-/* 標籤文字 */
-.label{ 
-  font-size:14px; 
-  font-weight:800; 
-  color:var(--secondary); 
-  margin:10px 0 8px; 
+/* 小提示／表單說明 */
+.hint{
+  font-size:12px;
+  color:var(--secondary);
+  line-height:1.5;
+  font-weight:700;
+}
+
+.label{
+  font-size:14px;
+  font-weight:800;
+  color:var(--secondary);
+  margin:10px 0 8px;
 }
 
 .hamburger{
@@ -240,20 +222,14 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   border-radius: 14px;
   background: transparent;
   border: 0;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-
   display:flex;
   flex-direction: column;
   place-items: center;
   justify-content: center;
   gap: 6px;
-
   padding: 0;
   cursor: pointer;
 }
-
-.hamburger:active{ opacity:.65; transform:scale(.98); }
 
 .hamburger span{
   display:block;
@@ -266,10 +242,13 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* ============================================
-   7) Tabbar (GLOBAL)
+   7) Tabbar
    ============================================ */
 .tabbar{
-  position:fixed; left:0; right:0; bottom:0;
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
   height: var(--tab-height);
   background: rgba(255,255,255,0.65);
   backdrop-filter: blur(18px);
@@ -296,15 +275,12 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   gap:6px;
   font-weight:800;
   padding:8px 0;
-
   position: relative;
   transform: translateZ(0);
   transition: transform .12s ease, opacity .12s ease;
   will-change: transform;
-
   overflow: hidden;
   border-radius: 16px;
-
   border:0;
   background:transparent;
 }
@@ -317,7 +293,6 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 
 .tabbar .tab.active{ color: var(--tabcolor); }
 
-/* micro-bounce */
 .tabbar .tab.tap-bounce{
   animation: tab-bounce 180ms ease-out;
 }
@@ -327,7 +302,6 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   100% { transform: scale(1); }
 }
 
-/* ripple */
 .tabbar .tab::after{
   content:"";
   position:absolute;
@@ -372,17 +346,13 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   left: 0;
   bottom: 0;
   height: 100dvh;
-
   width: var(--drawer-width);
   max-width: var(--drawer-width);
-
   background: var(--card-bg);
   border-right: 1px solid rgba(0,0,0,0.08);
   z-index: 90;
-
   transform: translateX(-105%) translateZ(0);
   transition: transform .22s ease;
-
   padding: 0;
 }
 
@@ -401,15 +371,12 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 .drawer.drawer-panel{
   border-top-right-radius: 28px;
   border-bottom-right-radius: 28px;
-
   box-shadow:
     0 24px 70px rgba(0,0,0,0.18),
     0 8px 18px rgba(0,0,0,0.10),
     inset -1px 0 0 rgba(255,255,255,0.35),
     inset 0 1px 0 rgba(255,255,255,0.55);
-
   border-right: 1px solid rgba(0,0,0,0.06);
-
   background:
     radial-gradient(120% 60% at 18% 0%,
       rgba(255,255,255,0.55) 0%,
@@ -420,7 +387,6 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
       rgba(255,255,255,0.10) 70px,
       rgba(255,255,255,0.00) 140px),
     var(--card-bg);
-
   -webkit-overflow-scrolling: touch;
   outline: 1px solid rgba(255,255,255,0.18);
   outline-offset: -1px;
@@ -447,7 +413,6 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   font-weight: 900;
   letter-spacing: -0.2px;
   color: var(--text);
-
   padding: 10px 12px;
   border-radius: 16px;
   background: rgba(255,255,255,0.38);
@@ -459,45 +424,35 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   width: 100%;
   border-radius: 18px;
   padding: 14px 14px;
-
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.2px;
-
   color: var(--text);
   text-align: left;
   cursor: pointer;
-
-  background: rgba(255,255,255,0.62);
-  border: 1px solid rgba(0,0,0,0.06);
-
+  background: var(--panel-soft-bg);
+  border: var(--panel-soft-border);
   box-shadow:
     0 10px 22px rgba(0,0,0,0.06),
     0 1px 0 rgba(255,255,255,0.55) inset;
-
   transition: transform .12s ease, opacity .15s ease, background-color .15s ease;
 }
 
-.drawer-item:active{
-  transform: scale(.99);
-  opacity: .75;
-}
-
 .drawer-item.danger{
-  background: rgba(217,74,74,0.10);
-  border: 1px solid rgba(217,74,74,0.18);
-  color: #b33b3b;
-
+  background: var(--danger-soft-bg);
+  border: var(--danger-soft-border);
+  color: var(--danger-text);
   box-shadow:
     0 10px 22px rgba(217,74,74,0.06),
     0 1px 0 rgba(255,255,255,0.45) inset;
 }
 
 /* ============================================
-   9) UI Modal (ui.alert / ui.confirm / ui.prompt)
+   9) UI Modal
    ============================================ */
 .ui-modal-backdrop{
-  position:fixed; inset:0;
+  position:fixed;
+  inset:0;
   background: rgba(0,0,0,.35);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -561,17 +516,8 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 .ui-btn{
-  border:0;
-  border-radius: 14px;
-  padding: 12px 14px;
-  font-weight:900;
-  cursor:pointer;
-  background: rgba(255,255,255,0.70);
-  border:1px solid rgba(0,0,0,0.06);
   color: var(--text, #3c3c3c);
-  -webkit-tap-highlight-color: transparent;
 }
-.ui-btn:active{ opacity:.75; transform: scale(.99); }
 
 .ui-btn.primary{
   background: var(--accent-text, #d61c68);
@@ -585,76 +531,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 /* ============================================
-   10) Save Button feedback (global)
-   ============================================ */
-.save,
-.btn.primary{
-  position: relative;
-  overflow: hidden;
-}
-
-.save.loading,
-.btn.primary.loading{
-  opacity: .9;
-  transform: scale(.995);
-  pointer-events: none;
-}
-
-.save.loading::after,
-.btn.primary.loading::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,.45) 50%,
-    rgba(255,255,255,0) 100%
-  );
-  transform: translateX(-120%);
-  animation: save-shimmer 900ms ease-in-out infinite;
-}
-
-@keyframes save-shimmer{
-  to{ transform: translateX(120%); }
-}
-
-.save.success,
-.btn.primary.success{
-  animation: save-pop 260ms ease-out;
-}
-
-@keyframes save-pop{
-  0%{ transform: scale(.98); }
-  60%{ transform: scale(1.02); }
-  100%{ transform: scale(1); }
-}
-
-.back-btn{
-  border:0;
-  background:transparent;
-  padding:0;
-  margin:0;
-  color: var(--accent-text);
-  text-decoration:none;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1;
-  cursor:pointer;
-  -webkit-tap-highlight-color: transparent;
-  user-select:none;
-  -webkit-appearance:none;
-  appearance:none;
-}
-
-.back-btn:disabled{
-  opacity:.5;
-  cursor:default;
-}
-
-/* ============================================
-   11) Shared page layout + list/card/button
+   10) Shared layout + form + button
    ============================================ */
 .app{
   min-height:100vh;
@@ -738,17 +615,35 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
   padding-bottom:2px;
 }
 
-.btn{
+.btn,
+.ui-btn,
+.save{
   border:0;
   border-radius:12px;
-  padding:10px 12px;
   font-weight:900;
   cursor:pointer;
-  background:rgba(255,255,255,0.62);
-  border:1px solid rgba(0,0,0,0.06);
-  color:var(--text);
   -webkit-tap-highlight-color:transparent;
+}
+
+.btn,
+.ui-btn{
+  padding:10px 12px;
+  background: var(--panel-soft-bg);
+  border: var(--panel-soft-border);
+  color:var(--text);
+}
+
+.btn{
   flex:0 0 auto;
+}
+
+.save{
+  margin-top:14px;
+  width:100%;
+  padding:14px 16px;
+  background: var(--btn-primary-bg, var(--accent-text));
+  color: var(--btn-primary-text, #fff);
+  font-size:18px;
 }
 
 .btn.primary{
@@ -758,14 +653,9 @@ input[type="time"]::-webkit-datetime-edit-ampm-field{
 }
 
 .btn.danger{
-  background:rgba(217,74,74,0.10);
-  border:1px solid rgba(217,74,74,0.18);
-  color:#b33b3b;
-}
-
-.btn:active{
-  opacity:.7;
-  transform:scale(.99);
+  background:var(--danger-soft-bg);
+  border:var(--danger-soft-border);
+  color:var(--danger-text);
 }
 
 .toolbar{
@@ -814,15 +704,71 @@ textarea.input:focus{
   box-shadow: 0 0 0 3px rgba(255,255,255,0.40);
 }
 
-.save{
-  margin-top:14px;
-  width:100%;
-  padding:14px 16px;
+/* ============================================
+   11) Save Button feedback
+   ============================================ */
+.save,
+.btn.primary{
+  position: relative;
+  overflow: hidden;
+}
+
+.save.loading,
+.btn.primary.loading{
+  opacity: .9;
+  transform: scale(.995);
+  pointer-events: none;
+}
+
+.save.loading::after,
+.btn.primary.loading::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.45) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: translateX(-120%);
+  animation: save-shimmer 900ms ease-in-out infinite;
+}
+
+@keyframes save-shimmer{
+  to{ transform: translateX(120%); }
+}
+
+.save.success,
+.btn.primary.success{
+  animation: save-pop 260ms ease-out;
+}
+
+@keyframes save-pop{
+  0%{ transform: scale(.98); }
+  60%{ transform: scale(1.02); }
+  100%{ transform: scale(1); }
+}
+
+.back-btn{
   border:0;
-  border-radius:16px;
-  background: var(--btn-primary-bg, var(--accent-text));
-  color: var(--btn-primary-text, #fff);
-  font-size:18px;
-  font-weight:800;
+  background:transparent;
+  padding:0;
+  margin:0;
+  color: var(--accent-text);
+  text-decoration:none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
   cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select:none;
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+.back-btn:disabled{
+  opacity:.5;
+  cursor:default;
 }
