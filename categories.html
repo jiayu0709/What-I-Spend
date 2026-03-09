@@ -19,7 +19,6 @@
     .app{min-height:100vh;padding-bottom:var(--tab-height)}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
     .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .back{color:var(--accent-text);text-decoration:none;font-weight:900}
     .title{font-size:28px;font-weight:900;margin:6px 0 12px;text-align:center}
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .seg{display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.45);
@@ -48,7 +47,7 @@
     <main class="page">
       <div class="nav">
         <div class="nav-left">
-            <a class="back" id="backLink" href="month.html">‹ 返回</a>
+            <button class="back-btn" id="backLink" type="button">‹ 返回</button>
         </div>
         <div class="nav-title">類別設定</div>
         <div class="nav-right">
@@ -93,10 +92,6 @@
       expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他🧶"],
       income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款💵","其他🧶"],
     };
-
-    const qs = new URLSearchParams(location.search);
-    const ref = qs.get("ref") || "month.html";
-    document.getElementById("backLink").href = ref;
 
     const $ = (id) => document.getElementById(id);
 

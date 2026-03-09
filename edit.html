@@ -26,13 +26,6 @@
     .app{min-height:100vh;padding-bottom:18px}
     .page{max-width:520px;margin:0 auto;padding:18px var(--page-padding) 28px}
 
-    /* ✅ 返回列：沿用你原本「返回」需求（不走全站抽屜） */
-    .back{
-      text-decoration:none;
-      color: var(--accent-text);
-      font-weight:800;
-    }
-
     .card{background:var(--card-bg);border-radius:var(--radius);padding:16px}
     .field{display:grid;gap:8px;margin-top:14px;min-width:0}
     .field:first-child{margin-top:0}
@@ -143,7 +136,7 @@
     <main class="page">
       <div class="nav">
         <div class="nav-left">
-          <a class="back" id="backLink" href="month.html">‹ 返回</a>
+          <button class="back-btn" id="backLink" type="button">‹ 返回</button>
         </div>
         <div class="nav-title">編輯明細</div>
         <div class="nav-right">
@@ -219,11 +212,6 @@
   <script>
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
-
-    // 回上一頁（可從 ref 帶回去）
-    const ref = qs.get("ref") || "month.html";
-    const backLink = document.getElementById("backLink");
-    if (backLink) backLink.href = ref;
 
     // ✅ 分類清單（保留你原本行為：固定清單 + 若原值不在清單就插入保留）
     const CATEGORIES = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
