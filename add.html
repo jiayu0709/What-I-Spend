@@ -23,18 +23,19 @@
     .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding) 28px; }
 
     .section{ margin-top:18px; }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:16px;
+    }
+
     .label{
       font-size:13px;
       font-weight:800;
       color:var(--secondary);
       margin:0 0 8px;
       letter-spacing:.1px;
-    }
-
-    .card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      padding:16px;
     }
 
     .segment{
@@ -74,6 +75,13 @@
       min-width:0;
     }
 
+    .field-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      min-width:0;
+    }
+
     .input, select, textarea{
       width:100%;
       max-width:100%;
@@ -98,13 +106,33 @@
       -webkit-appearance:none;
     }
 
-    .amount-wrap{
+    .amount-card{
       display:grid;
-      gap:8px;
+      gap:12px;
       padding:14px;
       border-radius:16px;
-      background:rgba(255,255,255,0.52);
+      background:rgba(255,255,255,0.56);
       border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .amount-main{
+      display:grid;
+      grid-template-columns: 110px 1fr;
+      gap:12px;
+      align-items:end;
+    }
+
+    .currency-pill{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,0.08);
+      font-weight:900;
+      font-size:18px;
+      color:var(--text);
     }
 
     .amount-input{
@@ -116,7 +144,8 @@
       line-height:1.1;
       font-weight:900;
       color:var(--text);
-      padding:0;
+      padding:8px 0 0;
+      min-width:0;
     }
 
     .amount-input::placeholder{
@@ -124,10 +153,51 @@
       font-weight:800;
     }
 
-    .amount-sub{
+    .fx-wrap{
+      display:grid;
+      gap:10px;
+      padding-top:2px;
+    }
+
+    .fx-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+
+    .hint{
+      font-size:12px;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.45;
+    }
+
+    .preview-box{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.72);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .preview-label{
       font-size:12px;
       font-weight:800;
       color:var(--secondary);
+    }
+
+    .preview-value{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+      white-space:nowrap;
+    }
+
+    .hidden{
+      display:none !important;
     }
 
     .note-input{
@@ -183,16 +253,62 @@
               <input class="input" type="date" id="date" />
             </div>
 
-            <div class="field">
-              <div class="label">分類</div>
-              <select class="input" id="category"></select>
+            <div class="field-row">
+              <div class="field">
+                <div class="label">分類</div>
+                <select class="input" id="category"></select>
+              </div>
+
+              <div class="field">
+                <div class="label">幣別</div>
+                <select class="input" id="currency">
+                  <option value="TWD">TWD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
             </div>
 
             <div class="field">
               <div class="label">金額</div>
-              <div class="amount-wrap">
-                <input class="amount-input" type="number" id="amount" inputmode="decimal" placeholder="0" />
-                <div class="amount-sub">輸入本次金額</div>
+              <div class="amount-card">
+                <div class="amount-main">
+                  <div class="currency-pill" id="currencyPill">TWD</div>
+                  <input
+                    class="amount-input"
+                    type="number"
+                    id="amount"
+                    inputmode="decimal"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div class="fx-wrap" id="fxWrap">
+                  <div class="fx-row">
+                    <div class="field">
+                      <div class="label">匯率</div>
+                      <input
+                        class="input"
+                        type="number"
+                        id="fxRate"
+                        inputmode="decimal"
+                        placeholder="1 EUR = 幾 TWD"
+                      />
+                    </div>
+
+                    <div class="field">
+                      <div class="label">換算後</div>
+                      <div class="preview-box">
+                        <div class="preview-label">台幣金額</div>
+                        <div class="preview-value" id="amountTWDPreview">NT$0</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="hint">
+                    非台幣時，請輸入當下匯率。統計頁可直接用台幣換算值做統計。
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -254,33 +370,26 @@
       return isFinite(n) ? n : NaN;
     };
 
+    const moneyNT = (n) => {
+      const v = Number(n || 0);
+      return "NT$" + Math.round(v).toLocaleString("en-US");
+    };
+
     const btnExpense = $("btn-expense");
     const btnIncome  = $("btn-income");
     const categorySelect = $("category");
+    const currencySelect = $("currency");
+    const currencyPill = $("currencyPill");
+    const fxWrap = $("fxWrap");
+    const fxRateInput = $("fxRate");
+    const amountTWDPreview = $("amountTWDPreview");
     const dateInput = $("date");
     const amountInput = $("amount");
     const noteInput = $("note");
     const saveBtn = $("saveBtn");
 
-    async function ensureDefaultBook(uid){
-      const existing = localStorage.getItem(LS_BOOK);
-      if (existing) return existing;
-
-      const booksRef = collection(db, "users", uid, "books");
-      const q1 = query(booksRef, orderBy("createdAt","asc"), limit(1));
-      const snap = await getDocs(q1);
-
-      if (!snap.empty) {
-        const firstId = snap.docs[0].id;
-        localStorage.setItem(LS_BOOK, firstId);
-        return firstId;
-      }
-
-      localStorage.setItem(LS_BOOK, docRef.id);
-      return docRef.id;
-    }
-
     let BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
+    let currentType = "expense";
 
     async function loadBookCategories(uid){
       const bookId = localStorage.getItem(LS_BOOK);
@@ -305,8 +414,6 @@
       BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
 
-    let currentType = "expense";
-
     function categoriesFor(type){
       return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
     }
@@ -330,6 +437,43 @@
       categorySelect.value = safeList.includes(prev) ? prev : safeList[0];
     }
 
+    function updateCurrencyUI() {
+      const currency = currencySelect.value || "TWD";
+      currencyPill.textContent = currency;
+
+      const isTWD = currency === "TWD";
+      fxWrap.classList.toggle("hidden", isTWD);
+
+      if (isTWD) {
+        fxRateInput.value = "1";
+      }
+
+      updateTWDPreview();
+    }
+
+    function updateTWDPreview() {
+      const currency = currencySelect.value || "TWD";
+      const amount = parseAmount(amountInput.value);
+      const fxRate = parseAmount(fxRateInput.value);
+
+      if (!isFinite(amount) || amount <= 0) {
+        amountTWDPreview.textContent = "NT$0";
+        return;
+      }
+
+      if (currency === "TWD") {
+        amountTWDPreview.textContent = moneyNT(amount);
+        return;
+      }
+
+      if (!isFinite(fxRate) || fxRate <= 0) {
+        amountTWDPreview.textContent = "NT$0";
+        return;
+      }
+
+      amountTWDPreview.textContent = moneyNT(amount * fxRate);
+    }
+
     function setType(type){
       currentType = (type === "income") ? "income" : "expense";
       const isExpense = currentType === "expense";
@@ -345,9 +489,14 @@
 
     dateInput.value = todayYMD();
     setType("expense");
+    updateCurrencyUI();
 
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click", () => setType("income"));
+
+    currencySelect.addEventListener("change", updateCurrencyUI);
+    amountInput.addEventListener("input", updateTWDPreview);
+    fxRateInput.addEventListener("input", updateTWDPreview);
 
     const qs = new URLSearchParams(location.search);
     const qsType = qs.get("type");
@@ -355,12 +504,20 @@
     const qsCategory = qs.get("category");
     const qsNote = qs.get("note");
     const qsDate = qs.get("date");
+    const qsCurrency = qs.get("currency");
+    const qsFxRate = qs.get("fxRate");
     const autoSave = qs.get("autosave") === "1";
 
     if (qsType === "income" || qsType === "expense") setType(qsType);
     if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
     if (qsAmount) amountInput.value = qsAmount;
     if (qsNote) noteInput.value = qsNote;
+    if (qsCurrency && ["TWD","EUR","USD"].includes(qsCurrency)) {
+      currencySelect.value = qsCurrency;
+    }
+    if (qsFxRate) fxRateInput.value = qsFxRate;
+
+    updateCurrencyUI();
 
     await window.firebaseReady;
 
@@ -460,9 +617,29 @@
       const category = (categorySelect.value || "").trim();
       const note = (noteInput.value || "").trim();
       const amount = parseAmount(amountInput.value);
+      const currency = currencySelect.value || "TWD";
 
-      if (!category) { await window.ui.alert("請選擇分類"); return; }
-      if (!isFinite(amount) || amount <= 0) { await window.ui.alert("請輸入正確金額（> 0）"); return; }
+      if (!category) {
+        await window.ui.alert("請選擇分類");
+        return;
+      }
+
+      if (!isFinite(amount) || amount <= 0) {
+        await window.ui.alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      let fxRateToTWD = 1;
+      let amountTWD = amount;
+
+      if (currency !== "TWD") {
+        fxRateToTWD = parseAmount(fxRateInput.value);
+        if (!isFinite(fxRateToTWD) || fxRateToTWD <= 0) {
+          await window.ui.alert("請輸入正確匯率（> 0）");
+          return;
+        }
+        amountTWD = amount * fxRateToTWD;
+      }
 
       const bookId = localStorage.getItem(LS_BOOK);
       if (!bookId) {
@@ -470,7 +647,18 @@
         return;
       }
 
-      const payload = { bookId, date, time, type: currentType, amount, category, note };
+      const payload = {
+        bookId,
+        date,
+        time,
+        type: currentType,
+        amount,
+        category,
+        note,
+        currency,
+        fxRateToTWD,
+        amountTWD,
+      };
 
       await writeTransaction(payload, { prefer: "client" });
 
