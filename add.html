@@ -12,7 +12,6 @@
   <title>新增</title>
 
   <style>
-    /* ✅ add.html 本頁專屬：表單/segment/按鈕（其餘交給 theme.css） */
     *{ box-sizing:border-box; }
 
     body{
@@ -24,8 +23,19 @@
     .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding) 28px; }
 
     .section{ margin-top:18px; }
-    .label{ font-size:14px; font-weight:800; color:var(--secondary); margin:10px 0 8px; }
-    .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
+    .label{
+      font-size:13px;
+      font-weight:800;
+      color:var(--secondary);
+      margin:0 0 8px;
+      letter-spacing:.1px;
+    }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:16px;
+    }
 
     .segment{
       display:grid;
@@ -53,24 +63,75 @@
       color:var(--text);
     }
 
-    .field{ display:grid; gap:8px; margin-top:14px; min-width:0; }
-    .field:first-child{ margin-top:0; }
+    .form-grid{
+      display:grid;
+      gap:14px;
+    }
 
-    .input, select{
+    .field{
+      display:grid;
+      gap:8px;
+      min-width:0;
+    }
+
+    .input, select, textarea{
       width:100%;
       max-width:100%;
       padding:12px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,0,0,0.12);
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10);
       background:#fff;
       font-size:16px;
       box-sizing:border-box;
+      color:var(--text);
+      outline:none;
+    }
+
+    .input:focus, select:focus, textarea:focus{
+      border-color: rgba(0,0,0,0.18);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.55);
     }
 
     input[type="date"]{
       display:block;
       appearance:none;
       -webkit-appearance:none;
+    }
+
+    .amount-wrap{
+      display:grid;
+      gap:8px;
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.52);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .amount-input{
+      width:100%;
+      border:0;
+      background:transparent;
+      outline:none;
+      font-size:34px;
+      line-height:1.1;
+      font-weight:900;
+      color:var(--text);
+      padding:0;
+    }
+
+    .amount-input::placeholder{
+      color:#b4b4b4;
+      font-weight:800;
+    }
+
+    .amount-sub{
+      font-size:12px;
+      font-weight:800;
+      color:var(--secondary);
+    }
+
+    .note-input{
+      min-height:48px;
     }
 
     .save{
@@ -91,7 +152,7 @@
 
     .save:disabled{
       opacity:.6;
-      cursor: not-allowed;
+      cursor:not-allowed;
     }
   </style>
 </head>
@@ -107,7 +168,6 @@
         </div>
       </div>
 
-      <!-- 類型 -->
       <section class="section">
         <div class="segment" role="tablist" aria-label="類型">
           <button class="seg-btn active" id="btn-expense" type="button" aria-pressed="true">支出</button>
@@ -115,27 +175,31 @@
         </div>
       </section>
 
-      <!-- 日期/分類/金額/備註 -->
       <section class="section">
         <div class="card">
-          <div class="field">
-            <div class="label">日期</div>
-            <input class="input" type="date" id="date" />
-          </div>
+          <div class="form-grid">
+            <div class="field">
+              <div class="label">日期</div>
+              <input class="input" type="date" id="date" />
+            </div>
 
-          <div class="field">
-            <div class="label">分類</div>
-            <select class="input" id="category"></select>
-          </div>
+            <div class="field">
+              <div class="label">分類</div>
+              <select class="input" id="category"></select>
+            </div>
 
-          <div class="field">
-            <div class="label">金額</div>
-            <input class="input" type="number" id="amount" inputmode="decimal" placeholder="輸入金額" />
-          </div>
+            <div class="field">
+              <div class="label">金額</div>
+              <div class="amount-wrap">
+                <input class="amount-input" type="number" id="amount" inputmode="decimal" placeholder="0" />
+                <div class="amount-sub">輸入本次金額</div>
+              </div>
+            </div>
 
-          <div class="field">
-            <div class="label">備註</div>
-            <input class="input" type="text" id="note" placeholder="備註（可空）" />
+            <div class="field">
+              <div class="label">備註</div>
+              <input class="input note-input" type="text" id="note" placeholder="備註（可空）" />
+            </div>
           </div>
         </div>
 
@@ -143,7 +207,6 @@
       </section>
     </main>
 
-    <!-- Tab Bar -->
     <nav class="tabbar" aria-label="Tab Bar">
       <div class="tabbar-inner">
         <button class="tab" type="button" data-href="add.html"><div class="icon">＋</div><div>新增</div></button>
@@ -153,7 +216,6 @@
     </nav>
   </div>
 
-  <!-- ✅ 全站共用：drawer / badge / modal / tabbar / auth helpers -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
@@ -164,10 +226,8 @@
       doc, getDoc, updateDoc
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ✅ 帳本
     const LS_BOOK = "wis_currentBookId";
 
-    // ✅ 預設分類（第一次使用會寫進書本）
     const DEFAULT_CATEGORIES = {
       expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他🧶"],
       income:  ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款💵","其他🧶"],
@@ -194,9 +254,6 @@
       return isFinite(n) ? n : NaN;
     };
 
-    // =========================
-    // DOM
-    // =========================
     const btnExpense = $("btn-expense");
     const btnIncome  = $("btn-income");
     const categorySelect = $("category");
@@ -205,9 +262,6 @@
     const noteInput = $("note");
     const saveBtn = $("saveBtn");
 
-    // =========================
-    // Book: ensure + categories
-    // =========================
     async function ensureDefaultBook(uid){
       const existing = localStorage.getItem(LS_BOOK);
       if (existing) return existing;
@@ -247,14 +301,10 @@
         return;
       }
 
-      // ✅ 舊帳本：補寫預設 categories
       await updateDoc(bookRef, { categories: DEFAULT_CATEGORIES });
       BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
 
-    // =========================
-    // UI: type + categories
-    // =========================
     let currentType = "expense";
 
     function categoriesFor(type){
@@ -293,9 +343,6 @@
       renderCategoryOptions(currentType);
     }
 
-    // =========================
-    // Prefill + querystring
-    // =========================
     dateInput.value = todayYMD();
     setType("expense");
 
@@ -308,16 +355,13 @@
     const qsCategory = qs.get("category");
     const qsNote = qs.get("note");
     const qsDate = qs.get("date");
-    const autoSave = qs.get("autosave") === "1"; // ✅ 保留變數（你原本有）
+    const autoSave = qs.get("autosave") === "1";
 
     if (qsType === "income" || qsType === "expense") setType(qsType);
     if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
     if (qsAmount) amountInput.value = qsAmount;
     if (qsNote) noteInput.value = qsNote;
 
-    // =========================
-    // Auth gate（不改你原流程：等 auth 還原）
-    // =========================
     await window.firebaseReady;
 
     const initialUser = await window.waitForAuthReady();
@@ -328,7 +372,6 @@
       await loadBookCategories(uid);
       renderCategoryOptions(currentType);
 
-      // ✅ 若網址有帶 category，等 categories 讀完後再選回去
       if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
         categorySelect.value = qsCategory;
       }
@@ -345,10 +388,6 @@
       return null;
     }
 
-    // =========================
-    // Write: function first, fallback to client
-    //（保持你原本策略/行為）
-    // =========================
     const isLocalhost = () =>
       location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
@@ -412,9 +451,6 @@
       }
     }
 
-    // =========================
-    // Save flow
-    // =========================
     async function saveToFirestore({ redirectAfter = true } = {}){
       const user = await ensureLoginOrRedirect();
       if (!user) return;
