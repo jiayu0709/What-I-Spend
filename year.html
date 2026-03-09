@@ -57,10 +57,6 @@
       border:1px solid rgba(0,0,0,0.06);
     }
 
-    .seg.seg-3{
-      grid-template-columns:1fr 1fr 1fr;
-    }
-
     .seg-btn{
       border:0;
       background:transparent;
@@ -171,6 +167,10 @@
       font-weight:900;
       fill:var(--text);
     }
+
+    .hidden{
+      display:none !important;
+    }
   </style>
 </head>
 
@@ -197,10 +197,9 @@
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
         </div>
 
-        <div class="seg seg-3" aria-label="顯示幣別切換">
+        <div class="seg" aria-label="顯示幣別切換">
           <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
-          <button class="seg-btn" type="button" id="btnCurUSD">USD</button>
-          <button class="seg-btn" type="button" id="btnCurEUR">EUR</button>
+          <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
         </div>
 
         <div class="display-hint" id="displayHint">
@@ -261,8 +260,21 @@
 
     let currentMode = localStorage.getItem(LS_STATS_MODE) || "expense";
     let displayCurrency = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "TWD";
+    let foreignCurrency = "";
+    let availableCurrencies = ["TWD"];
 
     $("monthLabel").textContent = monthLabel(currentMonth);
+
+    function getAvailableCurrencies() {
+      const list = ["TWD"];
+      if (foreignCurrency && foreignCurrency !== "TWD") list.push(foreignCurrency);
+      return list;
+    }
+
+    function normalizeDisplayCurrency(next) {
+      const wanted = String(next || "TWD").toUpperCase();
+      return availableCurrencies.includes(wanted) ? wanted : "TWD";
+    }
 
     function formatMoney(currency, amount) {
       const n = Number(amount || 0);
@@ -297,13 +309,49 @@
     }
 
     function updateCurrencyUI() {
-      $("btnCurTWD").classList.toggle("active", displayCurrency === "TWD");
-      $("btnCurUSD").classList.toggle("active", displayCurrency === "USD");
-      $("btnCurEUR").classList.toggle("active", displayCurrency === "EUR");
+      const btnTWD = $("btnCurTWD");
+      const btnForeign = $("btnCurForeign");
 
-      $("displayHint").textContent =
-        `目前以 ${displayCurrency} 顯示；不同幣別明細會先換算成所選幣別後再統計。`;
+      btnTWD.classList.toggle("active", displayCurrency === "TWD");
+
+      if (foreignCurrency && foreignCurrency !== "TWD") {
+        btnForeign.classList.remove("hidden");
+        btnForeign.textContent = foreignCurrency;
+        btnForeign.classList.toggle("active", displayCurrency === foreignCurrency);
+      } else {
+        btnForeign.classList.add("hidden");
+        btnForeign.classList.remove("active");
+      }
+
+      if (displayCurrency === "TWD") {
+        $("displayHint").textContent = "目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再統計。";
+      } else {
+        $("displayHint").textContent = `目前以 ${displayCurrency} 顯示；TWD 與其他幣別明細會先換算成 ${displayCurrency} 後再統計。`;
+      }
     }
+
+    function applyDisplayCurrency(next) {
+      displayCurrency = normalizeDisplayCurrency(next);
+      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+    }
+
+    function applyBookCurrencySettings(settings = {}) {
+      foreignCurrency = String(settings.foreignCurrency || "").toUpperCase();
+      if (!["USD", "EUR"].includes(foreignCurrency)) {
+        foreignCurrency = "";
+      }
+
+      availableCurrencies = getAvailableCurrencies();
+
+      const saved = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "";
+      const preferred = String(settings.primaryDisplayCurrency || "TWD").toUpperCase();
+      const nextDisplay = normalizeDisplayCurrency(saved || preferred || "TWD");
+
+      applyDisplayCurrency(nextDisplay);
+    }
+
+    window.__applyBookCurrencySettings = applyBookCurrencySettings;
 
     $("btnExpense").addEventListener("click", async () => {
       currentMode = "expense";
@@ -320,23 +368,13 @@
     });
 
     $("btnCurTWD").addEventListener("click", async () => {
-      displayCurrency = "TWD";
-      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
-      updateCurrencyUI();
+      applyDisplayCurrency("TWD");
       await window.__renderCurrentStatsMode();
     });
 
-    $("btnCurUSD").addEventListener("click", async () => {
-      displayCurrency = "USD";
-      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
-      updateCurrencyUI();
-      await window.__renderCurrentStatsMode();
-    });
-
-    $("btnCurEUR").addEventListener("click", async () => {
-      displayCurrency = "EUR";
-      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
-      updateCurrencyUI();
+    $("btnCurForeign").addEventListener("click", async () => {
+      if (!foreignCurrency) return;
+      applyDisplayCurrency(foreignCurrency);
       await window.__renderCurrentStatsMode();
     });
 
@@ -654,7 +692,7 @@
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, orderBy, onSnapshot, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
     function nextMonthKey(ym){
@@ -665,12 +703,31 @@
       return `${next.getFullYear()}-${mm}`;
     }
 
+    async function loadBookSettings(uid, bookId) {
+      if (!bookId) {
+        window.__applyBookCurrencySettings?.({});
+        return;
+      }
+
+      try {
+        const ref = doc(db, "users", uid, "books", bookId);
+        const snap = await getDoc(ref);
+        const data = snap.data() || {};
+        const settings = data.settings || {};
+        window.__applyBookCurrencySettings?.(settings);
+      } catch (e) {
+        console.error("讀取帳本設定失敗:", e);
+        window.__applyBookCurrencySettings?.({});
+      }
+    }
+
     async function renderCurrentBookBadge(uid) {
       const badge = document.getElementById("bookBadge");
       const bookId = localStorage.getItem("wis_currentBookId") || "";
 
       if (!bookId) {
         badge.style.display = "none";
+        window.__applyBookCurrencySettings?.({});
         return;
       }
 
@@ -684,9 +741,13 @@
         badge.textContent = (current?.name || "未命名帳本").trim();
         badge.title = badge.textContent;
         badge.style.display = "inline-flex";
+
+        const settings = current?.settings || {};
+        window.__applyBookCurrencySettings?.(settings);
       } catch (e) {
         console.error("讀取帳本 badge 失敗:", e);
         badge.style.display = "none";
+        await loadBookSettings(uid, bookId);
       }
     }
 
@@ -793,4 +854,4 @@
     });
   </script>
 </body>
-</html>ㄋ
+</html>
