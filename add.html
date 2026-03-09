@@ -12,216 +12,138 @@
   <title>新增</title>
 
   <style>
-    *{ box-sizing:border-box; }
+  .segment{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 4px;
+  }
 
-    body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-    }
+  .seg-btn{
+    border:0;
+    background:transparent;
+    padding:10px 0;
+    border-radius:10px;
+    font-weight:800;
+    color:var(--secondary);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+    -webkit-user-select:none;
+  }
 
-    .app{ min-height:100vh; padding-bottom: var(--tab-height); }
-    .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding) 28px; }
+  .seg-btn.active{
+    background:#fff;
+    color:var(--text);
+  }
 
-    .section{ margin-top:18px; }
+  .field-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+    min-width:0;
+  }
 
-    .card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      padding:16px;
-    }
+  input[type="date"]{
+    display:block;
+    appearance:none;
+    -webkit-appearance:none;
+  }
 
-    .label{
-      font-size:13px;
-      font-weight:800;
-      color:var(--secondary);
-      margin:0 0 8px;
-      letter-spacing:.1px;
-    }
+  .amount-card{
+    display:grid;
+    gap:12px;
+    padding:14px;
+    border-radius:16px;
+    background:rgba(255,255,255,0.56);
+    border:1px solid rgba(0,0,0,0.06);
+  }
 
-    .segment{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 4px;
-    }
+  .amount-main{
+    display:grid;
+    grid-template-columns:110px 1fr;
+    gap:12px;
+    align-items:center;
+    min-height:56px;
+  }
 
-    .seg-btn{
-      border:0;
-      background:transparent;
-      padding:10px 0;
-      border-radius:10px;
-      font-weight:800;
-      color:var(--secondary);
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-user-select:none;
-    }
+  .currency-pill{
+    height:56px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:14px;
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.08);
+    font-weight:900;
+    font-size:18px;
+    color:var(--text);
+  }
 
-    .seg-btn.active{
-      background:#fff;
-      color:var(--text);
-    }
+  .amount-input{
+    width:100%;
+    height:56px;
+    border:0;
+    background:transparent;
+    outline:none;
+    font-size:34px;
+    line-height:56px;
+    font-weight:900;
+    color:var(--text);
+    padding:0;
+    margin:0;
+    min-width:0;
+  }
 
-    .form-grid{
-      display:grid;
-      gap:14px;
-    }
+  .amount-input::placeholder{
+    color:#b4b4b4;
+    font-weight:800;
+  }
 
-    .field{
-      display:grid;
-      gap:8px;
-      min-width:0;
-    }
+  .fx-wrap{
+    display:grid;
+    gap:10px;
+    padding-top:2px;
+  }
 
-    .field-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-      min-width:0;
-    }
+  .fx-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
 
-    .input, select, textarea{
-      width:100%;
-      max-width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid rgba(0,0,0,0.10);
-      background:#fff;
-      font-size:16px;
-      box-sizing:border-box;
-      color:var(--text);
-      outline:none;
-    }
+  .preview-box{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    padding:12px;
+    border-radius:12px;
+    background:rgba(255,255,255,0.72);
+    border:1px solid rgba(0,0,0,0.06);
+  }
 
-    .input:focus, select:focus, textarea:focus{
-      border-color: rgba(0,0,0,0.18);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.55);
-    }
+  .preview-value{
+    font-size:18px;
+    font-weight:900;
+    color:var(--text);
+    white-space:nowrap;
+  }
 
-    input[type="date"]{
-      display:block;
-      appearance:none;
-      -webkit-appearance:none;
-    }
+  .hidden{
+    display:none !important;
+  }
 
-    .amount-card{
-      display:grid;
-      gap:12px;
-      padding:14px;
-      border-radius:16px;
-      background:rgba(255,255,255,0.56);
-      border:1px solid rgba(0,0,0,0.06);
-    }
+  .note-input{
+    min-height:48px;
+  }
 
-    .amount-main{
-      display:grid;
-      grid-template-columns:110px 1fr;
-      gap:12px;
-      align-items:center;   /* 原本如果是 end，改成 center */
-      min-height:56px;
-    }
-
-    .currency-pill{
-      height:56px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:14px;
-      background:#fff;
-      border:1px solid rgba(0,0,0,0.08);
-      font-weight:900;
-      font-size:18px;
-      color:var(--text);
-    }
-
-    .amount-input{
-      width:100%;
-      height:56px;          /* 跟左邊一樣高 */
-      border:0;
-      background:transparent;
-      outline:none;
-      font-size:34px;
-      line-height:56px;     /* 直接讓文字垂直置中 */
-      font-weight:900;
-      color:var(--text);
-      padding:0;            /* 把原本上下 padding 拿掉 */
-      margin:0;
-      min-width:0;
-    }
-
-    .amount-input::placeholder{
-      color:#b4b4b4;
-      font-weight:800;
-    }
-
-    .fx-wrap{
-      display:grid;
-      gap:10px;
-      padding-top:2px;
-    }
-
-    .fx-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-
-    .hint{
-      font-size:12px;
-      color:var(--secondary);
-      font-weight:800;
-      line-height:1.45;
-    }
-
-    .preview-box{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:12px;
-      padding:12px 12px;
-      border-radius:12px;
-      background:rgba(255,255,255,0.72);
-      border:1px solid rgba(0,0,0,0.06);
-    }
-
-    .preview-value{
-      font-size:18px;
-      font-weight:900;
-      color:var(--text);
-      white-space:nowrap;
-    }
-
-    .hidden{
-      display:none !important;
-    }
-
-    .note-input{
-      min-height:48px;
-    }
-
-    .save{
-      margin-top:14px;
-      width:100%;
-      padding:14px 16px;
-      border:0;
-      border-radius:16px;
-      background: var(--btn-primary-bg, var(--accent-text));
-      color: var(--btn-primary-text, #fff);
-      font-size:18px;
-      font-weight:800;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-
-    .save:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-    }
-  </style>
+  .save:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+  }
+</style>
 </head>
 
 <body>
