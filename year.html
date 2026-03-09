@@ -11,155 +11,167 @@
   <title>分析</title>
 
   <style>
-  .monthbar{
-    margin-top:6px;
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding:10px 12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-  }
+    .monthbar{
+      margin-top:6px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
 
-  .monthbar .m-btn{
-    border:0;
-    background: transparent;
-    padding:10px 12px;
-    border-radius:12px;
-    font-weight:900;
-    color: var(--accent-text, var(--accent));
-    cursor:pointer;
-    appearance:none;
-    -webkit-appearance:none;
-  }
+    .monthbar .m-btn{
+      border:0;
+      background: transparent;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      color: var(--accent-text, var(--accent));
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
 
-  .monthbar .m-title{
-    font-weight:900;
-    letter-spacing:-.2px;
-    color: var(--text);
-    white-space:nowrap;
-  }
+    .monthbar .m-title{
+      font-weight:900;
+      letter-spacing:-.2px;
+      color: var(--text);
+      white-space:nowrap;
+    }
 
-  .card.card--empty{
-    background:transparent;
-    padding:0;
-  }
+    .card.card--empty{
+      background:transparent;
+      padding:0;
+    }
 
-  .seg{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-bottom:12px;
-    padding:4px;
-    border-radius:12px;
-    background:rgba(255,255,255,0.45);
-    border:1px solid rgba(0,0,0,0.06);
-  }
+    .seg{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:12px;
+      padding:4px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-  .seg-btn{
-    border:0;
-    background:transparent;
-    border-radius:10px;
-    padding:10px 0;
-    font-size:15px;
-    font-weight:800;
-    color:var(--secondary);
-    cursor:pointer;
-    appearance:none;
-    -webkit-appearance:none;
-    -webkit-tap-highlight-color: transparent;
-    user-select:none;
-    -webkit-user-select:none;
-    transition:all .15s ease;
-  }
+    .seg.seg-3{
+      grid-template-columns:1fr 1fr 1fr;
+    }
 
-  .seg-btn.active{
-    background:var(--accent-text);
-    color:#fff;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-  }
+    .seg-btn{
+      border:0;
+      background:transparent;
+      border-radius:10px;
+      padding:10px 0;
+      font-size:15px;
+      font-weight:800;
+      color:var(--secondary);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+      -webkit-user-select:none;
+      transition:all .15s ease;
+    }
 
-  .donut-wrap{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:14px;
-    align-items:center;
-  }
+    .seg-btn.active{
+      background:var(--accent-text);
+      color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
 
-  .donut-area{
-    display:grid;
-    place-items:center;
-    padding:8px 0 2px;
-  }
+    .display-hint{
+      margin:-4px 0 10px;
+      font-size:12px;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.45;
+    }
 
-  .donut-legend{
-    margin-top:6px;
-    display:grid;
-    gap:12px;
-  }
+    .donut-wrap{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+      align-items:center;
+    }
 
-  .legend-row{
-    display:grid;
-    grid-template-columns:1fr auto auto;
-    gap:10px;
-    align-items:center;
-    font-size:18px;
-    padding:8px 0;
-  }
+    .donut-area{
+      display:grid;
+      place-items:center;
+      padding:8px 0 2px;
+    }
 
-  .legend-left{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    min-width:0;
-  }
+    .donut-legend{
+      margin-top:6px;
+      display:grid;
+      gap:12px;
+    }
 
-  .dot{
-    width:12px;
-    height:12px;
-    border-radius:999px;
-    flex:0 0 auto;
-  }
+    .legend-row{
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:10px;
+      align-items:center;
+      font-size:18px;
+      padding:8px 0;
+    }
 
-  .cat{
-    font-weight:800;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
+    .legend-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
 
-  .pct{
-    color:var(--secondary);
-    font-weight:900;
-    width:56px;
-    text-align:right;
-  }
+    .dot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      flex:0 0 auto;
+    }
 
-  .amt{
-    font-weight:900;
-    width:110px;
-    text-align:right;
-  }
+    .cat{
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
 
-  .donut-svg{
-    width:260px;
-    height:260px;
-    display:block;
-  }
+    .pct{
+      color:var(--secondary);
+      font-weight:900;
+      width:56px;
+      text-align:right;
+    }
 
-  .center-title{
-    font-size:18px;
-    font-weight:900;
-    fill:var(--secondary);
-  }
+    .amt{
+      font-weight:900;
+      width:120px;
+      text-align:right;
+    }
 
-  .center-value{
-    font-size:26px;
-    font-weight:900;
-    fill:var(--text);
-  }
-</style>
+    .donut-svg{
+      width:260px;
+      height:260px;
+      display:block;
+    }
+
+    .center-title{
+      font-size:18px;
+      font-weight:900;
+      fill:var(--secondary);
+    }
+
+    .center-value{
+      font-size:26px;
+      font-weight:900;
+      fill:var(--text);
+    }
+  </style>
 </head>
 
 <body>
@@ -183,6 +195,16 @@
         <div class="seg" aria-label="統計類型切換">
           <button class="seg-btn active" type="button" id="btnExpense">支出</button>
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
+        </div>
+
+        <div class="seg seg-3" aria-label="顯示幣別切換">
+          <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
+          <button class="seg-btn" type="button" id="btnCurUSD">USD</button>
+          <button class="seg-btn" type="button" id="btnCurEUR">EUR</button>
+        </div>
+
+        <div class="display-hint" id="displayHint">
+          目前以 TWD 顯示；不同幣別明細會先換算成所選幣別後再統計。
         </div>
 
         <div class="card" id="chartCard">
@@ -221,7 +243,6 @@
     const monthLabel = (dateObj) =>
       `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}`;
 
-    const moneyNT = (n) => "NT$" + Math.round(Number(n || 0)).toLocaleString("en-US");
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
     const qs = new URLSearchParams(location.search);
@@ -233,31 +254,90 @@
 
     const LS_BOOK = "wis_currentBookId";
     const LS_STATS_MODE = "wis_stats_mode";
+    const LS_STATS_DISPLAY_CURRENCY = "wis_stats_display_currency";
 
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
     let currentMode = localStorage.getItem(LS_STATS_MODE) || "expense";
+    let displayCurrency = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "TWD";
 
     $("monthLabel").textContent = monthLabel(currentMonth);
+
+    function formatMoney(currency, amount) {
+      const n = Number(amount || 0);
+
+      if (currency === "TWD") {
+        return "NT$" + Math.round(n).toLocaleString("en-US");
+      }
+
+      if (currency === "USD") {
+        return "US$" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      if (currency === "EUR") {
+        return "€" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      return `${currency} ${n.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })}`;
+    }
 
     function updateSegUI() {
       $("btnExpense").classList.toggle("active", currentMode === "expense");
       $("btnIncome").classList.toggle("active", currentMode === "income");
     }
 
-    $("btnExpense").addEventListener("click", () => {
+    function updateCurrencyUI() {
+      $("btnCurTWD").classList.toggle("active", displayCurrency === "TWD");
+      $("btnCurUSD").classList.toggle("active", displayCurrency === "USD");
+      $("btnCurEUR").classList.toggle("active", displayCurrency === "EUR");
+
+      $("displayHint").textContent =
+        `目前以 ${displayCurrency} 顯示；不同幣別明細會先換算成所選幣別後再統計。`;
+    }
+
+    $("btnExpense").addEventListener("click", async () => {
       currentMode = "expense";
       localStorage.setItem(LS_STATS_MODE, currentMode);
       updateSegUI();
-      window.__renderCurrentStatsMode();
+      await window.__renderCurrentStatsMode();
     });
 
-    $("btnIncome").addEventListener("click", () => {
+    $("btnIncome").addEventListener("click", async () => {
       currentMode = "income";
       localStorage.setItem(LS_STATS_MODE, currentMode);
       updateSegUI();
-      window.__renderCurrentStatsMode();
+      await window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurTWD").addEventListener("click", async () => {
+      displayCurrency = "TWD";
+      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+      await window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurUSD").addEventListener("click", async () => {
+      displayCurrency = "USD";
+      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+      await window.__renderCurrentStatsMode();
+    });
+
+    $("btnCurEUR").addEventListener("click", async () => {
+      displayCurrency = "EUR";
+      localStorage.setItem(LS_STATS_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+      await window.__renderCurrentStatsMode();
     });
 
     $("btnPrev").addEventListener("click", () => {
@@ -275,6 +355,7 @@
     });
 
     updateSegUI();
+    updateCurrencyUI();
 
     const getTxIndex = () => {
       try {
@@ -320,7 +401,7 @@
       "#F0C36E", "#B8A1E3", "#73C0AE", "#9FD3C7", "#B7C9F2",
     ];
 
-    function buildDonutSVG(total, slices, centerTitle) {
+    function buildDonutSVG(total, slices, centerTitle, centerValueText) {
       const size = 260;
       const cx = size / 2;
       const cy = size / 2;
@@ -384,7 +465,7 @@
       t2.setAttribute("y", cy + 26);
       t2.setAttribute("text-anchor", "middle");
       t2.setAttribute("class", "center-value");
-      t2.textContent = moneyNT(total);
+      t2.textContent = centerValueText;
       svg.appendChild(t2);
 
       return svg;
@@ -403,7 +484,57 @@
       return tmp;
     }
 
-    function renderCategoryChart(kind, txs) {
+    async function fetchRateToTWD(currency) {
+      const c = String(currency || "TWD").toUpperCase();
+      if (c === "TWD") return 1;
+
+      const res = await fetch(`/.netlify/functions/getFxRate?currency=${encodeURIComponent(c)}`);
+      const text = await res.text();
+
+      if (!res.ok) {
+        throw new Error(text || `匯率讀取失敗 (${res.status})`);
+      }
+
+      const data = JSON.parse(text);
+      const rate = Number(data?.rate);
+
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error(`無法取得 ${c} 匯率`);
+      }
+
+      return rate;
+    }
+
+    const rateCache = new Map();
+
+    async function getRateToTWD(currency) {
+      const c = String(currency || "TWD").toUpperCase();
+      if (rateCache.has(c)) return rateCache.get(c);
+
+      const rate = await fetchRateToTWD(c);
+      rateCache.set(c, rate);
+      return rate;
+    }
+
+    async function convertTxToDisplayAmount(tx, targetCurrency) {
+      const target = String(targetCurrency || "TWD").toUpperCase();
+      const txCurrency = String(tx.currency || "TWD").toUpperCase();
+      const rawAmount = Number(tx.amount || 0);
+      const amountTWD = Number(tx.amountTWD || rawAmount || 0);
+
+      if (target === "TWD") {
+        return amountTWD;
+      }
+
+      if (txCurrency === target && rawAmount > 0) {
+        return rawAmount;
+      }
+
+      const targetRateToTWD = await getRateToTWD(target);
+      return amountTWD / targetRateToTWD;
+    }
+
+    async function renderCategoryChart(kind, txs) {
       const sumsByCat = new Map();
       const sourceTxs = getSourceTxs(txs);
 
@@ -412,11 +543,11 @@
         if (!date.startsWith(currentKey)) continue;
         if (String(tx.type || "expense") !== kind) continue;
 
-        const amt = Number(tx.amountTWD || tx.amount || 0);
-        if (amt <= 0) continue;
+        const shownAmount = await convertTxToDisplayAmount(tx, displayCurrency);
+        if (!Number.isFinite(shownAmount) || shownAmount <= 0) continue;
 
         const cat = (tx.category || "Uncategorized").trim() || "Uncategorized";
-        sumsByCat.set(cat, (sumsByCat.get(cat) || 0) + amt);
+        sumsByCat.set(cat, (sumsByCat.get(cat) || 0) + shownAmount);
       }
 
       const items = Array.from(sumsByCat.entries())
@@ -463,7 +594,12 @@
       const donutArea = document.createElement("div");
       donutArea.className = "donut-area";
       donutArea.appendChild(
-        buildDonutSVG(total, slices, kind === "income" ? "Income" : "Expenses")
+        buildDonutSVG(
+          total,
+          slices,
+          kind === "income" ? "Income" : "Expenses",
+          formatMoney(displayCurrency, total)
+        )
       );
 
       const legend = document.createElement("div");
@@ -492,7 +628,7 @@
 
         const amt = document.createElement("div");
         amt.className = "amt";
-        amt.textContent = moneyNT(s.value);
+        amt.textContent = formatMoney(displayCurrency, s.value);
 
         row.append(left, pct, amt);
         legend.appendChild(row);
@@ -503,13 +639,13 @@
 
     let latestStatsTxs = null;
 
-    function renderCurrentStatsMode() {
-      renderCategoryChart(currentMode, latestStatsTxs);
+    async function renderCurrentStatsMode() {
+      await renderCategoryChart(currentMode, latestStatsTxs);
     }
 
-    window.__setStatsTxs = (txs) => {
+    window.__setStatsTxs = async (txs) => {
       latestStatsTxs = Array.isArray(txs) ? txs : null;
-      renderCurrentStatsMode();
+      await renderCurrentStatsMode();
     };
 
     window.__renderCurrentStatsMode = renderCurrentStatsMode;
@@ -594,9 +730,9 @@
 
       unsubscribeStats = onSnapshot(
         q,
-        (snap) => {
+        async (snap) => {
           const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          window.__setStatsTxs(txs);
+          await window.__setStatsTxs(txs);
         },
         (e) => {
           console.error("統計頁即時監聽失敗（fallback localStorage）:", e);
@@ -657,4 +793,4 @@
     });
   </script>
 </body>
-</html>
+</html>ㄋ
