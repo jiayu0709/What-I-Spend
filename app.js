@@ -311,29 +311,28 @@ function injectDrawer() {
 
   const ref = encodeURIComponent(pageName() || "month.html");
   drawer.innerHTML = `
-    <div class="drawer-inner">
-      <div class="drawer-title">功能</div>
+  <div class="drawer-inner">
+    <div class="drawer-title">功能</div>
 
-      <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
+    <button class="drawer-item danger" type="button" id="logoutBtn">登出</button>
 
-      <a class="drawer-link" href="books.html?ref=${ref}">
-        <div class="drawer-item">切換帳本</div>
-      </a>
+    <button class="drawer-item" type="button" data-href="books.html?ref=${ref}">
+      切換帳本
+    </button>
 
-      <a class="drawer-link" href="categories.html?ref=${ref}">
-        <div class="drawer-item">分類設定</div>
-      </a>
+    <button class="drawer-item" type="button" data-href="categories.html?ref=${ref}">
+      分類設定
+    </button>
 
-       <a class="drawer-link" href="onboarding.html?ref=${ref}">
-        <div class="drawer-item">快速記帳設定</div>
-      </a>
+    <button class="drawer-item" type="button" data-href="onboarding.html?ref=${ref}">
+      快速記帳設定
+    </button>
 
-      <button class="drawer-item" type="button" data-href="currency-settings.html">
-        幣別設定
-      </button>
-      
-    </div>
-  `;
+    <button class="drawer-item" type="button" data-href="currency-settings.html">
+      幣別設定
+    </button>
+  </div>
+`;
 
   const leftSlot =
     document.querySelector(".nav .nav-left") ||
@@ -398,9 +397,17 @@ function injectDrawer() {
   });
 
   drawer.addEventListener("click", (e) => {
-    const a = e.target.closest("a");
-    if (a) closeDrawer();
-  });
+  const btn = e.target.closest("[data-href]");
+  if (btn) {
+    const href = btn.dataset.href;
+    closeDrawer();
+    if (href) location.href = href;
+    return;
+  }
+
+  const a = e.target.closest("a");
+  if (a) closeDrawer();
+});
 }
 
 /* =========================
