@@ -378,6 +378,32 @@
       return "NT$" + Math.round(v).toLocaleString("en-US");
     };
 
+    async function fetchDefaultFxRate(currency) {
+      const c = String(currency || "TWD").toUpperCase();
+
+      if (c === "TWD") return 1;
+
+      console.log("fetching fx rate for:", c);
+
+      const res = await fetch(`/.netlify/functions/getFxRate?currency=${encodeURIComponent(c)}`);
+      const text = await res.text();
+
+      console.log("fx raw response:", res.status, text);
+
+      if (!res.ok) {
+        throw new Error(text || `匯率讀取失敗 (${res.status})`);
+      }
+
+      const data = JSON.parse(text);
+      const rate = Number(data?.rate);
+
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error("匯率格式錯誤");
+      }
+
+      return rate;
+    }
+
     const btnExpense = $("btn-expense");
     const btnIncome  = $("btn-income");
     const categorySelect = $("category");
@@ -440,7 +466,7 @@
       categorySelect.value = safeList.includes(prev) ? prev : safeList[0];
     }
 
-    function updateCurrencyUI() {
+    async function updateCurrencyUI({ autoFetch = true } = {}) {
       const currency = currencySelect.value || "TWD";
       currencyPill.textContent = currency;
 
@@ -449,6 +475,24 @@
 
       if (isTWD) {
         fxRateInput.value = "1";
+        updateTWDPreview();
+        return;
+      }
+
+      if (autoFetch) {
+        try {
+          fxRateInput.placeholder = "讀取匯率中…";
+          const rate = await fetchDefaultFxRate(currency);
+          console.log("auto-filled rate:", rate);
+          fxRateInput.value = String(rate);
+        } catch (e) {
+          console.error("自動抓匯率失敗:", e);
+          if (!fxRateInput.value) {
+            fxRateInput.value = "";
+          }
+        } finally {
+          fxRateInput.placeholder = "輸入匯率";
+        }
       }
 
       updateTWDPreview();
