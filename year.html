@@ -80,14 +80,6 @@
       box-shadow:0 2px 8px rgba(0,0,0,0.08);
     }
 
-    .display-hint{
-      margin:-4px 0 10px;
-      font-size:12px;
-      color:var(--secondary);
-      font-weight:800;
-      line-height:1.45;
-    }
-
     .donut-wrap{
       display:grid;
       grid-template-columns:1fr;
@@ -200,10 +192,6 @@
         <div class="seg" aria-label="顯示幣別切換">
           <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
           <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
-        </div>
-
-        <div class="display-hint" id="displayHint">
-          目前以 TWD 顯示；不同幣別明細會先換算成所選幣別後再統計。
         </div>
 
         <div class="card" id="chartCard">
@@ -322,13 +310,6 @@
         btnForeign.classList.add("hidden");
         btnForeign.classList.remove("active");
       }
-
-      if (displayCurrency === "TWD") {
-        $("displayHint").textContent = "目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再統計。";
-      } else {
-        $("displayHint").textContent = `目前以 ${displayCurrency} 顯示；TWD 與其他幣別明細會先換算成 ${displayCurrency} 後再統計。`;
-      }
-    }
 
     function applyDisplayCurrency(next) {
       displayCurrency = normalizeDisplayCurrency(next);
