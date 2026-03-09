@@ -309,7 +309,7 @@
                   </div>
 
                   <div class="hint">
-                    非台幣時，請輸入當下匯率。統計頁可直接用台幣換算值做統計。
+                    預設帶入臺灣銀行即期賣出匯率；使用者也可自行修改匯率。
                   </div>
                 </div>
               </div>
@@ -492,12 +492,14 @@
 
     dateInput.value = todayYMD();
     setType("expense");
-    updateCurrencyUI();
+    await updateCurrencyUI({ autoFetch: true });
 
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click", () => setType("income"));
 
-    currencySelect.addEventListener("change", updateCurrencyUI);
+    currencySelect.addEventListener("change", async () => {
+      await updateCurrencyUI({ autoFetch: true });
+    });
     amountInput.addEventListener("input", updateTWDPreview);
     fxRateInput.addEventListener("input", updateTWDPreview);
 
@@ -520,7 +522,7 @@
     }
     if (qsFxRate) fxRateInput.value = qsFxRate;
 
-    updateCurrencyUI();
+    await updateCurrencyUI({ autoFetch: true });
 
     await window.firebaseReady;
 
