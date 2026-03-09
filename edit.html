@@ -5,6 +5,7 @@
   ✅ 全站共用（nav/tabbar/drawer/modal/page transition/input colors...）交給 theme.css + app.js
   ✅ 本頁只保留「編輯頁專屬」：表單版面、btnbar、欄位統一高度/置中
   ✅ 分類清單仍用你原本的 CATEGORIES（不改行為）
+  ✅ 刪除完成後自動返回 ref
 -->
 <html lang="zh-Hant">
 <head>
@@ -15,7 +16,6 @@
   <title>編輯明細</title>
 
   <style>
-    /* ✅ edit.html 本頁專屬（其餘交給 theme.css） */
     *{box-sizing:border-box}
 
     body{
@@ -31,14 +31,12 @@
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
 
-    /* ✅ 統一白框高度 + iOS 溢出處理（維持你現在效果） */
     .input,
     input,
     select{
       width:100%;
       max-width:100%;
       box-sizing:border-box;
-
       height:52px;
       padding:0 12px;
       border-radius:10px;
@@ -56,19 +54,17 @@
       -webkit-appearance:none;
     }
 
-    /* select 用 normal 避免 iOS 裁字 */
     select{
       line-height:normal;
       padding-top:0;
       padding-bottom:0;
       text-align:center;
-      text-align-last:center; /* iOS/Safari：選到的那行置中 */
+      text-align-last:center;
       padding-left:12px;
       padding-right:12px;
     }
     select option{ text-align:center; }
 
-    /* ✅ 你要的：內容置中 + 套用主題色 */
     .input,
     input,
     select{
@@ -98,7 +94,6 @@
 
     .btnbar{margin-top:14px;display:grid;gap:10px}
 
-    /* ✅ 按鈕（維持你原本視覺/互動） */
     .btn{
       width:100%;
       padding:14px 16px;
@@ -119,7 +114,6 @@
     }
     .btn:active{opacity:.7;transform:scale(.98)}
 
-    /* link/button tap feedback（避免重複寫太多，全站也有，但這裡保留不改行為） */
     a, button{ -webkit-tap-highlight-color: transparent; }
     .btn, .back{
       transition: background-color .15s ease, opacity .15s ease, transform .1s ease;
@@ -178,10 +172,8 @@
     </main>
   </div>
 
-  <!-- ✅ 全站共用：drawer / badge / modal / button feedback / auth helpers -->
   <script type="module" src="app.js"></script>
 
-  <!-- ✅ Cloud ops：提供給非-module script 呼叫（行為不變） -->
   <script type="module">
     import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
@@ -212,8 +204,8 @@
   <script>
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
+    const ref = qs.get("ref") || "month.html";
 
-    // ✅ 分類清單（保留你原本行為：固定清單 + 若原值不在清單就插入保留）
     const CATEGORIES = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
 
     const els = {
@@ -224,7 +216,14 @@
       amount: document.getElementById("amount"),
       saveBtn: document.getElementById("saveBtn"),
       deleteBtn: document.getElementById("deleteBtn"),
+      backLink: document.getElementById("backLink"),
     };
+
+    if (els.backLink) {
+      els.backLink.addEventListener("click", () => {
+        location.href = ref;
+      });
+    }
 
     function renderCategoryOptions(currentValue){
       const sel = els.category;
@@ -240,7 +239,6 @@
 
       const cur = (currentValue || "").trim();
 
-      // 若原本分類不在清單裡：加一個 option 保留原值
       if (cur && !CATEGORIES.includes(cur)) {
         const opt = document.createElement("option");
         opt.value = cur;
@@ -260,7 +258,6 @@
       }
 
       if (!data) {
-        // 沒存過就用 query 當初始值
         data = {
           id,
           date: qs.get("date") || "",
@@ -293,18 +290,17 @@
 
       const amt = Number(String(data.amount).replace(/,/g, ""));
       if (!isFinite(amt) || amt <= 0) {
-        window.ui.alert("請輸入正確金額（> 0）");
+        await window.ui.alert("請輸入正確金額（> 0）");
         return;
       }
 
-      // 先存本機（保留原本行為）
       localStorage.setItem("tx:" + id, JSON.stringify(data));
 
       try {
         await window.saveToCloud(id, data);
       } catch (e) {
         console.error("saveToCloud failed:", e);
-        window.ui.alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
+        await window.ui.alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
         return;
       }
 
@@ -312,7 +308,6 @@
     }
 
     async function removeTx(){
-      // 先刪本機（保留原本行為）
       localStorage.removeItem("tx:" + id);
       localStorage.setItem("tx:deleted:" + id, "1");
 
@@ -320,10 +315,11 @@
         await window.deleteFromCloud(id);
       } catch (e) {
         console.error("deleteFromCloud failed:", e);
-        window.ui.alert("刪除失敗（雲端）：" + (e.message || e));
+        await window.ui.alert("刪除失敗（雲端）：" + (e.message || e));
         return;
       }
 
+      await window.ui.alert("已刪除");
       location.href = ref;
     }
 
@@ -346,13 +342,17 @@
 
     if (els.deleteBtn) {
       els.deleteBtn.addEventListener("click", async () => {
-        const ok = await window.ui.confirm("確定要刪除這筆明細嗎？", { danger: true });
+        const ok = await window.ui.confirm("確定要刪除這筆明細嗎？", {
+          title: "刪除明細",
+          danger: true,
+          okText: "刪除",
+          cancelText: "取消",
+        });
         if (!ok) return;
         await removeTx();
       });
     }
 
-    // ✅ 保留你原本的 a 轉場（不影響功能）
     document.querySelectorAll("a").forEach(link => {
       link.addEventListener("click", (e) => {
         const href = link.getAttribute("href");
