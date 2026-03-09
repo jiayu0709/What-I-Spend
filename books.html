@@ -15,24 +15,6 @@
     .app{ min-height:100vh; padding-bottom:var(--tab-height); }
     .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding,16px) 28px; }
 
-    .back{
-      border:0;
-      background:transparent;
-      padding:0;
-      margin:0;
-      color: var(--accent-text);
-      text-decoration:none;
-      font-family: inherit;
-      font-size: 16px;
-      font-weight: 900;
-      line-height: 1;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-appearance:none;
-      appearance:none;
-    }
-
     .section{ margin-top:14px; }
     .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
 
@@ -137,7 +119,7 @@
       <!-- ✅ header：同 theme.css 的 .nav / .nav-left / .nav-title / .nav-right -->
       <div class="nav">
         <div class="nav-left">
-          <button class="back" id="backLink" type="button">‹ 返回</button>
+          <button class="bac-btn" id="backLink" type="button">‹ 返回</button>
         </div>
         <div class="nav-title">帳本</div>
         <div class="nav-right">
@@ -195,14 +177,6 @@
     const errEl = $("err");
     const btnNew = $("btnNew");
     const bookBadge = $("bookBadge");
-
-    const qs = new URLSearchParams(location.search);
-    const ref = qs.get("ref");
-    const backTarget = ref || "month.html";
-
-    $("backLink").addEventListener("click", () => {
-      location.href = backTarget;
-    });
 
     let showArchived = false;
 
