@@ -11,143 +11,188 @@
   <title>本月</title>
 
   <style>
-  .monthbar{
-    margin-top:8px;
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding:10px 12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-  }
+    .monthbar{
+      margin-top:8px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
 
-  .monthbar .m-btn{
-    border:0;
-    background: transparent;
-    padding:10px 12px;
-    border-radius:12px;
-    font-weight:900;
-    color: var(--accent-text);
-    cursor:pointer;
-    appearance:none;
-    -webkit-appearance:none;
-  }
+    .monthbar .m-btn{
+      border:0;
+      background: transparent;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:900;
+      color: var(--accent-text);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
 
-  .monthbar .m-title{
-    font-weight:900;
-    letter-spacing:-.2px;
-    color: var(--text);
-    white-space:nowrap;
-  }
+    .monthbar .m-title{
+      font-weight:900;
+      letter-spacing:-.2px;
+      color: var(--text);
+      white-space:nowrap;
+    }
 
-  .rows{
-    display:grid;
-    gap:10px;
-    font-size:18px;
-  }
+    .seg{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:12px;
+      padding:4px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-  .summary-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-  }
+    .seg-btn{
+      border:0;
+      background:transparent;
+      border-radius:10px;
+      padding:10px 0;
+      font-size:15px;
+      font-weight:800;
+      color:var(--secondary);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+      -webkit-user-select:none;
+      transition:all .15s ease;
+    }
 
-  .v.green{
-    color:var(--green);
-    font-weight:800;
-  }
+    .seg-btn.active{
+      background:var(--accent-text);
+      color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
 
-  .v.red{
-    color:var(--red);
-    font-weight:800;
-  }
+    .display-hint{
+      margin:8px 0 0;
+      font-size:12px;
+      color:var(--secondary);
+      font-weight:800;
+      line-height:1.45;
+    }
 
-  .day-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    font-size:18px;
-    font-weight:800;
-    color:var(--secondary);
-    margin:14px 0 8px;
-    padding-top:6px;
-    padding-bottom:2px;
-    gap:12px;
-  }
+    .hidden{
+      display:none !important;
+    }
 
-  .day-total{
-    font-weight:900;
-    color:var(--secondary);
-    white-space:nowrap;
-    font-size:14px;
-  }
+    .rows{
+      display:grid;
+      gap:10px;
+      font-size:18px;
+    }
 
-  .day-total .v{
-    font-weight:900;
-    font-size:14px;
-  }
+    .summary-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
 
-  .day-total .v.green{
-    color:var(--green);
-  }
+    .v.green{
+      color:var(--green);
+      font-weight:800;
+    }
 
-  .day-total .v.red{
-    color:var(--red);
-  }
+    .v.red{
+      color:var(--red);
+      font-weight:800;
+    }
 
-  .day-card{
-    background:var(--card-bg);
-    border-radius:var(--radius);
-    overflow:hidden;
-  }
+    .day-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:18px;
+      font-weight:800;
+      color:var(--secondary);
+      margin:14px 0 8px;
+      padding-top:6px;
+      padding-bottom:2px;
+      gap:12px;
+    }
 
-  .tx{
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:12px;
-    padding:14px 16px;
-    text-decoration:none;
-    color:var(--text);
-    position:relative;
-  }
+    .day-total{
+      font-weight:900;
+      color:var(--secondary);
+      white-space:nowrap;
+      font-size:14px;
+    }
 
-  .cat{
-    font-size:20px;
-    font-weight:700;
-    line-height:1.2;
-  }
+    .day-total .v{
+      font-weight:900;
+      font-size:14px;
+    }
 
-  .note{
-    margin-top:4px;
-    font-size:14px;
-    color:var(--secondary);
-  }
+    .day-total .v.green{
+      color:var(--green);
+    }
 
-  .right{
-    text-align:right;
-    display:grid;
-    gap:4px;
-    min-width:90px;
-  }
+    .day-total .v.red{
+      color:var(--red);
+    }
 
-  .amt{
-    font-size:20px;
-    font-weight:800;
-  }
+    .day-card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      overflow:hidden;
+    }
 
-  .time{
-    font-size:14px;
-    color:var(--secondary);
-  }
-</style>
+    .tx{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      padding:14px 16px;
+      text-decoration:none;
+      color:var(--text);
+      position:relative;
+    }
+
+    .cat{
+      font-size:20px;
+      font-weight:700;
+      line-height:1.2;
+    }
+
+    .note{
+      margin-top:4px;
+      font-size:14px;
+      color:var(--secondary);
+    }
+
+    .right{
+      text-align:right;
+      display:grid;
+      gap:4px;
+      min-width:110px;
+    }
+
+    .amt{
+      font-size:20px;
+      font-weight:800;
+    }
+
+    .time{
+      font-size:14px;
+      color:var(--secondary);
+    }
+  </style>
 </head>
 
 <body>
   <div class="app">
     <main class="page">
-      <!-- Header：抽屜 / 標題 / 帳本（樣式由 theme.css 統一） -->
       <div class="nav">
         <div class="nav-left"></div>
         <div class="nav-title">本月</div>
@@ -160,6 +205,15 @@
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
         <div class="m-title"><span id="monthLabel">Loading...</span></div>
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
+      </div>
+
+      <div class="seg" aria-label="顯示幣別切換">
+        <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
+        <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+      </div>
+
+      <div class="display-hint" id="displayHint">
+        目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再顯示。
       </div>
 
       <section class="section">
@@ -184,410 +238,547 @@
     </nav>
   </div>
 
-  <!-- ✅ 全站共用（drawer / badge / modal / tabbar） -->
   <script type="module" src="app.js"></script>
 
   <script type="module">
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import {
-    collection, query, where, orderBy, limit, getDocs, onSnapshot
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { db } from "./firebase-config.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      collection, query, where, orderBy, getDocs, onSnapshot, doc, getDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
 
-  await window.firebaseReady;
+    await window.firebaseReady;
 
-  // =========================
-  // Month state + URL helpers
-  // =========================
-  const LS_BOOK = "wis_currentBookId";
-  const qs = new URLSearchParams(location.search);
+    const LS_BOOK = "wis_currentBookId";
+    const LS_MONTH_DISPLAY_CURRENCY = "wis_month_display_currency";
 
-  const urlBook = qs.get("b");
-  if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
+    const qs = new URLSearchParams(location.search);
+    const urlBook = qs.get("b");
+    if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
-  const $ = (id) => document.getElementById(id);
-  const pad2 = (n) => String(n).padStart(2, "0");
+    const $ = (id) => document.getElementById(id);
+    const pad2 = (n) => String(n).padStart(2, "0");
 
-  const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+    const monthKeyFromDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 
-  const parseMonthKey = (key) => {
-    if (!key || !/^\d{4}-\d{2}$/.test(key)) return null;
-    const [y, m] = key.split("-").map((n) => parseInt(n, 10));
-    if (!y || !m || m < 1 || m > 12) return null;
-    return new Date(y, m - 1, 1);
-  };
+    const parseMonthKey = (key) => {
+      if (!key || !/^\d{4}-\d{2}$/.test(key)) return null;
+      const [y, m] = key.split("-").map((n) => parseInt(n, 10));
+      if (!y || !m || m < 1 || m > 12) return null;
+      return new Date(y, m - 1, 1);
+    };
 
-  const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth() + delta, 1);
-  const monthLabel = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+    const addMonths = (d, delta) => new Date(d.getFullYear(), d.getMonth() + delta, 1);
+    const monthLabel = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
 
-  let currentMonth =
-    parseMonthKey(qs.get("m")) ||
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let currentMonth =
+      parseMonthKey(qs.get("m")) ||
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-  const currentKey = monthKeyFromDate(currentMonth);
-  $("monthLabel").textContent = monthLabel(currentMonth);
+    const currentKey = monthKeyFromDate(currentMonth);
+    $("monthLabel").textContent = monthLabel(currentMonth);
 
-  const currentBookIdFromLS = () => localStorage.getItem(LS_BOOK) || "";
+    const currentBookIdFromLS = () => localStorage.getItem(LS_BOOK) || "";
 
-  const buildMonthUrl = (mKey) => {
-    const b = currentBookIdFromLS();
-    return `month.html?m=${mKey}` + (b ? `&b=${encodeURIComponent(b)}` : "");
-  };
+    const buildMonthUrl = (mKey) => {
+      const b = currentBookIdFromLS();
+      return `month.html?m=${mKey}` + (b ? `&b=${encodeURIComponent(b)}` : "");
+    };
 
-  $("btnPrev").addEventListener("click", () => {
-    location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, -1)));
-  });
-
-  $("btnNext").addEventListener("click", () => {
-    location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, 1)));
-  });
-
-  const currentRef = buildMonthUrl(currentKey);
-
-  // =========================
-  // Helpers
-  // =========================
-  const parseAmount = (v) => {
-    const n = Number(String(v ?? "").replace(/,/g, ""));
-    return isFinite(n) ? n : 0;
-  };
-
-  const formatTime12h = (hhmm) => {
-    if (!hhmm) return "";
-    const [hStr, mStr] = hhmm.split(":");
-    let h = parseInt(hStr, 10);
-    const m = parseInt(mStr, 10);
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12;
-    if (h === 0) h = 12;
-    return `${h}:${pad2(m)} ${ampm}`;
-  };
-
-  const ymdToDate = (ymd) => {
-    if (!ymd) return null;
-    const [y, m, d] = ymd.split("-").map((n) => parseInt(n, 10));
-    if (!y || !m || !d) return null;
-    return new Date(y, m - 1, d);
-  };
-
-  const formatDayHeader = (ymd) => {
-    const dt = ymdToDate(ymd);
-    if (!dt) return ymd || "";
-    const wd = dt.toLocaleDateString("en-US", { weekday: "short" });
-    return `${wd}, ${dt.getMonth() + 1}/${dt.getDate()}`;
-  };
-
-  const nextMonthKey = (ym) => {
-    const [y, m] = ym.split("-").map((n) => parseInt(n, 10));
-    const d = new Date(y, m - 1, 1);
-    const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    return monthKeyFromDate(next);
-  };
-
-  // =========================
-  // Current book badge
-  // =========================
-  async function renderCurrentBookBadge(uid) {
-    const bookBadge = $("bookBadge");
-    const bookId = currentBookIdFromLS();
-
-    if (!bookId) {
-      bookBadge.style.display = "none";
-      return;
-    }
-
-    try {
-      const booksRef = collection(db, "users", uid, "books");
-      const q1 = query(booksRef, orderBy("createdAt", "asc"));
-      const snap = await getDocs(q1);
-      const allBooks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const curBook = allBooks.find(b => b.id === bookId);
-      const name = (curBook?.name || "未命名帳本").trim();
-
-      bookBadge.textContent = name;
-      bookBadge.title = name;
-      bookBadge.style.display = "inline-flex";
-    } catch (e) {
-      console.error("讀取帳本 badge 失敗:", e);
-      bookBadge.style.display = "none";
-    }
-  }
-
-  // =========================
-  // Rendering
-  // =========================
-  function buildTxRow(tx) {
-    const rawAmt = parseAmount(tx.amount);
-    const isIncome = tx.type === "income";
-
-    const row = document.createElement("div");
-    row.className = "tx";
-    row.dataset.id = tx.id;
-    row.style.webkitTouchCallout = "none";
-    row.style.webkitUserSelect = "none";
-    row.style.userSelect = "none";
-
-    const params = new URLSearchParams();
-    params.set("id", tx.id);
-    params.set("ref", currentRef);
-    if (tx.date) params.set("date", tx.date);
-    if (tx.time) params.set("time", tx.time);
-    params.set("type", tx.type || "expense");
-    params.set("amount", String(rawAmt));
-    params.set("cat", tx.category || "");
-    params.set("note", tx.note || "");
-
-    row.addEventListener("click", () => {
-      location.href = "edit.html?" + params.toString();
+    $("btnPrev").addEventListener("click", () => {
+      location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, -1)));
     });
 
-    row.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
+    $("btnNext").addEventListener("click", () => {
+      location.href = buildMonthUrl(monthKeyFromDate(addMonths(currentMonth, 1)));
     });
 
-    const left = document.createElement("div");
-    const cat = document.createElement("div");
-    cat.className = "cat";
-    cat.textContent = tx.category || "";
-    left.appendChild(cat);
+    const currentRef = buildMonthUrl(currentKey);
 
-    const noteTxt = (tx.note || "").trim();
-    const note = document.createElement("div");
-    note.className = "note";
-    if (noteTxt) note.textContent = noteTxt;
-    else note.style.display = "none";
-    left.appendChild(note);
+    let foreignCurrency = "";
+    let availableCurrencies = ["TWD"];
+    let displayCurrency = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "TWD";
 
-    const right = document.createElement("div");
-    right.className = "right";
-
-    const amt = document.createElement("div");
-    amt.className = "amt";
-    amt.textContent = isIncome ? `+${rawAmt}` : `-${rawAmt}`;
-    amt.style.color = isIncome ? "var(--green)" : "var(--red)";
-    right.appendChild(amt);
-
-    const time = document.createElement("div");
-    time.className = "time";
-    time.textContent = formatTime12h(tx.time || "");
-    right.appendChild(time);
-
-    row.append(left, right);
-    return row;
-  }
-
-  function renderWithTxs(txs) {
-    const root = $("list-root");
-    root.innerHTML = "";
-
-    let income = 0;
-    let expense = 0;
-
-    for (const tx of txs) {
-      const amt = parseAmount(tx.amount);
-      if (tx.type === "income") income += amt;
-      else expense += amt;
+    function getAvailableCurrencies() {
+      const list = ["TWD"];
+      if (foreignCurrency && foreignCurrency !== "TWD") list.push(foreignCurrency);
+      return list;
     }
 
-    const balance = income - expense;
-
-    $("sum-income").textContent = String(income);
-    $("sum-expense").textContent = String(expense);
-
-    const balEl = $("sum-balance");
-    balEl.textContent = String(balance);
-    balEl.classList.remove("green", "red");
-    balEl.classList.add(balance >= 0 ? "green" : "red");
-
-    if (!txs.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty";
-      empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
-      root.appendChild(empty);
-      return;
+    function normalizeDisplayCurrency(next) {
+      const wanted = String(next || "TWD").toUpperCase();
+      return availableCurrencies.includes(wanted) ? wanted : "TWD";
     }
 
-    const groups = new Map();
-    for (const tx of txs) {
-      const key = tx.date || "unknown";
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(tx);
-    }
+    function formatMoney(currency, amount) {
+      const n = Number(amount || 0);
 
-    const dates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
-
-    for (const dateKey of dates) {
-      const section = document.createElement("section");
-      section.className = "section";
-
-      const list = groups.get(dateKey);
-
-      const header = document.createElement("div");
-      header.className = "day-header";
-
-      const leftTitle = document.createElement("div");
-      leftTitle.textContent = formatDayHeader(dateKey);
-
-      let dayIncome = 0;
-      let dayExpense = 0;
-      for (const tx of list) {
-        const amt = parseAmount(tx.amount);
-        if (tx.type === "income") dayIncome += amt;
-        else dayExpense += amt;
+      if (currency === "TWD") {
+        return "NT$" + Math.round(n).toLocaleString("en-US");
       }
-      const dayNet = dayIncome - dayExpense;
 
-      const rightTotal = document.createElement("div");
-      rightTotal.className = "day-total";
-      rightTotal.appendChild(document.createTextNode("總計 "));
-
-      const v = document.createElement("span");
-      v.className = "v " + (dayNet >= 0 ? "green" : "red");
-      v.textContent = String(dayNet);
-      rightTotal.appendChild(v);
-
-      header.append(leftTitle, rightTotal);
-      section.appendChild(header);
-
-      const card = document.createElement("div");
-      card.className = "day-card";
-
-      list.forEach((tx, idx) => {
-        card.appendChild(buildTxRow(tx));
-        if (idx !== list.length - 1) {
-          const hr = document.createElement("hr");
-          hr.className = "divider";
-          card.appendChild(hr);
-        }
-      });
-
-      section.appendChild(card);
-      root.appendChild(section);
-    }
-  }
-
-  // =========================
-  // Realtime watch
-  // =========================
-  let unsubscribeMonthTxs = null;
-  let currentWatchingKey = "";
-  let currentWatchingUid = "";
-
-  function stopWatchingMonthTxs() {
-    if (unsubscribeMonthTxs) {
-      unsubscribeMonthTxs();
-      unsubscribeMonthTxs = null;
-    }
-    currentWatchingKey = "";
-    currentWatchingUid = "";
-  }
-
-  function watchMonthTxs(uid) {
-    const root = $("list-root");
-    const bookId = currentBookIdFromLS();
-
-    if (!bookId) {
-      stopWatchingMonthTxs();
-      location.replace("books.html");
-      return;
-    }
-
-    const watchKey = `${uid}__${bookId}__${currentKey}`;
-
-    if (unsubscribeMonthTxs && currentWatchingKey === watchKey) {
-      return;
-    }
-
-    stopWatchingMonthTxs();
-
-    root.innerHTML = "<div class='empty'>讀取中...</div>";
-
-    const txRef = collection(db, "users", uid, "transactions");
-    const start = `${currentKey}-01`;
-    const end = `${nextMonthKey(currentKey)}-01`;
-
-    const q = query(
-      txRef,
-      where("bookId", "==", bookId),
-      where("date", ">=", start),
-      where("date", "<", end),
-      orderBy("date", "desc"),
-      orderBy("time", "desc")
-    );
-
-    currentWatchingKey = watchKey;
-    currentWatchingUid = uid;
-
-    unsubscribeMonthTxs = onSnapshot(
-      q,
-      (snap) => {
-        const txs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderWithTxs(txs);
-      },
-      (e) => {
-        console.error("即時監聽失敗:", e);
-        root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+      if (currency === "USD") {
+        return "US$" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
       }
-    );
-  }
 
-  // =========================
-  // Keep in sync when app returns to foreground
-  // =========================
-  function resumeWatchIfNeeded() {
-    const user = window.auth.currentUser;
-    if (!user) return;
-    watchMonthTxs(user.uid);
-  }
+      if (currency === "EUR") {
+        return "€" + n.toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+      }
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      resumeWatchIfNeeded();
+      return `${currency} ${n.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })}`;
     }
-  });
 
-  window.addEventListener("focus", () => {
-    resumeWatchIfNeeded();
-  });
+    function parseAmount(v) {
+      const n = Number(String(v ?? "").replace(/,/g, ""));
+      return isFinite(n) ? n : 0;
+    }
 
-  window.addEventListener("pageshow", () => {
-    resumeWatchIfNeeded();
-  });
+    function formatTime12h(hhmm) {
+      if (!hhmm) return "";
+      const [hStr, mStr] = hhmm.split(":");
+      let h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10);
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12;
+      if (h === 0) h = 12;
+      return `${h}:${pad2(m)} ${ampm}`;
+    }
 
-  window.addEventListener("beforeunload", () => {
-    stopWatchingMonthTxs();
-  });
+    function ymdToDate(ymd) {
+      if (!ymd) return null;
+      const [y, m, d] = ymd.split("-").map((n) => parseInt(n, 10));
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
 
-  // =========================
-  // Auth gate
-  // =========================
-  let isInitialCheck = true;
+    function formatDayHeader(ymd) {
+      const dt = ymdToDate(ymd);
+      if (!dt) return ymd || "";
+      const wd = dt.toLocaleDateString("en-US", { weekday: "short" });
+      return `${wd}, ${dt.getMonth() + 1}/${dt.getDate()}`;
+    }
 
-  onAuthStateChanged(window.auth, async (user) => {
-    if (user) {
-      isInitialCheck = false;
+    function nextMonthKey(ym) {
+      const [y, m] = ym.split("-").map((n) => parseInt(n, 10));
+      const d = new Date(y, m - 1, 1);
+      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      return monthKeyFromDate(next);
+    }
+
+    function updateCurrencyUI() {
+      const btnTWD = $("btnCurTWD");
+      const btnForeign = $("btnCurForeign");
+
+      btnTWD.classList.toggle("active", displayCurrency === "TWD");
+
+      if (foreignCurrency && foreignCurrency !== "TWD") {
+        btnForeign.classList.remove("hidden");
+        btnForeign.textContent = foreignCurrency;
+        btnForeign.classList.toggle("active", displayCurrency === foreignCurrency);
+      } else {
+        btnForeign.classList.add("hidden");
+        btnForeign.classList.remove("active");
+      }
+
+      if (displayCurrency === "TWD") {
+        $("displayHint").textContent = "目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再顯示。";
+      } else {
+        $("displayHint").textContent = `目前以 ${displayCurrency} 顯示；TWD 與其他幣別明細會先換算成 ${displayCurrency} 後再顯示。`;
+      }
+    }
+
+    function applyDisplayCurrency(next) {
+      displayCurrency = normalizeDisplayCurrency(next);
+      localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY, displayCurrency);
+      updateCurrencyUI();
+    }
+
+    function applyBookCurrencySettings(settings = {}) {
+      foreignCurrency = String(settings.foreignCurrency || "").toUpperCase();
+      if (!["USD", "EUR"].includes(foreignCurrency)) {
+        foreignCurrency = "";
+      }
+
+      availableCurrencies = getAvailableCurrencies();
+
+      const saved = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "";
+      const preferred = String(settings.primaryDisplayCurrency || "TWD").toUpperCase();
+      const nextDisplay = normalizeDisplayCurrency(saved || preferred || "TWD");
+
+      applyDisplayCurrency(nextDisplay);
+    }
+
+    $("btnCurTWD").addEventListener("click", async () => {
+      applyDisplayCurrency("TWD");
+      await renderWithTxs(latestMonthTxs);
+    });
+
+    $("btnCurForeign").addEventListener("click", async () => {
+      if (!foreignCurrency) return;
+      applyDisplayCurrency(foreignCurrency);
+      await renderWithTxs(latestMonthTxs);
+    });
+
+    async function renderCurrentBookBadge(uid) {
+      const bookBadge = $("bookBadge");
+      const bookId = currentBookIdFromLS();
+
+      if (!bookId) {
+        bookBadge.style.display = "none";
+        applyBookCurrencySettings({});
+        return;
+      }
 
       try {
-        await window.ensureDefaultBookAndCategories(user.uid);
-        await renderCurrentBookBadge(user.uid);
-        watchMonthTxs(user.uid);
-      } catch (e) {
-        console.error("初始化失敗:", e);
-        $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
-      }
-    } else {
-      stopWatchingMonthTxs();
+        const booksRef = collection(db, "users", uid, "books");
+        const q1 = query(booksRef, orderBy("createdAt", "asc"));
+        const snap = await getDocs(q1);
+        const allBooks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const curBook = allBooks.find(b => b.id === bookId);
+        const name = (curBook?.name || "未命名帳本").trim();
 
-      if (isInitialCheck) {
-        setTimeout(() => {
-          if (!window.auth.currentUser) location.replace("index.html");
-        }, 1500);
-        isInitialCheck = false;
-      } else {
-        location.replace("index.html");
+        bookBadge.textContent = name;
+        bookBadge.title = name;
+        bookBadge.style.display = "inline-flex";
+
+        applyBookCurrencySettings(curBook?.settings || {});
+      } catch (e) {
+        console.error("讀取帳本 badge 失敗:", e);
+        bookBadge.style.display = "none";
+
+        try {
+          const ref = doc(db, "users", uid, "books", bookId);
+          const snap = await getDoc(ref);
+          const data = snap.data() || {};
+          applyBookCurrencySettings(data.settings || {});
+        } catch {
+          applyBookCurrencySettings({});
+        }
       }
     }
-  });
-</script>
+
+    async function fetchRateToTWD(currency) {
+      const c = String(currency || "TWD").toUpperCase();
+      if (c === "TWD") return 1;
+
+      const res = await fetch(`/.netlify/functions/getFxRate?currency=${encodeURIComponent(c)}`);
+      const text = await res.text();
+
+      if (!res.ok) {
+        throw new Error(text || `匯率讀取失敗 (${res.status})`);
+      }
+
+      const data = JSON.parse(text);
+      const rate = Number(data?.rate);
+
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error(`無法取得 ${c} 匯率`);
+      }
+
+      return rate;
+    }
+
+    const rateCache = new Map();
+
+    async function getRateToTWD(currency) {
+      const c = String(currency || "TWD").toUpperCase();
+      if (rateCache.has(c)) return rateCache.get(c);
+
+      const rate = await fetchRateToTWD(c);
+      rateCache.set(c, rate);
+      return rate;
+    }
+
+    async function convertTxToDisplayAmount(tx, targetCurrency) {
+      const target = String(targetCurrency || "TWD").toUpperCase();
+      const txCurrency = String(tx.currency || "TWD").toUpperCase();
+      const rawAmount = Number(tx.amount || 0);
+      const amountTWD = Number(tx.amountTWD || rawAmount || 0);
+
+      if (target === "TWD") {
+        return amountTWD;
+      }
+
+      if (txCurrency === target && rawAmount > 0) {
+        return rawAmount;
+      }
+
+      const targetRateToTWD = await getRateToTWD(target);
+      return amountTWD / targetRateToTWD;
+    }
+
+    async function buildTxRow(tx) {
+      const shownAmt = await convertTxToDisplayAmount(tx, displayCurrency);
+      const isIncome = tx.type === "income";
+
+      const row = document.createElement("div");
+      row.className = "tx";
+      row.dataset.id = tx.id;
+      row.style.webkitTouchCallout = "none";
+      row.style.webkitUserSelect = "none";
+      row.style.userSelect = "none";
+
+      const params = new URLSearchParams();
+      params.set("id", tx.id);
+      params.set("ref", currentRef);
+      if (tx.date) params.set("date", tx.date);
+      if (tx.time) params.set("time", tx.time);
+      params.set("type", tx.type || "expense");
+      params.set("amount", String(parseAmount(tx.amount)));
+      params.set("cat", tx.category || "");
+      params.set("note", tx.note || "");
+
+      row.addEventListener("click", () => {
+        location.href = "edit.html?" + params.toString();
+      });
+
+      row.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+      });
+
+      const left = document.createElement("div");
+
+      const cat = document.createElement("div");
+      cat.className = "cat";
+      cat.textContent = tx.category || "";
+      left.appendChild(cat);
+
+      const noteTxt = (tx.note || "").trim();
+      const note = document.createElement("div");
+      note.className = "note";
+      if (noteTxt) note.textContent = noteTxt;
+      else note.style.display = "none";
+      left.appendChild(note);
+
+      const right = document.createElement("div");
+      right.className = "right";
+
+      const amt = document.createElement("div");
+      amt.className = "amt";
+      amt.textContent = (isIncome ? "+" : "-") + formatMoney(displayCurrency, shownAmt);
+      amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+      right.appendChild(amt);
+
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = formatTime12h(tx.time || "");
+      right.appendChild(time);
+
+      row.append(left, right);
+      return row;
+    }
+
+    let latestMonthTxs = [];
+
+    async function renderWithTxs(txs) {
+      latestMonthTxs = Array.isArray(txs) ? txs : [];
+
+      const root = $("list-root");
+      root.innerHTML = "";
+
+      let income = 0;
+      let expense = 0;
+
+      for (const tx of latestMonthTxs) {
+        const amt = await convertTxToDisplayAmount(tx, displayCurrency);
+        if (tx.type === "income") income += amt;
+        else expense += amt;
+      }
+
+      const balance = income - expense;
+
+      $("sum-income").textContent = formatMoney(displayCurrency, income);
+      $("sum-expense").textContent = formatMoney(displayCurrency, expense);
+
+      const balEl = $("sum-balance");
+      balEl.textContent = formatMoney(displayCurrency, balance);
+      balEl.classList.remove("green", "red");
+      balEl.classList.add(balance >= 0 ? "green" : "red");
+
+      if (!latestMonthTxs.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
+        root.appendChild(empty);
+        return;
+      }
+
+      const groups = new Map();
+      for (const tx of latestMonthTxs) {
+        const key = tx.date || "unknown";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(tx);
+      }
+
+      const dates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+
+      for (const dateKey of dates) {
+        const section = document.createElement("section");
+        section.className = "section";
+
+        const list = groups.get(dateKey);
+
+        const header = document.createElement("div");
+        header.className = "day-header";
+
+        const leftTitle = document.createElement("div");
+        leftTitle.textContent = formatDayHeader(dateKey);
+
+        let dayIncome = 0;
+        let dayExpense = 0;
+        for (const tx of list) {
+          const amt = await convertTxToDisplayAmount(tx, displayCurrency);
+          if (tx.type === "income") dayIncome += amt;
+          else dayExpense += amt;
+        }
+        const dayNet = dayIncome - dayExpense;
+
+        const rightTotal = document.createElement("div");
+        rightTotal.className = "day-total";
+        rightTotal.appendChild(document.createTextNode("總計 "));
+
+        const v = document.createElement("span");
+        v.className = "v " + (dayNet >= 0 ? "green" : "red");
+        v.textContent = formatMoney(displayCurrency, dayNet);
+        rightTotal.appendChild(v);
+
+        header.append(leftTitle, rightTotal);
+        section.appendChild(header);
+
+        const card = document.createElement("div");
+        card.className = "day-card";
+
+        for (let idx = 0; idx < list.length; idx++) {
+          const txRow = await buildTxRow(list[idx]);
+          card.appendChild(txRow);
+
+          if (idx !== list.length - 1) {
+            const hr = document.createElement("hr");
+            hr.className = "divider";
+            card.appendChild(hr);
+          }
+        }
+
+        section.appendChild(card);
+        root.appendChild(section);
+      }
+    }
+
+    let unsubscribeMonthTxs = null;
+    let currentWatchingKey = "";
+
+    function stopWatchingMonthTxs() {
+      if (unsubscribeMonthTxs) {
+        unsubscribeMonthTxs();
+        unsubscribeMonthTxs = null;
+      }
+      currentWatchingKey = "";
+    }
+
+    function watchMonthTxs(uid) {
+      const root = $("list-root");
+      const bookId = currentBookIdFromLS();
+
+      if (!bookId) {
+        stopWatchingMonthTxs();
+        location.replace("books.html");
+        return;
+      }
+
+      const watchKey = `${uid}__${bookId}__${currentKey}`;
+      if (unsubscribeMonthTxs && currentWatchingKey === watchKey) return;
+
+      stopWatchingMonthTxs();
+      root.innerHTML = "<div class='empty'>讀取中...</div>";
+
+      const txRef = collection(db, "users", uid, "transactions");
+      const start = `${currentKey}-01`;
+      const end = `${nextMonthKey(currentKey)}-01`;
+
+      const q = query(
+        txRef,
+        where("bookId", "==", bookId),
+        where("date", ">=", start),
+        where("date", "<", end),
+        orderBy("date", "desc"),
+        orderBy("time", "desc")
+      );
+
+      currentWatchingKey = watchKey;
+
+      unsubscribeMonthTxs = onSnapshot(
+        q,
+        async (snap) => {
+          const txs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          await renderWithTxs(txs);
+        },
+        (e) => {
+          console.error("即時監聽失敗:", e);
+          root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+        }
+      );
+    }
+
+    function resumeWatchIfNeeded() {
+      const user = window.auth.currentUser;
+      if (!user) return;
+      watchMonthTxs(user.uid);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        resumeWatchIfNeeded();
+      }
+    });
+
+    window.addEventListener("focus", () => {
+      resumeWatchIfNeeded();
+    });
+
+    window.addEventListener("pageshow", () => {
+      resumeWatchIfNeeded();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      stopWatchingMonthTxs();
+    });
+
+    let isInitialCheck = true;
+
+    onAuthStateChanged(window.auth, async (user) => {
+      if (user) {
+        isInitialCheck = false;
+
+        try {
+          await window.ensureDefaultBookAndCategories(user.uid);
+          await renderCurrentBookBadge(user.uid);
+          watchMonthTxs(user.uid);
+        } catch (e) {
+          console.error("初始化失敗:", e);
+          $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+        }
+      } else {
+        stopWatchingMonthTxs();
+
+        if (isInitialCheck) {
+          setTimeout(() => {
+            if (!window.auth.currentUser) location.replace("index.html");
+          }, 1500);
+          isInitialCheck = false;
+        } else {
+          location.replace("index.html");
+        }
+      }
+    });
+  </script>
 </body>
 </html>
