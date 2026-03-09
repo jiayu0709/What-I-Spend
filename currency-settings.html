@@ -25,8 +25,8 @@
             <div class="label">預設幣別</div>
             <select class="input" id="defaultCurrency">
               <option value="TWD">TWD</option>
-              <option value="EUR">EUR</option>
               <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
             </select>
             <div class="hint">新增紀錄時，幣別欄位會預設此幣別。</div>
           </div>
@@ -35,10 +35,20 @@
             <div class="label">主要顯示幣別</div>
             <select class="input" id="primaryDisplayCurrency">
               <option value="TWD">TWD</option>
-              <option value="EUR">EUR</option>
               <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
             </select>
-            <div class="hint">本月、統計等頁面之後可優先以此幣別顯示。</div>
+            <div class="hint">本月、統計等頁面可優先以此幣別顯示。</div>
+          </div>
+
+          <div class="field">
+            <div class="label">帳本外幣</div>
+            <select class="input" id="foreignCurrency">
+              <option value="">不使用外幣</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+            <div class="hint">一個帳本只使用一種外幣。新增頁之後只會出現 TWD 與這個外幣。</div>
           </div>
         </div>
       </div>
@@ -59,10 +69,12 @@
     const DEFAULT_SETTINGS = {
       defaultCurrency: "TWD",
       primaryDisplayCurrency: "TWD",
+      foreignCurrency: "",
     };
 
     async function loadSettings() {
       await window.firebaseReady;
+
       const user = await window.waitForAuthReady();
       if (!user) {
         location.replace("index.html?next=" + encodeURIComponent(location.href));
@@ -82,6 +94,7 @@
 
       $("defaultCurrency").value = settings.defaultCurrency || "TWD";
       $("primaryDisplayCurrency").value = settings.primaryDisplayCurrency || "TWD";
+      $("foreignCurrency").value = settings.foreignCurrency || "";
     }
 
     async function saveSettings() {
@@ -94,12 +107,17 @@
         return;
       }
 
+      const defaultCurrency = $("defaultCurrency").value || "TWD";
+      const primaryDisplayCurrency = $("primaryDisplayCurrency").value || "TWD";
+      const foreignCurrency = $("foreignCurrency").value || "";
+
       const ref = doc(db, "users", user.uid, "books", bookId);
 
       await setDoc(ref, {
         settings: {
-          defaultCurrency: $("defaultCurrency").value || "TWD",
-          primaryDisplayCurrency: $("primaryDisplayCurrency").value || "TWD",
+          defaultCurrency,
+          primaryDisplayCurrency,
+          foreignCurrency,
         }
       }, { merge: true });
 
