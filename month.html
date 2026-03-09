@@ -314,27 +314,20 @@
       const n = Number(amount || 0);
 
       if (currency === "TWD") {
-        return "NT$" + Math.round(n).toLocaleString("en-US");
+        return Math.round(n).toLocaleString("en-US");
       }
 
-      if (currency === "USD") {
-        return "US$" + n.toLocaleString("en-US", {
+      if (currency === "USD" || currency === "EUR") {
+        return n.toLocaleString("en-US", {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         });
       }
 
-      if (currency === "EUR") {
-        return "€" + n.toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
-      }
-
-      return `${currency} ${n.toLocaleString("en-US", {
+      return n.toLocaleString("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
-      })}`;
+      });
     }
 
     function parseAmount(v) {
