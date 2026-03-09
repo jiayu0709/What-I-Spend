@@ -141,6 +141,10 @@
     const LS_BOOK = "wis_currentBookId";
     const $ = (id) => document.getElementById(id);
 
+    const qs = new URLSearchParams(location.search);
+    const ref = qs.get("ref");
+    const backTarget = ref || "month.html";
+
     $("backLink").addEventListener("click", () => {
       location.href = backTarget;
     });
