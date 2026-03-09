@@ -11,104 +11,137 @@
   <title>本月</title>
 
   <style>
-    /* ✅ month.html 本頁專屬：月份列＋列表排版（全站通用交給 theme.css） */
-    body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
-    }
+  .monthbar{
+    margin-top:8px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding:10px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
 
-    .app{ min-height:100vh; padding-bottom: var(--tab-height); }
-    .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding,16px) 28px; }
+  .monthbar .m-btn{
+    border:0;
+    background: transparent;
+    padding:10px 12px;
+    border-radius:12px;
+    font-weight:900;
+    color: var(--accent-text);
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+  }
 
-    .monthbar{
-      margin-top:8px;
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding:10px 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .monthbar .m-btn{
-      border:0;
-      background: transparent;
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:900;
-      color: var(--accent-text);
-      cursor:pointer;
-      appearance:none;
-      -webkit-appearance:none;
-    }
-    .monthbar .m-title{
-      font-weight:900;
-      letter-spacing:-.2px;
-      color: var(--text);
-      white-space:nowrap;
-    }
+  .monthbar .m-title{
+    font-weight:900;
+    letter-spacing:-.2px;
+    color: var(--text);
+    white-space:nowrap;
+  }
 
-    .section{ margin-top:18px; }
-    .card{ background:var(--card-bg); border-radius:var(--radius); padding:16px; }
-    .rows{ display:grid; gap:10px; font-size:18px; }
-    .row{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .v.green{ color:var(--green); font-weight:800; }
-    .v.red{ color:var(--red); font-weight:800; }
+  .rows{
+    display:grid;
+    gap:10px;
+    font-size:18px;
+  }
 
-    .day-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      font-size:18px;
-      font-weight:800;
-      color:var(--secondary);
-      margin:14px 0 8px;
-      padding-top:6px;
-      padding-bottom:2px;
-      gap:12px;
-    }
-    .day-total{
-      font-weight:900;
-      color:var(--secondary);
-      white-space:nowrap;
-      font-size:14px;
-    }
-    .day-total .v{ font-weight:900; font-size:14px; }
-    .day-total .v.green{ color:var(--green); }
-    .day-total .v.red{ color:var(--red); }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
 
-    .day-card{
-      background:var(--card-bg);
-      border-radius:var(--radius);
-      overflow:hidden;
-    }
+  .v.green{
+    color:var(--green);
+    font-weight:800;
+  }
 
-    .tx{
-      display:grid;
-      grid-template-columns:1fr auto;
-      gap:12px;
-      padding:14px 16px;
-      text-decoration:none;
-      color:var(--text);
-      position:relative;
-    }
-    .cat{ font-size:20px; font-weight:700; line-height:1.2; }
-    .note{ margin-top:4px; font-size:14px; color:var(--secondary); }
-    .right{ text-align:right; display:grid; gap:4px; min-width:90px; }
-    .amt{ font-size:20px; font-weight:800; }
-    .time{ font-size:14px; color:var(--secondary); }
-    .divider{ height:1px; background:var(--divider); border:0; margin:0; }
+  .v.red{
+    color:var(--red);
+    font-weight:800;
+  }
 
-    .empty{
-      margin-top:18px;
-      background:rgba(255,255,255,0.5);
-      border:1px solid rgba(0,0,0,0.06);
-      border-radius:var(--radius);
-      padding:14px 16px;
-      color:var(--secondary);
-      font-weight:800;
-    }
-  </style>
+  .day-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:18px;
+    font-weight:800;
+    color:var(--secondary);
+    margin:14px 0 8px;
+    padding-top:6px;
+    padding-bottom:2px;
+    gap:12px;
+  }
+
+  .day-total{
+    font-weight:900;
+    color:var(--secondary);
+    white-space:nowrap;
+    font-size:14px;
+  }
+
+  .day-total .v{
+    font-weight:900;
+    font-size:14px;
+  }
+
+  .day-total .v.green{
+    color:var(--green);
+  }
+
+  .day-total .v.red{
+    color:var(--red);
+  }
+
+  .day-card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+
+  .tx{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:12px;
+    padding:14px 16px;
+    text-decoration:none;
+    color:var(--text);
+    position:relative;
+  }
+
+  .cat{
+    font-size:20px;
+    font-weight:700;
+    line-height:1.2;
+  }
+
+  .note{
+    margin-top:4px;
+    font-size:14px;
+    color:var(--secondary);
+  }
+
+  .right{
+    text-align:right;
+    display:grid;
+    gap:4px;
+    min-width:90px;
+  }
+
+  .amt{
+    font-size:20px;
+    font-weight:800;
+  }
+
+  .time{
+    font-size:14px;
+    color:var(--secondary);
+  }
+</style>
 </head>
 
 <body>
