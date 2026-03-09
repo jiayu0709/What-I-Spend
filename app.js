@@ -285,7 +285,6 @@ const DRAWER_EXCLUDE = new Set([
 ]);
 
 function shouldShowDrawer() {
-  if (document.body?.dataset?.back === "true") return false;
   return !DRAWER_EXCLUDE.has(pageName());
 }
 
