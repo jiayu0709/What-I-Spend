@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>幣別設定</title>
+  <link rel="stylesheet" href="theme.css">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    }
+
+    .page{
+      max-width:520px;
+      margin:0 auto;
+      padding:18px var(--page-padding, 16px) 28px;
+    }
+
+    .section{ margin-top:18px; }
+
+    .card{
+      background:var(--card-bg, #f4efef);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    .form-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+    }
+
+    .label{
+      font-size:13px;
+      font-weight:800;
+      color:var(--secondary, #7d7272);
+      margin:0;
+    }
+
+    .input{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.10);
+      background:#fff;
+      font-size:16px;
+      color:var(--text, #4d3f3f);
+      outline:none;
+    }
+
+    .save{
+      margin-top:14px;
+      width:100%;
+      padding:14px 16px;
+      border:0;
+      border-radius:16px;
+      background: var(--btn-primary-bg, #7b5e5e);
+      color: var(--btn-primary-text, #fff);
+      font-size:18px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .hint{
+      font-size:12px;
+      color:var(--secondary, #7d7272);
+      line-height:1.5;
+      font-weight:700;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="nav">
+      <div class="nav-left">
+        <button type="button" onclick="history.back()">返回</button>
+      </div>
+      <div class="nav-title">幣別設定</div>
+      <div class="nav-right"></div>
+    </div>
+
+    <section class="section">
+      <div class="card">
+        <div class="form-grid">
+          <div class="field">
+            <div class="label">預設幣別</div>
+            <select class="input" id="defaultCurrency">
+              <option value="TWD">TWD</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+            <div class="hint">新增紀錄時，幣別欄位預設會選這個。</div>
+          </div>
+
+          <div class="field">
+            <div class="label">主要顯示幣別</div>
+            <select class="input" id="primaryDisplayCurrency">
+              <option value="TWD">TWD</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+            <div class="hint">本月、統計等頁面之後可優先用這個幣別顯示。</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="save" id="saveBtn" type="button">儲存</button>
+    </section>
+  </main>
+
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const LS_BOOK = "wis_currentBookId";
+    const $ = (id) => document.getElementById(id);
+
+    const DEFAULT_SETTINGS = {
+      defaultCurrency: "TWD",
+      primaryDisplayCurrency: "TWD",
+    };
+
+    async function loadSettings() {
+      await window.firebaseReady;
+      const user = await window.waitForAuthReady();
+      if (!user) {
+        location.replace("index.html?next=" + encodeURIComponent(location.href));
+        return;
+      }
+
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) {
+        location.replace("books.html");
+        return;
+      }
+
+      const ref = doc(db, "users", user.uid, "books", bookId);
+      const snap = await getDoc(ref);
+      const data = snap.data() || {};
+      const settings = data.settings || DEFAULT_SETTINGS;
+
+      $("defaultCurrency").value = settings.defaultCurrency || "TWD";
+      $("primaryDisplayCurrency").value = settings.primaryDisplayCurrency || "TWD";
+    }
+
+    async function saveSettings() {
+      const user = await window.waitForAuthReady();
+      if (!user) return;
+
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) {
+        location.replace("books.html");
+        return;
+      }
+
+      const ref = doc(db, "users", user.uid, "books", bookId);
+
+      await setDoc(ref, {
+        settings: {
+          defaultCurrency: $("defaultCurrency").value || "TWD",
+          primaryDisplayCurrency: $("primaryDisplayCurrency").value || "TWD",
+        }
+      }, { merge: true });
+
+      await window.ui?.alert?.("幣別設定已儲存");
+      history.back();
+    }
+
+    $("saveBtn").addEventListener("click", async () => {
+      try {
+        await saveSettings();
+      } catch (e) {
+        console.error(e);
+        alert("儲存失敗：" + (e.message || e));
+      }
+    });
+
+    await loadSettings();
+  </script>
+</body>
+</html>

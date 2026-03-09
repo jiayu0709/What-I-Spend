@@ -436,6 +436,26 @@
       BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
 
+    async function loadBookSettings(uid){
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) {
+        return {
+          defaultCurrency: "TWD",
+          primaryDisplayCurrency: "TWD",
+        };
+      }
+
+      const bookRef = doc(db, "users", uid, "books", bookId);
+      const snap = await getDoc(bookRef);
+      const data = snap.data() || {};
+      const settings = data.settings || {};
+
+      return {
+        defaultCurrency: settings.defaultCurrency || "TWD",
+        primaryDisplayCurrency: settings.primaryDisplayCurrency || "TWD",
+      };
+    }
+
     function categoriesFor(type){
       return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
     }
@@ -529,7 +549,6 @@
 
     dateInput.value = todayYMD();
     setType("expense");
-    await updateCurrencyUI({ autoFetch: true });
 
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click", () => setType("income"));
@@ -559,9 +578,6 @@
       currencySelect.value = qsCurrency;
     }
     if (qsFxRate) fxRateInput.value = qsFxRate;
-
-    await updateCurrencyUI({ autoFetch: true });
-
     await window.firebaseReady;
 
     const initialUser = await window.waitForAuthReady();
@@ -570,12 +586,21 @@
     if (uid) {
       await window.ensureDefaultBookAndCategories(uid);
       await loadBookCategories(uid);
+
+      const settings = await loadBookSettings(uid);
+
+      if (!qsCurrency && ["TWD","EUR","USD"].includes(settings.defaultCurrency)) {
+        currencySelect.value = settings.defaultCurrency;
+      }
+
       renderCategoryOptions(currentType);
 
       if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
         categorySelect.value = qsCategory;
       }
     }
+
+    await updateCurrencyUI({ autoFetch: true });
 
     saveBtn.disabled = false;
 

@@ -327,6 +327,11 @@ function injectDrawer() {
        <a class="drawer-link" href="onboarding.html?ref=${ref}">
         <div class="drawer-item">快速記帳設定</div>
       </a>
+
+      <button class="drawer-item" type="button" data-href="currency-settings.html">
+        幣別設定
+      </button>
+      
     </div>
   `;
 
