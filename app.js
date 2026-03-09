@@ -660,7 +660,7 @@ function boot() {
   bindTabbarButtons();
   bindTabbarEffects();
   injectThemedModal();
-  injectBackButton();
+  bindBackLink();
   injectDrawer();
   updateBookBadge();
 }
@@ -671,44 +671,16 @@ if (document.readyState === "loading") {
   boot();
 }
 
-function shouldShowBackButton() {
-  return document.body?.dataset?.back === "true";
-}
+function bindBackLink() {
+  const btn = document.getElementById("backLink");
+  if (!btn) return;
 
-function getBackTarget() {
   const qs = new URLSearchParams(location.search);
-  const qsRef = qs.get("ref");
-  const bodyRef = document.body?.dataset?.backHref;
-  return qsRef || bodyRef || "month.html";
-}
-
-function injectBackButton() {
-  if (!shouldShowBackButton()) return;
-
-  const navLeft =
-    document.querySelector(".nav .nav-left") ||
-    document.querySelector(".nav-left");
-
-  if (!navLeft) return;
-  if (navLeft.querySelector("[data-role='back-button']")) return;
-
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "back-btn";
-  btn.dataset.role = "back-button";
-  btn.textContent = "‹ 返回";
+  const ref = qs.get("ref");
+  const fallback = btn.dataset.href || "month.html";
+  const backTarget = ref || fallback;
 
   btn.addEventListener("click", () => {
-    const mode = document.body?.dataset?.backMode || "href";
-    const target = getBackTarget();
-
-    if (mode === "history") {
-      history.back();
-      return;
-    }
-
-    location.href = target;
+    location.href = backTarget;
   });
-
-  navLeft.appendChild(btn);
 }
