@@ -772,3 +772,64 @@ textarea.input:focus{
   opacity:.5;
   cursor:default;
 }
+
+.seg{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  background:rgba(255,255,255,.45);
+  border-radius:12px;
+  padding:4px;
+  margin-bottom:12px;
+}
+
+.seg button{
+  border:0;
+  background:transparent;
+  padding:10px 0;
+  border-radius:10px;
+  font-weight:900;
+  color:var(--secondary);
+}
+
+.seg button.active{
+  background:#fff;
+  color:var(--text);
+}
+
+.list{
+  margin-top:12px;
+  display:grid;
+  gap:10px;
+}
+
+.item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:14px;
+  padding:12px 12px;
+}
+
+.edit,
+.del{
+  border:0;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.edit{
+  background:rgba(0,0,0,0.06);
+  border:1px solid rgba(0,0,0,0.10);
+  color:var(--text);
+}
+
+.del{
+  background:rgba(217,74,74,0.12);
+  border:1px solid rgba(217,74,74,0.20);
+  color:#b33b3b;
+}
