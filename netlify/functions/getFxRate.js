@@ -11,15 +11,13 @@ export async function handler(event) {
         currency: "TWD",
         rate: 1,
         rateType: "self",
-        source: "local",
+        source: "CBC",
         fetchedAt: new Date().toISOString(),
       });
     }
 
-    const itemCode = currency === "USD" ? "BP01D01en" : "BP01D02en";
-    const url = `https://cpx.cbc.gov.tw/API/DataAPI/Get?FileName=${itemCode}`;
-
-    const res = await fetch(url, {
+    // 中央銀行：Spot Exchange Rates（月資料）
+    const res = await fetch("https://cpx.cbc.gov.tw/API/DataAPI/Get?FileName=EG52M01en", {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
 
@@ -27,8 +25,13 @@ export async function handler(event) {
       throw new Error(`CBC fetch failed: ${res.status}`);
     }
 
-    const data = await res.json();
-    const rate = extractLatestRateFromCBC(data);
+    const payload = await res.json();
+
+    // 先把資料印出來，看實際欄位名稱
+    console.log("CBC payload keys:", Object.keys(payload || {}));
+    console.log("CBC sample row:", payload?.DataSet?.[payload?.DataSet?.length - 1] || payload?.dataSet?.[payload?.dataSet?.length - 1] || null);
+
+    const rate = extractLatestMonthlyRate(payload, currency);
 
     if (!rate) {
       throw new Error(`Rate not found for ${currency}`);
@@ -37,7 +40,7 @@ export async function handler(event) {
     return json(200, {
       currency,
       rate,
-      rateType: "daily",
+      rateType: "monthly",
       source: "Central Bank of the Republic of China (Taiwan)",
       fetchedAt: new Date().toISOString(),
     });
@@ -47,29 +50,34 @@ export async function handler(event) {
   }
 }
 
-function extractLatestRateFromCBC(payload) {
-  const rows = payload?.dataSet || payload?.DataSet || payload?.dataset || [];
+function extractLatestMonthlyRate(payload, currency) {
+  const rows = payload?.DataSet || payload?.dataSet || [];
   if (!Array.isArray(rows) || rows.length === 0) return null;
 
   const last = rows[rows.length - 1];
 
+  // 先試常見欄位名
   const candidates = [
-    last?.value,
-    last?.Value,
-    last?.dataValue,
-    last?.DataValue,
-    last?.ClosingRate,
-    last?.closingRate,
+    currency,
+    currency.toLowerCase(),
+    `${currency}SpotRate`,
+    `${currency}_spot`,
+    `${currency}_rate`,
   ];
 
-  for (const v of candidates) {
-    const n = Number(String(v ?? "").replace(/,/g, ""));
-    if (Number.isFinite(n) && n > 0) return n;
+  for (const key of candidates) {
+    if (key in last) {
+      const n = Number(String(last[key] ?? "").replace(/,/g, ""));
+      if (Number.isFinite(n) && n > 0) return n;
+    }
   }
 
-  for (const val of Object.values(last || {})) {
-    const n = Number(String(val ?? "").replace(/,/g, ""));
-    if (Number.isFinite(n) && n > 0) return n;
+  // 最後退一步：掃描欄位名裡包含 EUR / USD 的欄位
+  for (const [key, val] of Object.entries(last || {})) {
+    if (String(key).toUpperCase().includes(currency)) {
+      const n = Number(String(val ?? "").replace(/,/g, ""));
+      if (Number.isFinite(n) && n > 0) return n;
+    }
   }
 
   return null;
