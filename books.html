@@ -168,6 +168,9 @@
     const LS_BOOK_NAME = "wis_currentBookName";
 
     const $ = (id) => document.getElementById(id);
+    const qs = new URLSearchParams(location.search);
+    const ref = qs.get("ref");
+    const backTarget = ref || "month.html";
 
     const listEl = $("list");
     const archivedListEl = $("archivedList");
@@ -177,6 +180,12 @@
     const errEl = $("err");
     const btnNew = $("btnNew");
     const bookBadge = $("bookBadge");
+    const backLink = $("backLink");
+    if (backLink) {
+      backLink.addEventListener("click", () => {
+        location.href = backTarget;
+      });
+    }
 
     let showArchived = false;
 
