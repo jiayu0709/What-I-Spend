@@ -116,3 +116,90 @@ function json(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
+
+export async function handler(event) {
+  const VERSION = "fx-v3-debug-2026-03-09";
+
+  try {
+    const currency = String(
+      event.queryStringParameters?.currency || "TWD"
+    ).toUpperCase();
+
+    if (!["TWD", "USD", "EUR"].includes(currency)) {
+      return json(400, { error: "Unsupported currency", version: VERSION });
+    }
+
+    if (currency === "TWD") {
+      return json(200, {
+        currency: "TWD",
+        rate: 1,
+        rateType: "self",
+        source: "local",
+        fetchedAt: new Date().toISOString(),
+        version: VERSION,
+      });
+    }
+
+    const res = await fetch("https://rate.bot.com.tw/xrt/fltxt/0/day", {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "text/plain,text/html;q=0.9,*/*;q=0.8",
+      },
+    });
+
+    const text = await res.text();
+
+    const normalized = String(text || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/\r/g, " ")
+      .replace(/\n/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const tokens = normalized.split(" ");
+    const idx = tokens.indexOf(currency);
+    const sellingIdx = tokens.indexOf("Selling", idx + 2);
+
+    console.log("VERSION =", VERSION);
+    console.log("status =", res.status);
+    console.log("content-type =", res.headers.get("content-type"));
+    console.log("raw head =", text.slice(0, 300));
+    console.log("currency =", currency);
+    console.log("idx =", idx);
+    console.log("token after currency =", tokens[idx + 1]);
+    console.log("sellingIdx =", sellingIdx);
+    console.log("token window =", tokens.slice(Math.max(0, idx - 3), idx + 25));
+
+    const rate = extractBotSpotSellRate(text, currency);
+
+    if (rate == null) {
+      return json(500, {
+        error: `Rate not found for ${currency}`,
+        version: VERSION,
+        debug: {
+          status: res.status,
+          contentType: res.headers.get("content-type"),
+          idx,
+          tokenAfterCurrency: tokens[idx + 1] || null,
+          sellingIdx,
+          rawHead: text.slice(0, 200),
+        },
+      });
+    }
+
+    return json(200, {
+      currency,
+      rate,
+      rateType: "spot_sell",
+      source: "Bank of Taiwan",
+      fetchedAt: new Date().toISOString(),
+      version: VERSION,
+    });
+  } catch (err) {
+    console.error("getFxRate error:", err);
+    return json(500, {
+      error: err.message || "Unknown error",
+      version: "fx-v3-debug-2026-03-09",
+    });
+  }
+}
