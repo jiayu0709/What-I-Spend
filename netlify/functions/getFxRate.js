@@ -37,6 +37,7 @@ export async function handler(event) {
     const html = await res.text();
 
     const rate = extractSpotSellRate(html, currency);
+
     if (!rate) {
       throw new Error(`Rate not found for ${currency}`);
     }
@@ -68,7 +69,7 @@ export async function handler(event) {
 function extractSpotSellRate(html, currency) {
   const upper = String(currency || "").toUpperCase();
 
-  // 先抓包含 (USD) / (EUR) 的整列
+  // 先抓包含幣別代碼的整列，例如 (USD) / (EUR)
   const rowRegex = new RegExp(
     `<tr[^>]*>[\\s\\S]*?\$begin:math:text$\$\{upper\}\\$end:math:text$[\\s\\S]*?<\\/tr>`,
     "i"
@@ -78,7 +79,7 @@ function extractSpotSellRate(html, currency) {
 
   const rowHtml = rowMatch[0];
 
-  // 取出所有欄位
+  // 抓該列所有 td
   const tdRegex = /<td[^>]*data-table="([^"]+)"[^>]*>([\s\S]*?)<\/td>/gi;
   const cells = [];
   let m;
@@ -89,16 +90,19 @@ function extractSpotSellRate(html, currency) {
     cells.push({ key, value });
   }
 
-  // 找「即期賣出」
-  const spotSell = cells.find(
-    (x) =>
-      x.key.includes("即期匯率") &&
-      x.key.includes("本行賣出")
+  // 優先找：即期匯率 / 本行賣出
+  let target = cells.find(
+    (x) => x.key.includes("即期匯率") && x.key.includes("本行賣出")
   );
 
-  if (!spotSell) return null;
+  // 有些頁面結構可能不是這個文字，退而求其次抓只包含「本行賣出」
+  if (!target) {
+    target = cells.find((x) => x.key.includes("本行賣出"));
+  }
 
-  const n = Number(spotSell.value);
+  if (!target) return null;
+
+  const n = Number(target.value);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -108,5 +112,6 @@ function stripTags(str) {
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&#160;/g, " ")
     .replace(/\s+/g, " ");
 }
