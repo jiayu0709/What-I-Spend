@@ -16,18 +16,19 @@ export async function handler(event) {
       });
     }
 
-    const res = await fetch("https://www.bot.com.tw/tw/personal-banking/foreign-exchange", {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-      },
+    const itemCode = currency === "USD" ? "BP01D01en" : "BP01D02en";
+    const url = `https://cpx.cbc.gov.tw/API/DataAPI/Get?FileName=${itemCode}`;
+
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
     });
 
     if (!res.ok) {
-      throw new Error(`BOT fetch failed: ${res.status}`);
+      throw new Error(`CBC fetch failed: ${res.status}`);
     }
 
-    const html = await res.text();
-    const rate = extractSpotSellRateFromBot(html, currency);
+    const data = await res.json();
+    const rate = extractLatestRateFromCBC(data);
 
     if (!rate) {
       throw new Error(`Rate not found for ${currency}`);
@@ -36,8 +37,8 @@ export async function handler(event) {
     return json(200, {
       currency,
       rate,
-      rateType: "spot_sell",
-      source: "Bank of Taiwan",
+      rateType: "daily",
+      source: "Central Bank of the Republic of China (Taiwan)",
       fetchedAt: new Date().toISOString(),
     });
   } catch (err) {
@@ -46,26 +47,38 @@ export async function handler(event) {
   }
 }
 
+function extractLatestRateFromCBC(payload) {
+  const rows = payload?.dataSet || payload?.DataSet || payload?.dataset || [];
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const last = rows[rows.length - 1];
+
+  const candidates = [
+    last?.value,
+    last?.Value,
+    last?.dataValue,
+    last?.DataValue,
+    last?.ClosingRate,
+    last?.closingRate,
+  ];
+
+  for (const v of candidates) {
+    const n = Number(String(v ?? "").replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+
+  for (const val of Object.values(last || {})) {
+    const n = Number(String(val ?? "").replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+
+  return null;
+}
+
 function json(statusCode, body) {
   return {
     statusCode,
     headers: { "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify(body),
   };
-}
-
-function extractSpotSellRateFromBot(html, currency) {
-  const upper = String(currency || "").toUpperCase();
-
-  // 先抓該幣別區塊，例如 USD / EUR
-  const blockRegex = new RegExp(
-    `${upper}[\\s\\S]{0,800}?即期賣出[\\s\\S]{0,120}?([0-9]+(?:\\.[0-9]+)?)`,
-    "i"
-  );
-  const match = html.match(blockRegex);
-
-  if (!match) return null;
-
-  const n = Number(match[1]);
-  return Number.isFinite(n) ? n : null;
 }
