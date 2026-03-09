@@ -498,6 +498,7 @@
     btnIncome.addEventListener("click", () => setType("income"));
 
     currencySelect.addEventListener("change", async () => {
+      console.log("currency changed:", currencySelect.value);
       await updateCurrencyUI({ autoFetch: true });
     });
     amountInput.addEventListener("input", updateTWDPreview);
