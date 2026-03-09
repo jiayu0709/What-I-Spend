@@ -1,5 +1,5 @@
 exports.handler = async function (event) {
-  const VERSION = "fx-v3-debug-2026-03-09";
+  const VERSION = "fx-v4-html-parser-2026-03-09";
 
   try {
     const currency = String(
@@ -21,40 +21,19 @@ exports.handler = async function (event) {
       });
     }
 
-    const res = await fetch("https://rate.bot.com.tw/xrt/fltxt/0/day", {
+    const res = await fetch("https://rate.bot.com.tw/xrt?Lang=zh-TW", {
       headers: {
         "User-Agent": "Mozilla/5.0",
-        Accept: "text/plain,text/html;q=0.9,*/*;q=0.8",
+        "Accept": "text/html,text/plain;q=0.9,*/*;q=0.8",
       },
     });
 
-    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`BOT fetch failed: ${res.status}`);
+    }
 
-    const normalized = String(text || "")
-      .replace(/^\uFEFF/, "")
-      .replace(/\r/g, " ")
-      .replace(/\n/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    const tokens = normalized.split(" ");
-    const idx = tokens.indexOf(currency);
-    const sellingIdx = tokens.indexOf("Selling", idx + 2);
-
-    console.log("VERSION =", VERSION);
-    console.log("status =", res.status);
-    console.log("content-type =", res.headers.get("content-type"));
-    console.log("raw head =", text.slice(0, 300));
-    console.log("currency =", currency);
-    console.log("idx =", idx);
-    console.log("token after currency =", tokens[idx + 1]);
-    console.log("sellingIdx =", sellingIdx);
-    console.log(
-      "token window =",
-      tokens.slice(Math.max(0, idx - 3), idx + 25)
-    );
-
-    const rate = extractBotSpotSellRate(text, currency);
+    const html = await res.text();
+    const rate = extractSpotSellFromBotHtml(html, currency);
 
     if (rate == null) {
       return json(500, {
@@ -63,10 +42,7 @@ exports.handler = async function (event) {
         debug: {
           status: res.status,
           contentType: res.headers.get("content-type"),
-          idx,
-          tokenAfterCurrency: tokens[idx + 1] || null,
-          sellingIdx,
-          rawHead: text.slice(0, 200),
+          head: html.slice(0, 300),
         },
       });
     }
@@ -83,56 +59,39 @@ exports.handler = async function (event) {
     console.error("getFxRate error:", err);
     return json(500, {
       error: err.message || "Unknown error",
-      version: "fx-v3-debug-2026-03-09",
+      version: VERSION,
     });
   }
 };
 
-function extractBotSpotSellRate(text, currency) {
+function extractSpotSellFromBotHtml(html, currency) {
   const upper = String(currency || "").toUpperCase();
 
-  const normalized = String(text || "")
-    .replace(/^\uFEFF/, "")
-    .replace(/\r/g, " ")
-    .replace(/\n/g, " ")
+  const text = String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#160;/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  const tokens = normalized.split(" ");
-  const idx = tokens.indexOf(upper);
+  // 目標格式類似：
+  // 美金 (USD) 美金 (USD) 31.49 32.16 31.84 31.94 查詢 查詢 ...
+  // 歐元 (EUR) 歐元 (EUR) 35.98 37.32 36.60 37.00 查詢 查詢 ...
+  const regex = new RegExp(
+    `\$begin:math:text$\$\{upper\}\\$end:math:text$[\\s\\S]{0,120}?([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)\\s+([0-9]+(?:\\.[0-9]+)?)`,
+    "i"
+  );
 
-  if (idx === -1) {
-    console.error("Currency token not found:", upper);
-    return null;
-  }
+  const match = text.match(regex);
+  if (!match) return null;
 
-  if (tokens[idx + 1] !== "Buying") {
-    console.error("Buying token not found after currency:", upper);
-    return null;
-  }
+  // 四個數字依序是：
+  // 現金買入、現金賣出、即期買入、即期賣出
+  const spotSell = Number(match[4]);
 
-  const sellingIdx = tokens.indexOf("Selling", idx + 2);
-  if (sellingIdx === -1) {
-    console.error("Selling token not found for currency:", upper);
-    return null;
-  }
-
-  const sellingNumbers = [];
-  for (let i = sellingIdx + 1; i < tokens.length; i++) {
-    const t = tokens[i];
-
-    if (/^[A-Z]{3}$/.test(t)) break;
-
-    if (/^\d+(\.\d+)?$/.test(t)) {
-      sellingNumbers.push(Number(t));
-    }
-  }
-
-  const spotSelling = sellingNumbers[1];
-
-  return Number.isFinite(spotSelling) && spotSelling > 0
-    ? spotSelling
-    : null;
+  return Number.isFinite(spotSell) && spotSell > 0 ? spotSell : null;
 }
 
 function json(statusCode, body) {
