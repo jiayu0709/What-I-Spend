@@ -15,11 +15,17 @@
     .app{ min-height:100vh; padding-bottom:var(--tab-height); }
     .page{ max-width:520px; margin:0 auto; padding:18px var(--page-padding,16px) 28px; }
 
-    /* books.html 的 header 左邊是「返回」不是抽屜：給它同高容器 */
     .back{
+      border:0;
+      background:transparent;
+      padding:0;
+      margin:0;
       color: var(--accent-text);
       text-decoration:none;
       font-weight:900;
+      font: inherit;
+      line-height: inherit;
+      cursor:pointer;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
     }
@@ -128,7 +134,7 @@
       <!-- ✅ header：同 theme.css 的 .nav / .nav-left / .nav-title / .nav-right -->
       <div class="nav">
         <div class="nav-left">
-          <a class="back" id="backLink" href="month.html">‹ 返回</a>
+          <button class="back" id="backLink" type="button">‹ 返回</button>
         </div>
         <div class="nav-title">帳本</div>
         <div class="nav-right">
@@ -189,7 +195,11 @@
 
     const qs = new URLSearchParams(location.search);
     const ref = qs.get("ref");
-    $("backLink").href = ref || "month.html";
+    const backTarget = ref || "month.html";
+
+    $("backLink").addEventListener("click", () => {
+      location.href = backTarget;
+    });
 
     let showArchived = false;
 
