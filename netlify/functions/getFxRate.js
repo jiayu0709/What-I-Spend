@@ -1,6 +1,8 @@
 export async function handler(event) {
   try {
-    const currency = String(event.queryStringParameters?.currency || "TWD").toUpperCase();
+    const currency = String(
+      event.queryStringParameters?.currency || "TWD"
+    ).toUpperCase();
 
     if (!["TWD", "USD", "EUR"].includes(currency)) {
       return json(400, { error: "Unsupported currency" });
@@ -16,10 +18,10 @@ export async function handler(event) {
       });
     }
 
-    // 臺灣銀行 plain file
     const res = await fetch("https://rate.bot.com.tw/xrt/fltxt/0/day", {
       headers: {
         "User-Agent": "Mozilla/5.0",
+        "Accept": "text/plain,text/html;q=0.9,*/*;q=0.8",
       },
     });
 
@@ -28,6 +30,10 @@ export async function handler(event) {
     }
 
     const text = await res.text();
+
+    // 先留一點 debug，部署後很好查
+    console.log("BOT raw head:", text.slice(0, 300));
+
     const rate = extractBotSpotSellRate(text, currency);
 
     if (!rate) {
@@ -50,29 +56,63 @@ export async function handler(event) {
 function extractBotSpotSellRate(text, currency) {
   const upper = String(currency || "").toUpperCase();
 
-  // plain file 格式類似：
-  // USD Buying 31.28000 31.60500 ... Selling 31.95000 31.75500 ...
-  // EUR Buying 35.71000 36.22500 ... Selling 37.05000 36.82500 ...
-  //
-  // 我們要的是 Spot Selling
-  // => Selling 後面的第 2 個數字
+  // 去掉 BOM、換行，壓成單一空白
+  const normalized = String(text || "")
+    .replace(/^\uFEFF/, "")
+    .replace(/\r/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  const regex = new RegExp(
-    `\\b${upper}\\b\\s+Buying\\s+([0-9.]+)\\s+([0-9.]+)(?:\\s+[0-9.]+){0,20}\\s+Selling\\s+([0-9.]+)\\s+([0-9.]+)`,
-    "i"
-  );
+  const tokens = normalized.split(" ");
+  const idx = tokens.indexOf(upper);
 
-  const match = text.match(regex);
-  if (!match) return null;
+  if (idx === -1) {
+    console.error("Currency token not found:", upper);
+    return null;
+  }
 
-  const spotSelling = Number(match[4]);
-  return Number.isFinite(spotSelling) && spotSelling > 0 ? spotSelling : null;
+  // 預期格式：
+  // USD Buying [9個數字] Selling [9個數字]
+  if (tokens[idx + 1] !== "Buying") {
+    console.error("Buying token not found after currency:", upper);
+    return null;
+  }
+
+  const sellingIdx = tokens.indexOf("Selling", idx + 2);
+  if (sellingIdx === -1) {
+    console.error("Selling token not found for currency:", upper);
+    return null;
+  }
+
+  const sellingNumbers = [];
+  for (let i = sellingIdx + 1; i < tokens.length; i++) {
+    const t = tokens[i];
+
+    // 遇到下一個幣別代碼就停
+    if (/^[A-Z]{3}$/.test(t)) break;
+
+    if (/^\d+(\.\d+)?$/.test(t)) {
+      sellingNumbers.push(Number(t));
+    }
+  }
+
+  // Selling 後第 1 個 = 現金賣出
+  // Selling 後第 2 個 = 即期賣出
+  const spotSelling = sellingNumbers[1];
+
+  return Number.isFinite(spotSelling) && spotSelling > 0
+    ? spotSelling
+    : null;
 }
 
 function json(statusCode, body) {
   return {
     statusCode,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
     body: JSON.stringify(body),
   };
 }
