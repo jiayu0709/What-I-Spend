@@ -241,6 +241,10 @@
       font-size:14px;
       color:var(--secondary);
     }
+
+    .soft-loading{
+      opacity:.6;
+    }
   </style>
 </head>
 
@@ -378,6 +382,8 @@
     let displayCurrency = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "TWD";
     let filterMode = localStorage.getItem(LS_MONTH_FILTER_MODE) || "all";
     let latestMonthTxs = [];
+    let hasRenderedOnce = false;
+    let loadingTimer = null;
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -497,12 +503,8 @@
     function applyDisplayCurrency(next, { persist = true, lock = false } = {}) {
       displayCurrency = normalizeDisplayCurrency(next);
 
-      if (persist) {
-        localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY, displayCurrency);
-      }
-      if (lock) {
-        localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY_LOCK, "1");
-      }
+      if (persist) localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY, displayCurrency);
+      if (lock) localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY_LOCK, "1");
 
       updateCurrencyUI();
     }
@@ -515,9 +517,7 @@
 
     function applyBookCurrencySettings(settings = {}) {
       foreignCurrency = String(settings.foreignCurrency || "").toUpperCase();
-      if (!["USD", "EUR"].includes(foreignCurrency)) {
-        foreignCurrency = "";
-      }
+      if (!["USD", "EUR"].includes(foreignCurrency)) foreignCurrency = "";
 
       availableCurrencies = getAvailableCurrencies();
 
@@ -530,6 +530,20 @@
         : normalizeDisplayCurrency(preferred || saved || "TWD");
 
       applyDisplayCurrency(nextDisplay, { persist: true, lock: false });
+    }
+
+    function startSoftLoading() {
+      clearTimeout(loadingTimer);
+      if (hasRenderedOnce) return;
+
+      loadingTimer = setTimeout(() => {
+        $("list-root").innerHTML = "<div class='empty soft-loading'>讀取中...</div>";
+      }, 250);
+    }
+
+    function stopSoftLoading() {
+      clearTimeout(loadingTimer);
+      loadingTimer = null;
     }
 
     $("btnFilterTrigger").addEventListener("click", (e) => {
@@ -697,9 +711,7 @@
         location.href = "edit.html?" + params.toString();
       });
 
-      row.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-      });
+      row.addEventListener("contextmenu", (e) => e.preventDefault());
 
       const left = document.createElement("div");
 
@@ -734,6 +746,7 @@
     }
 
     async function renderWithTxs(txs) {
+      stopSoftLoading();
       latestMonthTxs = Array.isArray(txs) ? txs : [];
 
       const root = $("list-root");
@@ -770,6 +783,7 @@
               ? "這個月份還沒有收入明細。"
               : "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
+        hasRenderedOnce = true;
         return;
       }
 
@@ -833,6 +847,8 @@
         section.appendChild(card);
         root.appendChild(section);
       }
+
+      hasRenderedOnce = true;
     }
 
     let unsubscribeMonthTxs = null;
@@ -847,7 +863,6 @@
     }
 
     function watchMonthTxs(uid) {
-      const root = $("list-root");
       const bookId = currentBookIdFromLS();
 
       if (!bookId) {
@@ -860,7 +875,7 @@
       if (unsubscribeMonthTxs && currentWatchingKey === watchKey) return;
 
       stopWatchingMonthTxs();
-      root.innerHTML = "<div class='empty'>讀取中...</div>";
+      startSoftLoading();
 
       const txRef = collection(db, "users", uid, "transactions");
       const start = `${currentKey}-01`;
@@ -884,8 +899,9 @@
           await renderWithTxs(txs);
         },
         (e) => {
+          stopSoftLoading();
           console.error("即時監聽失敗:", e);
-          root.innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
+          $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
       );
     }
@@ -897,9 +913,7 @@
     }
 
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        resumeWatchIfNeeded();
-      }
+      if (document.visibilityState === "visible") resumeWatchIfNeeded();
     });
 
     window.addEventListener("focus", () => {
@@ -912,6 +926,7 @@
 
     window.addEventListener("beforeunload", () => {
       stopWatchingMonthTxs();
+      stopSoftLoading();
     });
 
     updateFilterUI();
@@ -928,11 +943,13 @@
           await renderCurrentBookBadge(user.uid);
           watchMonthTxs(user.uid);
         } catch (e) {
+          stopSoftLoading();
           console.error("初始化失敗:", e);
           $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
       } else {
         stopWatchingMonthTxs();
+        stopSoftLoading();
 
         if (isInitialCheck) {
           setTimeout(() => {
