@@ -41,15 +41,23 @@
       white-space:nowrap;
     }
 
+    .toolbar-switches{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-top:12px;
+      align-items:stretch;
+    }
+
     .seg{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:8px;
-      margin-top:12px;
       padding:4px;
       border-radius:12px;
       background:rgba(255,255,255,0.45);
       border:1px solid rgba(0,0,0,0.06);
+      min-width:0;
     }
 
     .seg-btn{
@@ -67,6 +75,10 @@
       user-select:none;
       -webkit-user-select:none;
       transition:all .15s ease;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .seg-btn.active{
@@ -207,9 +219,16 @@
         <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
       </div>
 
-      <div class="seg" aria-label="顯示幣別切換">
-        <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
-        <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+      <div class="toolbar-switches">
+        <div class="seg" aria-label="收支切換">
+          <button class="seg-btn active" type="button" id="btnModeAll">全部</button>
+          <button class="seg-btn" type="button" id="btnModeExpense">支出</button>
+        </div>
+
+        <div class="seg" aria-label="顯示幣別切換">
+          <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
+          <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+        </div>
       </div>
 
       <div class="display-hint" id="displayHint">
@@ -251,6 +270,7 @@
 
     const LS_BOOK = "wis_currentBookId";
     const LS_MONTH_DISPLAY_CURRENCY = "wis_month_display_currency";
+    const LS_MONTH_FILTER_MODE = "wis_month_filter_mode";
 
     const qs = new URLSearchParams(location.search);
     const urlBook = qs.get("b");
@@ -298,6 +318,7 @@
     let foreignCurrency = "";
     let availableCurrencies = ["TWD"];
     let displayCurrency = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "TWD";
+    let filterMode = localStorage.getItem(LS_MONTH_FILTER_MODE) || "all";
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -308,6 +329,10 @@
     function normalizeDisplayCurrency(next) {
       const wanted = String(next || "TWD").toUpperCase();
       return availableCurrencies.includes(wanted) ? wanted : "TWD";
+    }
+
+    function normalizeFilterMode(next) {
+      return next === "expense" ? "expense" : "all";
     }
 
     function formatMoney(currency, amount) {
@@ -367,6 +392,11 @@
       return monthKeyFromDate(next);
     }
 
+    function updateFilterUI() {
+      $("btnModeAll").classList.toggle("active", filterMode === "all");
+      $("btnModeExpense").classList.toggle("active", filterMode === "expense");
+    }
+
     function updateCurrencyUI() {
       const btnTWD = $("btnCurTWD");
       const btnForeign = $("btnCurForeign");
@@ -395,6 +425,12 @@
       updateCurrencyUI();
     }
 
+    function applyFilterMode(next) {
+      filterMode = normalizeFilterMode(next);
+      localStorage.setItem(LS_MONTH_FILTER_MODE, filterMode);
+      updateFilterUI();
+    }
+
     function applyBookCurrencySettings(settings = {}) {
       foreignCurrency = String(settings.foreignCurrency || "").toUpperCase();
       if (!["USD", "EUR"].includes(foreignCurrency)) {
@@ -409,6 +445,16 @@
 
       applyDisplayCurrency(nextDisplay);
     }
+
+    $("btnModeAll").addEventListener("click", async () => {
+      applyFilterMode("all");
+      await renderWithTxs(latestMonthTxs);
+    });
+
+    $("btnModeExpense").addEventListener("click", async () => {
+      applyFilterMode("expense");
+      await renderWithTxs(latestMonthTxs);
+    });
 
     $("btnCurTWD").addEventListener("click", async () => {
       applyDisplayCurrency("TWD");
@@ -509,6 +555,13 @@
       return amountTWD / targetRateToTWD;
     }
 
+    function shouldShowTx(tx) {
+      if (filterMode === "expense") {
+        return String(tx.type || "expense") === "expense";
+      }
+      return true;
+    }
+
     async function buildTxRow(tx) {
       const shownAmt = await convertTxToDisplayAmount(tx, displayCurrency);
       const isIncome = tx.type === "income";
@@ -597,16 +650,20 @@
       balEl.classList.remove("green", "red");
       balEl.classList.add(balance >= 0 ? "green" : "red");
 
-      if (!latestMonthTxs.length) {
+      const filteredTxs = latestMonthTxs.filter(shouldShowTx);
+
+      if (!filteredTxs.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "這個月份還沒有明細，去新增一筆吧！";
+        empty.textContent = filterMode === "expense"
+          ? "這個月份還沒有支出明細。"
+          : "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
         return;
       }
 
       const groups = new Map();
-      for (const tx of latestMonthTxs) {
+      for (const tx of filteredTxs) {
         const key = tx.date || "unknown";
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(tx);
@@ -744,6 +801,9 @@
     window.addEventListener("beforeunload", () => {
       stopWatchingMonthTxs();
     });
+
+    updateFilterUI();
+    updateCurrencyUI();
 
     let isInitialCheck = true;
 
