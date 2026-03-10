@@ -269,7 +269,7 @@
           </button>
 
           <div class="dropdown-menu hidden" id="filterMenu">
-            <button class="dropdown-item active" type="button" id="btnModeAll">全部</button>
+            <button class="dropdown-item" type="button" id="btnModeAll">全部</button>
             <button class="dropdown-item" type="button" id="btnModeExpense">支出</button>
             <button class="dropdown-item" type="button" id="btnModeIncome">收入</button>
           </div>
@@ -282,7 +282,7 @@
           </button>
 
           <div class="dropdown-menu hidden" id="currencyMenu">
-            <button class="dropdown-item active" type="button" id="btnCurTWD">TWD</button>
+            <button class="dropdown-item" type="button" id="btnCurTWD">TWD</button>
             <button class="dropdown-item hidden" type="button" id="btnCurForeign">USD</button>
           </div>
         </div>
@@ -328,6 +328,7 @@
     const LS_BOOK = "wis_currentBookId";
     const LS_MONTH_DISPLAY_CURRENCY = "wis_month_display_currency";
     const LS_MONTH_FILTER_MODE = "wis_month_filter_mode";
+    const LS_MONTH_DISPLAY_CURRENCY_LOCK = "wis_month_display_currency_locked";
 
     const qs = new URLSearchParams(location.search);
     const urlBook = qs.get("b");
@@ -376,6 +377,7 @@
     let availableCurrencies = ["TWD"];
     let displayCurrency = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "TWD";
     let filterMode = localStorage.getItem(LS_MONTH_FILTER_MODE) || "all";
+    let latestMonthTxs = [];
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -404,13 +406,6 @@
 
       if (currency === "TWD") {
         return Math.round(n).toLocaleString("en-US");
-      }
-
-      if (currency === "USD" || currency === "EUR") {
-        return n.toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
       }
 
       return n.toLocaleString("en-US", {
@@ -463,9 +458,9 @@
 
     function toggleMenu(menuId) {
       const menu = $(menuId);
-      const willShow = menu.classList.contains("hidden");
+      const shouldOpen = menu.classList.contains("hidden");
       closeAllMenus();
-      menu.classList.toggle("hidden", !willShow);
+      if (shouldOpen) menu.classList.remove("hidden");
     }
 
     function updateFilterUI() {
@@ -499,9 +494,16 @@
       }
     }
 
-    function applyDisplayCurrency(next) {
+    function applyDisplayCurrency(next, { persist = true, lock = false } = {}) {
       displayCurrency = normalizeDisplayCurrency(next);
-      localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY, displayCurrency);
+
+      if (persist) {
+        localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY, displayCurrency);
+      }
+      if (lock) {
+        localStorage.setItem(LS_MONTH_DISPLAY_CURRENCY_LOCK, "1");
+      }
+
       updateCurrencyUI();
     }
 
@@ -520,9 +522,14 @@
       availableCurrencies = getAvailableCurrencies();
 
       const preferred = String(settings.primaryDisplayCurrency || "TWD").toUpperCase();
-      const nextDisplay = normalizeDisplayCurrency(preferred);
+      const saved = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "";
+      const isLocked = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY_LOCK) === "1";
 
-      applyDisplayCurrency(nextDisplay);
+      const nextDisplay = isLocked
+        ? normalizeDisplayCurrency(saved || preferred || "TWD")
+        : normalizeDisplayCurrency(preferred || saved || "TWD");
+
+      applyDisplayCurrency(nextDisplay, { persist: true, lock: false });
     }
 
     $("btnFilterTrigger").addEventListener("click", (e) => {
@@ -554,14 +561,14 @@
     });
 
     $("btnCurTWD").addEventListener("click", async () => {
-      applyDisplayCurrency("TWD");
+      applyDisplayCurrency("TWD", { persist: true, lock: true });
       closeAllMenus();
       await renderWithTxs(latestMonthTxs);
     });
 
     $("btnCurForeign").addEventListener("click", async () => {
       if (!foreignCurrency) return;
-      applyDisplayCurrency(foreignCurrency);
+      applyDisplayCurrency(foreignCurrency, { persist: true, lock: true });
       closeAllMenus();
       await renderWithTxs(latestMonthTxs);
     });
@@ -651,13 +658,8 @@
       const rawAmount = Number(tx.amount || 0);
       const amountTWD = Number(tx.amountTWD || rawAmount || 0);
 
-      if (target === "TWD") {
-        return amountTWD;
-      }
-
-      if (txCurrency === target && rawAmount > 0) {
-        return rawAmount;
-      }
+      if (target === "TWD") return amountTWD;
+      if (txCurrency === target && rawAmount > 0) return rawAmount;
 
       const targetRateToTWD = await getRateToTWD(target);
       return amountTWD / targetRateToTWD;
@@ -731,8 +733,6 @@
       return row;
     }
 
-    let latestMonthTxs = [];
-
     async function renderWithTxs(txs) {
       latestMonthTxs = Array.isArray(txs) ? txs : [];
 
@@ -801,6 +801,7 @@
           if (tx.type === "income") dayIncome += amt;
           else dayExpense += amt;
         }
+
         const dayNet = dayIncome - dayExpense;
 
         const rightTotal = document.createElement("div");
