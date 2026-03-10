@@ -13,8 +13,8 @@
   <style>
     .monthbar{
       margin-top:8px;
-      background: var(--card-bg);
-      border-radius: var(--radius);
+      background:var(--card-bg);
+      border-radius:var(--radius);
       padding:10px 12px;
       display:flex;
       align-items:center;
@@ -24,11 +24,11 @@
 
     .monthbar .m-btn{
       border:0;
-      background: transparent;
+      background:transparent;
       padding:10px 12px;
       border-radius:12px;
       font-weight:900;
-      color: var(--accent-text);
+      color:var(--accent-text);
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
@@ -37,54 +37,96 @@
     .monthbar .m-title{
       font-weight:900;
       letter-spacing:-.2px;
-      color: var(--text);
+      color:var(--text);
       white-space:nowrap;
     }
 
     .toolbar-switches{
+      position:relative;
       display:grid;
       grid-template-columns:repeat(2, minmax(0, 1fr));
       gap:10px;
       margin-top:12px;
-      align-items:stretch;
+      align-items:start;
+      z-index:20;
     }
 
-    .seg{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-      padding:4px;
-      border-radius:12px;
-      background:rgba(255,255,255,0.45);
-      border:1px solid rgba(0,0,0,0.06);
+    .dropdown{
+      position:relative;
       min-width:0;
     }
 
-    .seg-btn{
+    .dropdown-trigger{
+      width:100%;
       border:0;
-      background:transparent;
-      border-radius:10px;
-      padding:10px 0;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      padding:12px 14px;
       font-size:15px;
-      font-weight:800;
-      color:var(--secondary);
+      font-weight:900;
+      color:var(--text);
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-user-select:none;
-      transition:all .15s ease;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      min-width:0;
+      white-space:nowrap;
+    }
+
+    .dropdown-trigger .trigger-label{
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .dropdown-trigger .trigger-caret{
+      flex:0 0 auto;
+      font-size:12px;
+      opacity:.7;
+    }
+
+    .dropdown-menu{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      right:0;
+      display:grid;
+      gap:8px;
+      background:var(--card-bg);
+      border-radius:14px;
+      padding:10px;
+      box-shadow:0 12px 28px rgba(0,0,0,0.12);
+      border:1px solid rgba(0,0,0,0.06);
+      z-index:50;
+    }
+
+    .dropdown-item{
+      border:0;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      padding:12px 14px;
+      text-align:center;
+      font-size:15px;
+      font-weight:900;
+      color:var(--text);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
       min-width:0;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    .seg-btn.active{
+    .dropdown-item.active{
       background:var(--accent-text);
       color:#fff;
       box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      border-color:transparent;
     }
 
     .display-hint{
@@ -220,14 +262,29 @@
       </div>
 
       <div class="toolbar-switches">
-        <div class="seg" aria-label="收支切換">
-          <button class="seg-btn active" type="button" id="btnModeAll">全部</button>
-          <button class="seg-btn" type="button" id="btnModeExpense">支出</button>
+        <div class="dropdown" id="filterDropdown">
+          <button class="dropdown-trigger" type="button" id="btnFilterTrigger" aria-label="收支篩選">
+            <span class="trigger-label" id="filterTriggerLabel">全部</span>
+            <span class="trigger-caret">▾</span>
+          </button>
+
+          <div class="dropdown-menu hidden" id="filterMenu">
+            <button class="dropdown-item active" type="button" id="btnModeAll">全部</button>
+            <button class="dropdown-item" type="button" id="btnModeExpense">支出</button>
+            <button class="dropdown-item" type="button" id="btnModeIncome">收入</button>
+          </div>
         </div>
 
-        <div class="seg" aria-label="顯示幣別切換">
-          <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
-          <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+        <div class="dropdown" id="currencyDropdown">
+          <button class="dropdown-trigger" type="button" id="btnCurrencyTrigger" aria-label="顯示幣別">
+            <span class="trigger-label" id="currencyTriggerLabel">TWD</span>
+            <span class="trigger-caret">▾</span>
+          </button>
+
+          <div class="dropdown-menu hidden" id="currencyMenu">
+            <button class="dropdown-item active" type="button" id="btnCurTWD">TWD</button>
+            <button class="dropdown-item hidden" type="button" id="btnCurForeign">USD</button>
+          </div>
         </div>
       </div>
 
@@ -332,7 +389,14 @@
     }
 
     function normalizeFilterMode(next) {
-      return next === "expense" ? "expense" : "all";
+      const value = String(next || "all");
+      return ["all", "expense", "income"].includes(value) ? value : "all";
+    }
+
+    function getFilterLabel(mode) {
+      if (mode === "expense") return "支出";
+      if (mode === "income") return "收入";
+      return "全部";
     }
 
     function formatMoney(currency, amount) {
@@ -392,9 +456,23 @@
       return monthKeyFromDate(next);
     }
 
+    function closeAllMenus() {
+      $("filterMenu").classList.add("hidden");
+      $("currencyMenu").classList.add("hidden");
+    }
+
+    function toggleMenu(menuId) {
+      const menu = $(menuId);
+      const willShow = menu.classList.contains("hidden");
+      closeAllMenus();
+      menu.classList.toggle("hidden", !willShow);
+    }
+
     function updateFilterUI() {
       $("btnModeAll").classList.toggle("active", filterMode === "all");
       $("btnModeExpense").classList.toggle("active", filterMode === "expense");
+      $("btnModeIncome").classList.toggle("active", filterMode === "income");
+      $("filterTriggerLabel").textContent = getFilterLabel(filterMode);
     }
 
     function updateCurrencyUI() {
@@ -411,6 +489,8 @@
         btnForeign.classList.add("hidden");
         btnForeign.classList.remove("active");
       }
+
+      $("currencyTriggerLabel").textContent = displayCurrency;
 
       if (displayCurrency === "TWD") {
         $("displayHint").textContent = "目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再顯示。";
@@ -446,25 +526,54 @@
       applyDisplayCurrency(nextDisplay);
     }
 
+    $("btnFilterTrigger").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu("filterMenu");
+    });
+
+    $("btnCurrencyTrigger").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu("currencyMenu");
+    });
+
     $("btnModeAll").addEventListener("click", async () => {
       applyFilterMode("all");
+      closeAllMenus();
       await renderWithTxs(latestMonthTxs);
     });
 
     $("btnModeExpense").addEventListener("click", async () => {
       applyFilterMode("expense");
+      closeAllMenus();
+      await renderWithTxs(latestMonthTxs);
+    });
+
+    $("btnModeIncome").addEventListener("click", async () => {
+      applyFilterMode("income");
+      closeAllMenus();
       await renderWithTxs(latestMonthTxs);
     });
 
     $("btnCurTWD").addEventListener("click", async () => {
       applyDisplayCurrency("TWD");
+      closeAllMenus();
       await renderWithTxs(latestMonthTxs);
     });
 
     $("btnCurForeign").addEventListener("click", async () => {
       if (!foreignCurrency) return;
       applyDisplayCurrency(foreignCurrency);
+      closeAllMenus();
       await renderWithTxs(latestMonthTxs);
+    });
+
+    document.addEventListener("click", (e) => {
+      const filterDropdown = $("filterDropdown");
+      const currencyDropdown = $("currencyDropdown");
+
+      if (!filterDropdown.contains(e.target) && !currencyDropdown.contains(e.target)) {
+        closeAllMenus();
+      }
     });
 
     async function renderCurrentBookBadge(uid) {
@@ -556,9 +665,9 @@
     }
 
     function shouldShowTx(tx) {
-      if (filterMode === "expense") {
-        return String(tx.type || "expense") === "expense";
-      }
+      const type = String(tx.type || "expense");
+      if (filterMode === "expense") return type === "expense";
+      if (filterMode === "income") return type === "income";
       return true;
     }
 
@@ -655,9 +764,12 @@
       if (!filteredTxs.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = filterMode === "expense"
-          ? "這個月份還沒有支出明細。"
-          : "這個月份還沒有明細，去新增一筆吧！";
+        empty.textContent =
+          filterMode === "expense"
+            ? "這個月份還沒有支出明細。"
+            : filterMode === "income"
+              ? "這個月份還沒有收入明細。"
+              : "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
         return;
       }
