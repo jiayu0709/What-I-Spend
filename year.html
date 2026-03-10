@@ -34,11 +34,43 @@
       -webkit-appearance:none;
     }
 
-    .monthbar .m-title{
+    .m-title-btn{
+      border:0;
+      background:transparent;
+      padding:10px 14px;
+      border-radius:12px;
       font-weight:900;
       letter-spacing:-.2px;
       color: var(--text);
       white-space:nowrap;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      font-size:16px;
+    }
+
+    .range-menu{
+      margin-top:8px;
+      display:grid;
+      gap:8px;
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:10px;
+    }
+
+    .range-menu-btn{
+      border:0;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      padding:12px 14px;
+      text-align:center;
+      font-size:15px;
+      font-weight:900;
+      color:var(--text);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
     }
 
     .card.card--empty{
@@ -179,16 +211,20 @@
 
       <div class="monthbar" aria-label="期間切換">
         <button class="m-btn" type="button" id="btnPrev" aria-label="上一期">&lt;</button>
-        <div class="m-title"><span id="monthLabel">Loading...</span></div>
+
+        <button class="m-title-btn" type="button" id="btnRangePicker" aria-label="選擇統計模式">
+          <span id="monthLabel">Loading...</span>
+        </button>
+
         <button class="m-btn" type="button" id="btnNext" aria-label="下一期">&gt;</button>
       </div>
 
-      <section class="section">
-        <div class="seg" aria-label="統計期間切換">
-          <button class="seg-btn active" type="button" id="btnPeriodMonth">月統計</button>
-          <button class="seg-btn" type="button" id="btnPeriodYear">年統計</button>
-        </div>
+      <div class="range-menu hidden" id="rangeMenu">
+        <button class="range-menu-btn" type="button" id="btnModeMonth">以月份統計</button>
+        <button class="range-menu-btn" type="button" id="btnModeYear">以年度統計</button>
+      </div>
 
+      <section class="section">
         <div class="seg" aria-label="統計類型切換">
           <button class="seg-btn active" type="button" id="btnExpense">支出</button>
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
@@ -263,12 +299,6 @@
     let availableCurrencies = ["TWD"];
     let latestStatsTxs = null;
 
-    function getCurrentRangeKey() {
-      return currentPeriod === "year"
-        ? String(currentMonth.getFullYear())
-        : monthKeyFromDate(currentMonth);
-    }
-
     function updateRangeLabel() {
       $("monthLabel").textContent =
         currentPeriod === "year"
@@ -276,7 +306,11 @@
           : monthLabel(currentMonth);
     }
 
-    updateRangeLabel();
+    function getCurrentRangeKey() {
+      return currentPeriod === "year"
+        ? String(currentMonth.getFullYear())
+        : monthKeyFromDate(currentMonth);
+    }
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -296,30 +330,10 @@
         return Math.round(n).toLocaleString("en-US");
       }
 
-      if (currency === "USD") {
-        return n.toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
-      }
-
-      if (currency === "EUR") {
-        return n.toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
-      }
-
       return n.toLocaleString("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       });
-    }
-
-    function updatePeriodUI() {
-      $("btnPeriodMonth").classList.toggle("active", currentPeriod === "month");
-      $("btnPeriodYear").classList.toggle("active", currentPeriod === "year");
-      updateRangeLabel();
     }
 
     function updateSegUI() {
@@ -364,20 +378,43 @@
       applyDisplayCurrency(nextDisplay);
     }
 
+    function toggleRangeMenu(show) {
+      $("rangeMenu").classList.toggle("hidden", !show);
+    }
+
+    function updatePeriodUI() {
+      updateRangeLabel();
+    }
+
     window.__applyBookCurrencySettings = applyBookCurrencySettings;
 
-    $("btnPeriodMonth").addEventListener("click", async () => {
+    $("btnRangePicker").addEventListener("click", () => {
+      const isHidden = $("rangeMenu").classList.contains("hidden");
+      toggleRangeMenu(isHidden);
+    });
+
+    $("btnModeMonth").addEventListener("click", async () => {
       currentPeriod = "month";
       localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
       updatePeriodUI();
+      toggleRangeMenu(false);
       await window.__reloadStatsRange?.();
     });
 
-    $("btnPeriodYear").addEventListener("click", async () => {
+    $("btnModeYear").addEventListener("click", async () => {
       currentPeriod = "year";
       localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
       updatePeriodUI();
+      toggleRangeMenu(false);
       await window.__reloadStatsRange?.();
+    });
+
+    document.addEventListener("click", (e) => {
+      const picker = $("btnRangePicker");
+      const menu = $("rangeMenu");
+      if (!picker.contains(e.target) && !menu.contains(e.target)) {
+        toggleRangeMenu(false);
+      }
     });
 
     $("btnExpense").addEventListener("click", async () => {
@@ -411,7 +448,7 @@
           ? addYears(currentMonth, -1)
           : addMonths(currentMonth, -1);
 
-      updateRangeLabel();
+      updatePeriodUI();
       await window.__reloadStatsRange?.();
     });
 
@@ -421,7 +458,7 @@
           ? addYears(currentMonth, 1)
           : addMonths(currentMonth, 1);
 
-      updateRangeLabel();
+      updatePeriodUI();
       await window.__reloadStatsRange?.();
     });
 
@@ -896,10 +933,9 @@
 
       const bookId = localStorage.getItem("wis_currentBookId") || "";
       const currentPeriod = localStorage.getItem("wis_stats_period") || "month";
-
       const label = document.getElementById("monthLabel")?.textContent || "";
-      let currentMonth;
 
+      let currentMonth;
       if (currentPeriod === "year") {
         const y = parseInt(label, 10) || new Date().getFullYear();
         currentMonth = new Date(y, 0, 1);
