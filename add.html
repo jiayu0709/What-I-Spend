@@ -275,19 +275,21 @@
     const $ = (id) => document.getElementById(id);
     const pad2 = (n) => String(n).padStart(2, "0");
 
-    const btnExpense = $("btn-expense");
-    const btnIncome = $("btn-income");
-    const categorySelect = $("category");
-    const currencySelect = $("currency");
-    const currencyPill = $("currencyPill");
-    const fxWrap = $("fxWrap");
-    const fxRateInput = $("fxRate");
-    const fxHint = $("fxHint");
-    const amountTWDPreview = $("amountTWDPreview");
-    const dateInput = $("date");
-    const amountInput = $("amount");
-    const noteInput = $("note");
-    const saveBtn = $("saveBtn");
+    const els = {
+      btnExpense: $("btn-expense"),
+      btnIncome: $("btn-income"),
+      category: $("category"),
+      currency: $("currency"),
+      currencyPill: $("currencyPill"),
+      fxWrap: $("fxWrap"),
+      fxRate: $("fxRate"),
+      fxHint: $("fxHint"),
+      amountTWDPreview: $("amountTWDPreview"),
+      date: $("date"),
+      amount: $("amount"),
+      note: $("note"),
+      saveBtn: $("saveBtn"),
+    };
 
     let BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     let BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
@@ -333,18 +335,62 @@
     }
 
     function renderCurrencyOptions(selectedValue = "") {
-      const prev = selectedValue || currencySelect.value || "TWD";
+      const prev = selectedValue || els.currency.value || "TWD";
 
-      currencySelect.innerHTML = "";
+      els.currency.innerHTML = "";
 
       for (const c of AVAILABLE_CURRENCIES) {
         const opt = document.createElement("option");
         opt.value = c;
         opt.textContent = c;
-        currencySelect.appendChild(opt);
+        els.currency.appendChild(opt);
       }
 
-      currencySelect.value = isSupportedCurrency(prev) ? prev : "TWD";
+      els.currency.value = isSupportedCurrency(prev) ? prev : "TWD";
+    }
+
+    function categoriesFor(type) {
+      return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
+    }
+
+    function renderCategoryOptions(type) {
+      const list = categoriesFor(type);
+      const safeList = (Array.isArray(list) && list.length)
+        ? list
+        : (type === "income" ? DEFAULT_CATEGORIES.income : DEFAULT_CATEGORIES.expense);
+
+      const prev = els.category.value;
+
+      els.category.innerHTML = "";
+      for (const name of safeList) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        els.category.appendChild(opt);
+      }
+
+      els.category.value = safeList.includes(prev) ? prev : safeList[0];
+    }
+
+    function setType(type) {
+      currentType = (type === "income") ? "income" : "expense";
+      const isExpense = currentType === "expense";
+
+      els.btnExpense.classList.toggle("active", isExpense);
+      els.btnIncome.classList.toggle("active", !isExpense);
+
+      els.btnExpense.setAttribute("aria-pressed", String(isExpense));
+      els.btnIncome.setAttribute("aria-pressed", String(!isExpense));
+
+      renderCategoryOptions(currentType);
+    }
+
+    function setInitialFxHiddenState() {
+      els.fxWrap.classList.add("hidden");
+      els.currencyPill.textContent = "TWD";
+      els.fxRate.value = "1";
+      els.fxHint.textContent = "台幣不需匯率換算。";
+      els.amountTWDPreview.textContent = "NT$0";
     }
 
     async function fetchDefaultFxRate(currency) {
@@ -393,6 +439,7 @@
 
     async function loadBookSettings(uid) {
       const bookId = localStorage.getItem(LS_BOOK);
+
       if (!bookId) {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
         AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_SETTINGS);
@@ -414,99 +461,63 @@
       return BOOK_SETTINGS;
     }
 
-    function categoriesFor(type) {
-      return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
-    }
-
-    function renderCategoryOptions(type) {
-      const list = categoriesFor(type);
-      const safeList = (Array.isArray(list) && list.length)
-        ? list
-        : (type === "income" ? DEFAULT_CATEGORIES.income : DEFAULT_CATEGORIES.expense);
-
-      const prev = categorySelect.value;
-
-      categorySelect.innerHTML = "";
-      for (const name of safeList) {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        categorySelect.appendChild(opt);
-      }
-
-      categorySelect.value = safeList.includes(prev) ? prev : safeList[0];
-    }
-
-    async function updateCurrencyUI({ autoFetch = true } = {}) {
-      const currency = currencySelect.value || "TWD";
-      currencyPill.textContent = currency;
-
-      const isTWD = currency === "TWD";
-
-      if (isTWD) {
-        fxWrap.classList.add("hidden");
-        fxRateInput.value = "1";
-        fxHint.textContent = "台幣不需匯率換算。";
-        updateTWDPreview();
-        return;
-      }
-
-      fxWrap.classList.remove("hidden");
-      fxRateInput.placeholder = `1 ${currency} = 幾 TWD`;
-      fxHint.textContent = `預設帶入臺灣銀行 ${currency} 即期賣出匯率；使用者也可自行修改匯率。`;
-
-      if (autoFetch) {
-        try {
-          fxRateInput.placeholder = "讀取匯率中…";
-          const rate = await fetchDefaultFxRate(currency);
-          fxRateInput.value = String(rate);
-        } catch (e) {
-          console.error("自動抓匯率失敗:", e);
-          if (!fxRateInput.value) {
-            fxRateInput.value = "";
-          }
-        } finally {
-          fxRateInput.placeholder = `1 ${currency} = 幾 TWD`;
-        }
-      }
-
-      updateTWDPreview();
-    }
-
     function updateTWDPreview() {
-      const currency = currencySelect.value || "TWD";
-      const amount = parseAmount(amountInput.value);
-      const fxRate = parseAmount(fxRateInput.value);
+      const currency = els.currency.value || "TWD";
+      const amount = parseAmount(els.amount.value);
+      const fxRate = parseAmount(els.fxRate.value);
 
       if (!isFinite(amount) || amount <= 0) {
-        amountTWDPreview.textContent = "NT$0";
+        els.amountTWDPreview.textContent = "NT$0";
         return;
       }
 
       if (currency === "TWD") {
-        amountTWDPreview.textContent = moneyNT(amount);
+        els.amountTWDPreview.textContent = moneyNT(amount);
         return;
       }
 
       if (!isFinite(fxRate) || fxRate <= 0) {
-        amountTWDPreview.textContent = "NT$0";
+        els.amountTWDPreview.textContent = "NT$0";
         return;
       }
 
-      amountTWDPreview.textContent = moneyNT(amount * fxRate);
+      els.amountTWDPreview.textContent = moneyNT(amount * fxRate);
     }
 
-    function setType(type) {
-      currentType = (type === "income") ? "income" : "expense";
-      const isExpense = currentType === "expense";
+    async function updateCurrencyUI({ autoFetch = true } = {}) {
+      const currency = els.currency.value || "TWD";
+      const isTWD = currency === "TWD";
 
-      btnExpense.classList.toggle("active", isExpense);
-      btnIncome.classList.toggle("active", !isExpense);
+      els.currencyPill.textContent = currency;
 
-      btnExpense.setAttribute("aria-pressed", String(isExpense));
-      btnIncome.setAttribute("aria-pressed", String(!isExpense));
+      if (isTWD) {
+        els.fxWrap.classList.add("hidden");
+        els.fxRate.value = "1";
+        els.fxHint.textContent = "台幣不需匯率換算。";
+        updateTWDPreview();
+        return;
+      }
 
-      renderCategoryOptions(currentType);
+      els.fxWrap.classList.remove("hidden");
+      els.fxRate.placeholder = `1 ${currency} = 幾 TWD`;
+      els.fxHint.textContent = `預設帶入臺灣銀行 ${currency} 即期賣出匯率；使用者也可自行修改匯率。`;
+
+      if (autoFetch) {
+        try {
+          els.fxRate.placeholder = "讀取匯率中…";
+          const rate = await fetchDefaultFxRate(currency);
+          els.fxRate.value = String(rate);
+        } catch (e) {
+          console.error("自動抓匯率失敗:", e);
+          if (!els.fxRate.value) {
+            els.fxRate.value = "";
+          }
+        } finally {
+          els.fxRate.placeholder = `1 ${currency} = 幾 TWD`;
+        }
+      }
+
+      updateTWDPreview();
     }
 
     async function ensureLoginOrRedirect() {
@@ -585,12 +596,12 @@
       const user = await ensureLoginOrRedirect();
       if (!user) return;
 
-      const date = dateInput.value || todayYMD();
+      const date = els.date.value || todayYMD();
       const time = nowHHMM();
-      const category = (categorySelect.value || "").trim();
-      const note = (noteInput.value || "").trim();
-      const amount = parseAmount(amountInput.value);
-      const currency = currencySelect.value || "TWD";
+      const category = (els.category.value || "").trim();
+      const note = (els.note.value || "").trim();
+      const amount = parseAmount(els.amount.value);
+      const currency = els.currency.value || "TWD";
 
       if (!category) {
         await window.ui.alert("請選擇分類");
@@ -606,11 +617,13 @@
       let amountTWD = amount;
 
       if (currency !== "TWD") {
-        fxRateToTWD = parseAmount(fxRateInput.value);
+        fxRateToTWD = parseAmount(els.fxRate.value);
+
         if (!isFinite(fxRateToTWD) || fxRateToTWD <= 0) {
           await window.ui.alert("請輸入正確匯率（> 0）");
           return;
         }
+
         amountTWD = amount * fxRateToTWD;
       }
 
@@ -642,73 +655,83 @@
       }
     }
 
-    dateInput.value = todayYMD();
-    setType("expense");
+    function applyQueryPrefill() {
+      const qs = new URLSearchParams(location.search);
 
-    fxWrap.classList.add("hidden");
-    currencyPill.textContent = "TWD";
-    fxRateInput.value = "1";
-    fxHint.textContent = "台幣不需匯率換算。";
-    amountTWDPreview.textContent = "NT$0";
+      const qsType = qs.get("type");
+      const qsAmount = qs.get("amount");
+      const qsCategory = qs.get("category");
+      const qsNote = qs.get("note");
+      const qsDate = qs.get("date");
+      const qsCurrency = qs.get("currency");
+      const qsFxRate = qs.get("fxRate");
 
-    btnExpense.addEventListener("click", () => setType("expense"));
-    btnIncome.addEventListener("click", () => setType("income"));
+      if (qsType === "income" || qsType === "expense") setType(qsType);
+      if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) els.date.value = qsDate;
+      if (qsAmount) els.amount.value = qsAmount;
+      if (qsNote) els.note.value = qsNote;
+      if (qsFxRate) els.fxRate.value = qsFxRate;
 
-    currencySelect.addEventListener("change", async () => {
-      await updateCurrencyUI({ autoFetch: true });
-    });
+      return { qsCategory, qsCurrency };
+    }
 
-    amountInput.addEventListener("input", updateTWDPreview);
-    fxRateInput.addEventListener("input", updateTWDPreview);
+    async function bootstrap() {
+      els.date.value = todayYMD();
+      setType("expense");
+      setInitialFxHiddenState();
 
-    const qs = new URLSearchParams(location.search);
-    const qsType = qs.get("type");
-    const qsAmount = qs.get("amount");
-    const qsCategory = qs.get("category");
-    const qsNote = qs.get("note");
-    const qsDate = qs.get("date");
-    const qsCurrency = qs.get("currency");
-    const qsFxRate = qs.get("fxRate");
+      const { qsCategory, qsCurrency } = applyQueryPrefill();
 
-    if (qsType === "income" || qsType === "expense") setType(qsType);
-    if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) dateInput.value = qsDate;
-    if (qsAmount) amountInput.value = qsAmount;
-    if (qsNote) noteInput.value = qsNote;
-    if (qsFxRate) fxRateInput.value = qsFxRate;
+      await window.firebaseReady;
 
-    await window.firebaseReady;
+      const initialUser = await window.waitForAuthReady();
+      const uid = initialUser?.uid || null;
 
-    const initialUser = await window.waitForAuthReady();
-    const uid = initialUser?.uid || null;
-
-    if (uid) {
-      await window.ensureDefaultBookAndCategories(uid);
-      await loadBookCategories(uid);
-      await loadBookSettings(uid);
+      if (uid) {
+        await window.ensureDefaultBookAndCategories(uid);
+        await loadBookCategories(uid);
+        await loadBookSettings(uid);
+      } else {
+        BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
+        AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_SETTINGS);
+      }
 
       renderCategoryOptions(currentType);
       renderCurrencyOptions();
 
       const preferredCurrency =
-        (qsCurrency && isSupportedCurrency(qsCurrency)) ? qsCurrency :
-        (isSupportedCurrency(BOOK_SETTINGS.defaultCurrency) ? BOOK_SETTINGS.defaultCurrency : "TWD");
+        (qsCurrency && isSupportedCurrency(qsCurrency))
+          ? qsCurrency.toUpperCase()
+          : (isSupportedCurrency(BOOK_SETTINGS.defaultCurrency)
+              ? BOOK_SETTINGS.defaultCurrency.toUpperCase()
+              : "TWD");
 
-      currencySelect.value = preferredCurrency;
+      els.currency.value = preferredCurrency;
 
-      if (qsCategory && [...categorySelect.options].some(o => o.value === qsCategory)) {
-        categorySelect.value = qsCategory;
+      if (qsCategory && [...els.category.options].some(o => o.value === qsCategory)) {
+        els.category.value = qsCategory;
       }
-    } else {
-      renderCurrencyOptions("TWD");
+
+      await updateCurrencyUI({
+        autoFetch: preferredCurrency !== "TWD"
+      });
+
+      saveBtn.disabled = false;
     }
 
-    await updateCurrencyUI({ autoFetch: currencySelect.value !== "TWD" });
+    els.btnExpense.addEventListener("click", () => setType("expense"));
+    els.btnIncome.addEventListener("click", () => setType("income"));
 
-    saveBtn.disabled = false;
+    els.currency.addEventListener("change", async () => {
+      await updateCurrencyUI({ autoFetch: true });
+    });
 
-    saveBtn.addEventListener("click", async () => {
+    els.amount.addEventListener("input", updateTWDPreview);
+    els.fxRate.addEventListener("input", updateTWDPreview);
+
+    els.saveBtn.addEventListener("click", async () => {
       await window.withButtonFeedback(
-        saveBtn,
+        els.saveBtn,
         async () => { await saveToFirestore({ redirectAfter: true }); },
         {
           loadingText: "儲存中…",
@@ -722,6 +745,8 @@
         }
       );
     });
+
+    await bootstrap();
   </script>
 </body>
 </html>
