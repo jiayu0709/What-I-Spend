@@ -12,137 +12,137 @@
   <title>新增</title>
 
   <style>
-  .segment{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 4px;
-  }
+    .segment{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      background:var(--card-bg);
+      border-radius:12px;
+      padding:4px;
+    }
 
-  .seg-btn{
-    border:0;
-    background:transparent;
-    padding:10px 0;
-    border-radius:10px;
-    font-weight:800;
-    color:var(--secondary);
-    cursor:pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select:none;
-    -webkit-user-select:none;
-  }
+    .seg-btn{
+      border:0;
+      background:transparent;
+      padding:10px 0;
+      border-radius:10px;
+      font-weight:800;
+      color:var(--secondary);
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+      -webkit-user-select:none;
+    }
 
-  .seg-btn.active{
-    background:#fff;
-    color:var(--text);
-  }
+    .seg-btn.active{
+      background:#fff;
+      color:var(--text);
+    }
 
-  .field-row{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-    min-width:0;
-  }
+    .field-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      min-width:0;
+    }
 
-  input[type="date"]{
-    display:block;
-    appearance:none;
-    -webkit-appearance:none;
-  }
+    input[type="date"]{
+      display:block;
+      appearance:none;
+      -webkit-appearance:none;
+    }
 
-  .amount-card{
-    display:grid;
-    gap:12px;
-    padding:14px;
-    border-radius:16px;
-    background:rgba(255,255,255,0.56);
-    border:1px solid rgba(0,0,0,0.06);
-  }
+    .amount-card{
+      display:grid;
+      gap:12px;
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.56);
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-  .amount-main{
-    display:grid;
-    grid-template-columns:110px 1fr;
-    gap:12px;
-    align-items:center;
-    min-height:56px;
-  }
+    .amount-main{
+      display:grid;
+      grid-template-columns:110px 1fr;
+      gap:12px;
+      align-items:center;
+      min-height:56px;
+    }
 
-  .currency-pill{
-    height:56px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:14px;
-    background:#fff;
-    border:1px solid rgba(0,0,0,0.08);
-    font-weight:900;
-    font-size:18px;
-    color:var(--text);
-  }
+    .currency-pill{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,0.08);
+      font-weight:900;
+      font-size:18px;
+      color:var(--text);
+    }
 
-  .amount-input{
-    width:100%;
-    height:56px;
-    border:0;
-    background:transparent;
-    outline:none;
-    font-size:34px;
-    line-height:56px;
-    font-weight:900;
-    color:var(--text);
-    padding:0;
-    margin:0;
-    min-width:0;
-  }
+    .amount-input{
+      width:100%;
+      height:56px;
+      border:0;
+      background:transparent;
+      outline:none;
+      font-size:34px;
+      line-height:56px;
+      font-weight:900;
+      color:var(--text);
+      padding:0;
+      margin:0;
+      min-width:0;
+    }
 
-  .amount-input::placeholder{
-    color:#b4b4b4;
-    font-weight:800;
-  }
+    .amount-input::placeholder{
+      color:#b4b4b4;
+      font-weight:800;
+    }
 
-  .fx-wrap{
-    display:grid;
-    gap:10px;
-    padding-top:2px;
-  }
+    .fx-wrap{
+      display:grid;
+      gap:10px;
+      padding-top:2px;
+    }
 
-  .fx-row{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:12px;
-  }
+    .fx-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
 
-  .preview-box{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:12px;
-    padding:12px;
-    border-radius:12px;
-    background:rgba(255,255,255,0.72);
-    border:1px solid rgba(0,0,0,0.06);
-  }
+    .preview-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:12px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.72);
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-  .preview-value{
-    font-size:18px;
-    font-weight:900;
-    color:var(--text);
-    white-space:nowrap;
-  }
+    .preview-value{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+      white-space:nowrap;
+    }
 
-  .hidden{
-    display:none !important;
-  }
+    .hidden{
+      display:none !important;
+    }
 
-  .note-input{
-    min-height:48px;
-  }
+    .note-input{
+      min-height:48px;
+    }
 
-  .save:disabled{
-    opacity:.6;
-    cursor:not-allowed;
-  }
+    .save:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
   </style>
 </head>
 
@@ -198,7 +198,7 @@
                   />
                 </div>
 
-                <div class="fx-wrap" id="fxWrap">
+                <div class="fx-wrap hidden" id="fxWrap">
                   <div class="fx-row">
                     <div class="field">
                       <div class="label">匯率</div>
@@ -251,8 +251,12 @@
   <script type="module">
     import { auth, db } from "./firebase-config.js";
     import {
-      addDoc, collection, serverTimestamp,
-      doc, getDoc, updateDoc
+      addDoc,
+      collection,
+      serverTimestamp,
+      doc,
+      getDoc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const LS_BOOK = "wis_currentBookId";
@@ -272,7 +276,7 @@
     const pad2 = (n) => String(n).padStart(2, "0");
 
     const btnExpense = $("btn-expense");
-    const btnIncome  = $("btn-income");
+    const btnIncome = $("btn-income");
     const categorySelect = $("category");
     const currencySelect = $("currency");
     const currencyPill = $("currencyPill");
@@ -345,7 +349,6 @@
 
     async function fetchDefaultFxRate(currency) {
       const c = String(currency || "TWD").toUpperCase();
-
       if (c === "TWD") return 1;
 
       const res = await fetch(`/.netlify/functions/getFxRate?currency=${encodeURIComponent(c)}`);
@@ -365,7 +368,7 @@
       return rate;
     }
 
-    async function loadBookCategories(uid){
+    async function loadBookCategories(uid) {
       const bookId = localStorage.getItem(LS_BOOK);
       if (!bookId) return;
 
@@ -377,7 +380,7 @@
       const ok =
         c &&
         Array.isArray(c.expense) && c.expense.length &&
-        Array.isArray(c.income)  && c.income.length;
+        Array.isArray(c.income) && c.income.length;
 
       if (ok) {
         BOOK_CATEGORIES = { expense: c.expense, income: c.income };
@@ -388,7 +391,7 @@
       BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
 
-    async function loadBookSettings(uid){
+    async function loadBookSettings(uid) {
       const bookId = localStorage.getItem(LS_BOOK);
       if (!bookId) {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
@@ -411,11 +414,11 @@
       return BOOK_SETTINGS;
     }
 
-    function categoriesFor(type){
+    function categoriesFor(type) {
       return type === "income" ? BOOK_CATEGORIES.income : BOOK_CATEGORIES.expense;
     }
 
-    function renderCategoryOptions(type){
+    function renderCategoryOptions(type) {
       const list = categoriesFor(type);
       const safeList = (Array.isArray(list) && list.length)
         ? list
@@ -439,15 +442,16 @@
       currencyPill.textContent = currency;
 
       const isTWD = currency === "TWD";
-      fxWrap.classList.toggle("hidden", isTWD);
 
       if (isTWD) {
+        fxWrap.classList.add("hidden");
         fxRateInput.value = "1";
         fxHint.textContent = "台幣不需匯率換算。";
         updateTWDPreview();
         return;
       }
 
+      fxWrap.classList.remove("hidden");
       fxRateInput.placeholder = `1 ${currency} = 幾 TWD`;
       fxHint.textContent = `預設帶入臺灣銀行 ${currency} 即期賣出匯率；使用者也可自行修改匯率。`;
 
@@ -492,7 +496,7 @@
       amountTWDPreview.textContent = moneyNT(amount * fxRate);
     }
 
-    function setType(type){
+    function setType(type) {
       currentType = (type === "income") ? "income" : "expense";
       const isExpense = currentType === "expense";
 
@@ -505,7 +509,7 @@
       renderCategoryOptions(currentType);
     }
 
-    async function ensureLoginOrRedirect(){
+    async function ensureLoginOrRedirect() {
       const user = await window.waitForAuthReady();
       if (user) return user;
 
@@ -514,7 +518,7 @@
       return null;
     }
 
-    async function addViaFunction(payload){
+    async function addViaFunction(payload) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
@@ -537,7 +541,7 @@
       return res.json().catch(() => ({}));
     }
 
-    async function addViaClientFirestore(payload){
+    async function addViaClientFirestore(payload) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
@@ -547,7 +551,7 @@
       );
     }
 
-    async function writeTransaction(payload, { prefer = "function" } = {}){
+    async function writeTransaction(payload, { prefer = "function" } = {}) {
       const u = auth.currentUser;
       if (!u) throw new Error("Not logged in");
 
@@ -577,7 +581,7 @@
       }
     }
 
-    async function saveToFirestore({ redirectAfter = true } = {}){
+    async function saveToFirestore({ redirectAfter = true } = {}) {
       const user = await ensureLoginOrRedirect();
       if (!user) return;
 
@@ -641,12 +645,19 @@
     dateInput.value = todayYMD();
     setType("expense");
 
+    fxWrap.classList.add("hidden");
+    currencyPill.textContent = "TWD";
+    fxRateInput.value = "1";
+    fxHint.textContent = "台幣不需匯率換算。";
+    amountTWDPreview.textContent = "NT$0";
+
     btnExpense.addEventListener("click", () => setType("expense"));
     btnIncome.addEventListener("click", () => setType("income"));
 
     currencySelect.addEventListener("change", async () => {
       await updateCurrencyUI({ autoFetch: true });
     });
+
     amountInput.addEventListener("input", updateTWDPreview);
     fxRateInput.addEventListener("input", updateTWDPreview);
 
@@ -691,7 +702,7 @@
       renderCurrencyOptions("TWD");
     }
 
-    await updateCurrencyUI({ autoFetch: true });
+    await updateCurrencyUI({ autoFetch: currencySelect.value !== "TWD" });
 
     saveBtn.disabled = false;
 
