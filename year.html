@@ -73,6 +73,13 @@
       -webkit-appearance:none;
     }
 
+    .toolbar-switches{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
     .card.card--empty{
       background:transparent;
       padding:0;
@@ -87,6 +94,10 @@
       border-radius:12px;
       background:rgba(255,255,255,0.45);
       border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .seg.seg-half{
+      margin-bottom:0;
     }
 
     .seg-btn{
@@ -195,6 +206,12 @@
     .hidden{
       display:none !important;
     }
+
+    @media (max-width: 420px){
+      .toolbar-switches{
+        grid-template-columns:1fr;
+      }
+    }
   </style>
 </head>
 
@@ -225,14 +242,16 @@
       </div>
 
       <section class="section">
-        <div class="seg" aria-label="統計類型切換">
-          <button class="seg-btn active" type="button" id="btnExpense">支出</button>
-          <button class="seg-btn" type="button" id="btnIncome">收入</button>
-        </div>
+        <div class="toolbar-switches">
+          <div class="seg seg-half" aria-label="統計類型切換">
+            <button class="seg-btn active" type="button" id="btnExpense">支出</button>
+            <button class="seg-btn" type="button" id="btnIncome">收入</button>
+          </div>
 
-        <div class="seg" aria-label="顯示幣別切換">
-          <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
-          <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+          <div class="seg seg-half" aria-label="顯示幣別切換">
+            <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
+            <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+          </div>
         </div>
 
         <div class="card" id="chartCard">
@@ -304,12 +323,6 @@
         currentPeriod === "year"
           ? yearLabel(currentMonth)
           : monthLabel(currentMonth);
-    }
-
-    function getCurrentRangeKey() {
-      return currentPeriod === "year"
-        ? String(currentMonth.getFullYear())
-        : monthKeyFromDate(currentMonth);
     }
 
     function getAvailableCurrencies() {
@@ -651,7 +664,7 @@
         return date.startsWith(`${currentMonth.getFullYear()}-`);
       }
 
-      return date.startsWith(getCurrentRangeKey());
+      return date.startsWith(monthKeyFromDate(currentMonth));
     }
 
     async function renderCategoryChart(kind, txs) {
