@@ -177,13 +177,18 @@
         </div>
       </div>
 
-      <div class="monthbar" aria-label="月份切換">
-        <button class="m-btn" type="button" id="btnPrev" aria-label="上一月">&lt;</button>
+      <div class="monthbar" aria-label="期間切換">
+        <button class="m-btn" type="button" id="btnPrev" aria-label="上一期">&lt;</button>
         <div class="m-title"><span id="monthLabel">Loading...</span></div>
-        <button class="m-btn" type="button" id="btnNext" aria-label="下一月">&gt;</button>
+        <button class="m-btn" type="button" id="btnNext" aria-label="下一期">&gt;</button>
       </div>
 
       <section class="section">
+        <div class="seg" aria-label="統計期間切換">
+          <button class="seg-btn active" type="button" id="btnPeriodMonth">月統計</button>
+          <button class="seg-btn" type="button" id="btnPeriodYear">年統計</button>
+        </div>
+
         <div class="seg" aria-label="統計類型切換">
           <button class="seg-btn active" type="button" id="btnExpense">支出</button>
           <button class="seg-btn" type="button" id="btnIncome">收入</button>
@@ -227,8 +232,14 @@
     const addMonths = (dateObj, delta) =>
       new Date(dateObj.getFullYear(), dateObj.getMonth() + delta, 1);
 
+    const addYears = (dateObj, delta) =>
+      new Date(dateObj.getFullYear() + delta, 0, 1);
+
     const monthLabel = (dateObj) =>
       `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}`;
+
+    const yearLabel = (dateObj) =>
+      `${dateObj.getFullYear()}`;
 
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
@@ -237,21 +248,35 @@
       parseMonthKey(qs.get("m")) ||
       new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-    const currentKey = monthKeyFromDate(currentMonth);
-
     const LS_BOOK = "wis_currentBookId";
     const LS_STATS_MODE = "wis_stats_mode";
     const LS_STATS_DISPLAY_CURRENCY = "wis_stats_display_currency";
+    const LS_STATS_PERIOD = "wis_stats_period";
 
     const urlBook = qs.get("b");
     if (urlBook) localStorage.setItem(LS_BOOK, urlBook);
 
     let currentMode = localStorage.getItem(LS_STATS_MODE) || "expense";
+    let currentPeriod = localStorage.getItem(LS_STATS_PERIOD) || "month";
     let displayCurrency = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "TWD";
     let foreignCurrency = "";
     let availableCurrencies = ["TWD"];
+    let latestStatsTxs = null;
 
-    $("monthLabel").textContent = monthLabel(currentMonth);
+    function getCurrentRangeKey() {
+      return currentPeriod === "year"
+        ? String(currentMonth.getFullYear())
+        : monthKeyFromDate(currentMonth);
+    }
+
+    function updateRangeLabel() {
+      $("monthLabel").textContent =
+        currentPeriod === "year"
+          ? yearLabel(currentMonth)
+          : monthLabel(currentMonth);
+    }
+
+    updateRangeLabel();
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -268,27 +293,33 @@
       const n = Number(amount || 0);
 
       if (currency === "TWD") {
-        return "NT$" + Math.round(n).toLocaleString("en-US");
+        return Math.round(n).toLocaleString("en-US");
       }
 
       if (currency === "USD") {
-        return "US$" + n.toLocaleString("en-US", {
+        return n.toLocaleString("en-US", {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         });
       }
 
       if (currency === "EUR") {
-        return "€" + n.toLocaleString("en-US", {
+        return n.toLocaleString("en-US", {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         });
       }
 
-      return `${currency} ${n.toLocaleString("en-US", {
+      return n.toLocaleString("en-US", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
-      })}`;
+      });
+    }
+
+    function updatePeriodUI() {
+      $("btnPeriodMonth").classList.toggle("active", currentPeriod === "month");
+      $("btnPeriodYear").classList.toggle("active", currentPeriod === "year");
+      updateRangeLabel();
     }
 
     function updateSegUI() {
@@ -335,6 +366,20 @@
 
     window.__applyBookCurrencySettings = applyBookCurrencySettings;
 
+    $("btnPeriodMonth").addEventListener("click", async () => {
+      currentPeriod = "month";
+      localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
+      updatePeriodUI();
+      await window.__reloadStatsRange?.();
+    });
+
+    $("btnPeriodYear").addEventListener("click", async () => {
+      currentPeriod = "year";
+      localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
+      updatePeriodUI();
+      await window.__reloadStatsRange?.();
+    });
+
     $("btnExpense").addEventListener("click", async () => {
       currentMode = "expense";
       localStorage.setItem(LS_STATS_MODE, currentMode);
@@ -360,20 +405,27 @@
       await window.__renderCurrentStatsMode();
     });
 
-    $("btnPrev").addEventListener("click", () => {
-      const prev = addMonths(currentMonth, -1);
-      const m = monthKeyFromDate(prev);
-      const bookId = localStorage.getItem(LS_BOOK) || "";
-      location.href = `year.html?m=${m}` + (bookId ? `&b=${encodeURIComponent(bookId)}` : "");
+    $("btnPrev").addEventListener("click", async () => {
+      currentMonth =
+        currentPeriod === "year"
+          ? addYears(currentMonth, -1)
+          : addMonths(currentMonth, -1);
+
+      updateRangeLabel();
+      await window.__reloadStatsRange?.();
     });
 
-    $("btnNext").addEventListener("click", () => {
-      const next = addMonths(currentMonth, 1);
-      const m = monthKeyFromDate(next);
-      const bookId = localStorage.getItem(LS_BOOK) || "";
-      location.href = `year.html?m=${m}` + (bookId ? `&b=${encodeURIComponent(bookId)}` : "");
+    $("btnNext").addEventListener("click", async () => {
+      currentMonth =
+        currentPeriod === "year"
+          ? addYears(currentMonth, 1)
+          : addMonths(currentMonth, 1);
+
+      updateRangeLabel();
+      await window.__reloadStatsRange?.();
     });
 
+    updatePeriodUI();
     updateSegUI();
     updateCurrencyUI();
 
@@ -554,13 +606,23 @@
       return amountTWD / targetRateToTWD;
     }
 
+    function txInCurrentRange(tx) {
+      const date = String(tx.date || "");
+      if (!date) return false;
+
+      if (currentPeriod === "year") {
+        return date.startsWith(`${currentMonth.getFullYear()}-`);
+      }
+
+      return date.startsWith(getCurrentRangeKey());
+    }
+
     async function renderCategoryChart(kind, txs) {
       const sumsByCat = new Map();
       const sourceTxs = getSourceTxs(txs);
 
       for (const tx of sourceTxs) {
-        const date = String(tx.date || "");
-        if (!date.startsWith(currentKey)) continue;
+        if (!txInCurrentRange(tx)) continue;
         if (String(tx.type || "expense") !== kind) continue;
 
         const shownAmount = await convertTxToDisplayAmount(tx, displayCurrency);
@@ -582,9 +644,14 @@
         card.classList.add("card--empty");
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = kind === "income"
-          ? "這個月份還沒有收入資料，先去新增幾筆吧！"
-          : "這個月份還沒有支出資料，先去新增幾筆吧！";
+        empty.textContent =
+          currentPeriod === "year"
+            ? (kind === "income"
+                ? "這一年還沒有收入資料，先去新增幾筆吧！"
+                : "這一年還沒有支出資料，先去新增幾筆吧！")
+            : (kind === "income"
+                ? "這個月份還沒有收入資料，先去新增幾筆吧！"
+                : "這個月份還沒有支出資料，先去新增幾筆吧！");
         root.appendChild(empty);
         return;
       }
@@ -617,7 +684,9 @@
         buildDonutSVG(
           total,
           slices,
-          kind === "income" ? "Income" : "Expenses",
+          currentPeriod === "year"
+            ? (kind === "income" ? "Year Income" : "Year Expenses")
+            : (kind === "income" ? "Month Income" : "Month Expenses"),
           formatMoney(displayCurrency, total)
         )
       );
@@ -657,8 +726,6 @@
       root.append(donutArea, legend);
     }
 
-    let latestStatsTxs = null;
-
     async function renderCurrentStatsMode() {
       await renderCategoryChart(currentMode, latestStatsTxs);
     }
@@ -669,7 +736,10 @@
     };
 
     window.__renderCurrentStatsMode = renderCurrentStatsMode;
-    window.__currentKeyForStats = currentKey;
+    window.__reloadStatsRange = async () => {
+      updateRangeLabel();
+      await window.__watchStatsForCurrentRange?.();
+    };
   </script>
 
   <script type="module">
@@ -677,12 +747,25 @@
     import { collection, query, where, orderBy, onSnapshot, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
-    function nextMonthKey(ym){
-      const [y, m] = ym.split("-").map(n => parseInt(n, 10));
-      const d = new Date(y, m - 1, 1);
-      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      const mm = String(next.getMonth() + 1).padStart(2, "0");
-      return `${next.getFullYear()}-${mm}`;
+    function monthStartKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}-01`;
+    }
+
+    function nextMonthStartKey(dateObj) {
+      const next = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 1);
+      const y = next.getFullYear();
+      const m = String(next.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}-01`;
+    }
+
+    function yearStartKey(dateObj) {
+      return `${dateObj.getFullYear()}-01-01`;
+    }
+
+    function nextYearStartKey(dateObj) {
+      return `${dateObj.getFullYear() + 1}-01-01`;
     }
 
     async function loadBookSettings(uid, bookId) {
@@ -744,23 +827,25 @@
       currentWatchKey = "";
     }
 
-    function watchMonthTxs(uid, ym, bookId) {
-      if (!bookId) {
-        stopWatchingStats();
-        window.__setStatsTxs(null);
-        return;
+    function getCurrentRangeQuery(currentPeriod, currentMonth, txRef, bookId) {
+      if (currentPeriod === "year") {
+        const start = yearStartKey(currentMonth);
+        const end = nextYearStartKey(currentMonth);
+
+        return query(
+          txRef,
+          where("bookId", "==", bookId),
+          where("date", ">=", start),
+          where("date", "<", end),
+          orderBy("date", "desc"),
+          orderBy("time", "desc")
+        );
       }
 
-      const watchKey = `${uid}__${bookId}__${ym}`;
-      if (unsubscribeStats && currentWatchKey === watchKey) return;
+      const start = monthStartKey(currentMonth);
+      const end = nextMonthStartKey(currentMonth);
 
-      stopWatchingStats();
-
-      const start = `${ym}-01`;
-      const end = `${nextMonthKey(ym)}-01`;
-
-      const txRef = collection(db, "users", uid, "transactions");
-      const q = query(
+      return query(
         txRef,
         where("bookId", "==", bookId),
         where("date", ">=", start),
@@ -768,6 +853,27 @@
         orderBy("date", "desc"),
         orderBy("time", "desc")
       );
+    }
+
+    function watchStats(uid, currentPeriod, currentMonth, bookId) {
+      if (!bookId) {
+        stopWatchingStats();
+        window.__setStatsTxs(null);
+        return;
+      }
+
+      const periodKey =
+        currentPeriod === "year"
+          ? `${currentMonth.getFullYear()}`
+          : `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
+
+      const watchKey = `${uid}__${bookId}__${currentPeriod}__${periodKey}`;
+      if (unsubscribeStats && currentWatchKey === watchKey) return;
+
+      stopWatchingStats();
+
+      const txRef = collection(db, "users", uid, "transactions");
+      const q = getCurrentRangeQuery(currentPeriod, currentMonth, txRef, bookId);
 
       currentWatchKey = watchKey;
 
@@ -778,19 +884,40 @@
           await window.__setStatsTxs(txs);
         },
         (e) => {
-          console.error("統計頁即時監聽失敗（fallback localStorage）:", e);
+          console.error("統計頁即時監聽失敗:", e);
           window.__setStatsTxs(null);
         }
       );
     }
 
-    function resumeWatchIfNeeded() {
+    window.__watchStatsForCurrentRange = async () => {
       const user = window.auth.currentUser;
       if (!user) return;
 
-      const ym = window.__currentKeyForStats;
       const bookId = localStorage.getItem("wis_currentBookId") || "";
-      watchMonthTxs(user.uid, ym, bookId);
+      const currentPeriod = localStorage.getItem("wis_stats_period") || "month";
+
+      const label = document.getElementById("monthLabel")?.textContent || "";
+      let currentMonth;
+
+      if (currentPeriod === "year") {
+        const y = parseInt(label, 10) || new Date().getFullYear();
+        currentMonth = new Date(y, 0, 1);
+      } else {
+        const m = /^\d{4}-\d{2}$/.test(label) ? label : null;
+        if (m) {
+          const [yy, mm] = m.split("-").map(Number);
+          currentMonth = new Date(yy, mm - 1, 1);
+        } else {
+          currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        }
+      }
+
+      watchStats(user.uid, currentPeriod, currentMonth, bookId);
+    };
+
+    function resumeWatchIfNeeded() {
+      window.__watchStatsForCurrentRange?.();
     }
 
     await window.firebaseReady;
@@ -806,13 +933,9 @@
       try {
         await window.ensureDefaultBookAndCategories(user.uid);
         await renderCurrentBookBadge(user.uid);
-
-        const ym = window.__currentKeyForStats;
-        const bookId = localStorage.getItem("wis_currentBookId") || "";
-
-        watchMonthTxs(user.uid, ym, bookId);
+        await window.__watchStatsForCurrentRange?.();
       } catch (e) {
-        console.error("統計頁初始化失敗（fallback localStorage）:", e);
+        console.error("統計頁初始化失敗:", e);
         window.__setStatsTxs(null);
       }
     });
