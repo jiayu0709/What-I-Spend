@@ -1,14 +1,4 @@
 <!doctype html>
-<!--
-  edit.html
-  ✅ 分類抓這筆交易所屬帳本 books/{bookId}.categories
-  ✅ 幣別選項 = TWD + 該帳本 settings.foreignCurrency
-  ✅ 編輯預設幣別 = 這筆交易原本存的 currency
-  ✅ 若原分類已不在帳本分類內，仍保留顯示
-  ✅ 若原幣別已不在帳本可用幣別內，仍保留顯示
-  ✅ 金額區塊排版比照 add.html
-  ✅ 刪除完成後自動返回 ref
--->
 <html lang="zh-Hant">
 <head>
   <link rel="stylesheet" href="theme.css">
@@ -231,16 +221,6 @@
 
     .btn:active{opacity:.7;transform:scale(.98)}
 
-    a, button{ -webkit-tap-highlight-color:transparent; }
-    .btn, .back{
-      transition:background-color .15s ease, opacity .15s ease, transform .1s ease;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-
-    .back:active{opacity:.6;transform:scale(.98)}
-    .btn.primary:active{opacity:.75}
-
     @media (max-width:420px){
       .dual-field-row{
         grid-template-columns:1fr 1fr;
@@ -325,9 +305,7 @@
                 </div>
               </div>
 
-              <div class="hint" id="fxHint">
-                外幣會依匯率換算台幣。
-              </div>
+              <div class="hint" id="fxHint">外幣會依匯率換算台幣。</div>
             </div>
           </div>
         </div>
@@ -351,52 +329,6 @@
     import { doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
-    window.saveToCloud = async (id, data) => {
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-
-      const ref = doc(db, "users", user.uid, "transactions", id);
-      await updateDoc(ref, {
-        date: data.date,
-        time: data.time,
-        category: data.category,
-        note: data.note,
-        amount: data.amount,
-        currency: data.currency,
-        fxRateToTWD: data.fxRateToTWD,
-        amountTWD: data.amountTWD,
-      });
-    };
-
-    window.deleteFromCloud = async (id) => {
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-
-      const ref = doc(db, "users", user.uid, "transactions", id);
-      await deleteDoc(ref);
-    };
-
-    window.getTransactionFromCloud = async (id) => {
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-
-      const ref = doc(db, "users", user.uid, "transactions", id);
-      const snap = await getDoc(ref);
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-    };
-
-    window.getBookDataFromCloud = async (bookId) => {
-      const user = await window.requireAuth();
-      if (!user) throw new Error("Not logged in");
-      if (!bookId) throw new Error("No bookId");
-
-      const ref = doc(db, "users", user.uid, "books", bookId);
-      const snap = await getDoc(ref);
-      return snap.exists() ? (snap.data() || {}) : {};
-    };
-  </script>
-
-  <script>
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
     const ref = qs.get("ref") || "month.html";
@@ -429,9 +361,8 @@
     let TX_DATA = null;
     let TX_TYPE = txTypeFromQs;
 
-    function moneyNT(n){
-      const v = Number(n || 0);
-      return "NT$" + Math.round(v).toLocaleString("en-US");
+    function normalizeCurrency(v){
+      return String(v || "TWD").trim().toUpperCase();
     }
 
     function parseAmount(v){
@@ -439,8 +370,53 @@
       return isFinite(n) ? n : NaN;
     }
 
-    function normalizeCurrency(v){
-      return String(v || "TWD").trim().toUpperCase();
+    function moneyNT(n){
+      const v = Number(n || 0);
+      return "NT$" + Math.round(v).toLocaleString("en-US");
+    }
+
+    async function getTransactionFromCloud(id) {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid, "transactions", id);
+      const snap = await getDoc(ref);
+      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    }
+
+    async function getBookDataFromCloud(bookId) {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+      if (!bookId) throw new Error("No bookId");
+
+      const ref = doc(db, "users", user.uid, "books", bookId);
+      const snap = await getDoc(ref);
+      return snap.exists() ? (snap.data() || {}) : {};
+    }
+
+    async function saveToCloud(id, data) {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid, "transactions", id);
+      await updateDoc(ref, {
+        date: data.date,
+        time: data.time,
+        category: data.category,
+        note: data.note,
+        amount: data.amount,
+        currency: data.currency,
+        fxRateToTWD: data.fxRateToTWD,
+        amountTWD: data.amountTWD,
+      });
+    }
+
+    async function deleteFromCloud(id) {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const ref = doc(db, "users", user.uid, "transactions", id);
+      await deleteDoc(ref);
     }
 
     function buildAvailableCurrencies(bookData = {}) {
@@ -454,54 +430,42 @@
       return list;
     }
 
-    if (els.backLink) {
-      els.backLink.addEventListener("click", () => {
-        location.href = ref;
-      });
-    }
-
     async function renderCategoryOptions(currentValue){
-      const sel = els.category;
-      if (!sel) return;
-
       const categories = BOOK_DATA.categories || {};
       const source =
         TX_TYPE === "income"
           ? (categories.income || DEFAULT_CATEGORIES.income)
           : (categories.expense || DEFAULT_CATEGORIES.expense);
 
-      sel.innerHTML = "";
+      els.category.innerHTML = "";
 
       for (const name of source) {
         const opt = document.createElement("option");
         opt.value = name;
         opt.textContent = name;
-        sel.appendChild(opt);
+        els.category.appendChild(opt);
       }
 
-      const cur = (currentValue || "").trim();
+      const cur = String(currentValue || "").trim();
 
       if (cur && !source.includes(cur)) {
         const opt = document.createElement("option");
         opt.value = cur;
         opt.textContent = cur;
-        sel.insertBefore(opt, sel.firstChild);
+        els.category.insertBefore(opt, els.category.firstChild);
       }
 
-      sel.value = cur || source[0] || "";
+      els.category.value = cur || source[0] || "";
     }
 
     function renderCurrencyOptions(currentValue = ""){
-      const sel = els.currency;
-      if (!sel) return;
-
-      sel.innerHTML = "";
+      els.currency.innerHTML = "";
 
       for (const c of AVAILABLE_CURRENCIES) {
         const opt = document.createElement("option");
         opt.value = c;
         opt.textContent = c;
-        sel.appendChild(opt);
+        els.currency.appendChild(opt);
       }
 
       const cur = normalizeCurrency(currentValue || "TWD");
@@ -510,16 +474,16 @@
         const opt = document.createElement("option");
         opt.value = cur;
         opt.textContent = cur;
-        sel.insertBefore(opt, sel.firstChild);
+        els.currency.insertBefore(opt, els.currency.firstChild);
       }
 
-      sel.value = cur || "TWD";
+      els.currency.value = cur;
     }
 
     function updateTWDPreview() {
-      const currency = normalizeCurrency(els.currency?.value || "TWD");
-      const amount = parseAmount(els.amount?.value);
-      const fxRate = parseAmount(els.fxRate?.value);
+      const currency = normalizeCurrency(els.currency.value || "TWD");
+      const amount = parseAmount(els.amount.value);
+      const fxRate = parseAmount(els.fxRate.value);
 
       if (!isFinite(amount) || amount <= 0) {
         els.amountTWDPreview.textContent = "NT$0";
@@ -540,7 +504,7 @@
     }
 
     function updateCurrencyUI() {
-      const currency = normalizeCurrency(els.currency?.value || "TWD");
+      const currency = normalizeCurrency(els.currency.value || "TWD");
       els.currencyPill.textContent = currency;
 
       if (currency === "TWD") {
@@ -550,9 +514,7 @@
       } else {
         els.fxWrap.classList.remove("hidden");
         els.fxHint.textContent = `1 ${currency} = 幾 TWD`;
-        if (!els.fxRate.value) {
-          els.fxRate.value = "";
-        }
+        if (!els.fxRate.value) els.fxRate.value = "";
       }
 
       updateTWDPreview();
@@ -566,7 +528,7 @@
       } catch {}
 
       try {
-        TX_DATA = await window.getTransactionFromCloud(id);
+        TX_DATA = await getTransactionFromCloud(id);
       } catch (e) {
         console.error("getTransactionFromCloud failed:", e);
         TX_DATA = null;
@@ -596,7 +558,7 @@
       const txBookId = data.bookId || localStorage.getItem("wis_currentBookId") || "";
 
       try {
-        BOOK_DATA = await window.getBookDataFromCloud(txBookId);
+        BOOK_DATA = await getBookDataFromCloud(txBookId);
       } catch (e) {
         console.error("getBookDataFromCloud failed:", e);
         BOOK_DATA = {};
@@ -604,14 +566,12 @@
 
       AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_DATA);
 
-      if (els.date) els.date.value = data.date || "";
-      if (els.time) els.time.value = data.time || "";
-      if (els.note) els.note.value = data.note || "";
-      if (els.amount) els.amount.value = data.amount || "";
+      els.date.value = data.date || "";
+      els.time.value = data.time || "";
+      els.note.value = data.note || "";
+      els.amount.value = data.amount || "";
 
       await renderCategoryOptions(data.category || "");
-
-      // 這裡就是關鍵：預設選這筆交易原本的幣別
       renderCurrencyOptions(data.currency || "TWD");
 
       els.fxRate.value = String(data.fxRateToTWD || "1");
@@ -619,9 +579,9 @@
     }
 
     async function save(){
-      const currency = normalizeCurrency(els.currency?.value || "TWD");
-      const amount = parseAmount(els.amount?.value);
-      const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate?.value);
+      const currency = normalizeCurrency(els.currency.value || "TWD");
+      const amount = parseAmount(els.amount.value);
+      const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate.value);
 
       if (!isFinite(amount) || amount <= 0) {
         await window.ui.alert("請輸入正確金額（> 0）");
@@ -635,10 +595,10 @@
 
       const data = {
         id,
-        date: els.date?.value || "",
-        time: els.time?.value || "",
-        category: (els.category?.value || "").trim(),
-        note: (els.note?.value || "").trim(),
+        date: els.date.value || "",
+        time: els.time.value || "",
+        category: (els.category.value || "").trim(),
+        note: (els.note.value || "").trim(),
         amount,
         currency,
         fxRateToTWD: fxRate,
@@ -650,81 +610,51 @@
         ...data,
       }));
 
-      try {
-        await window.saveToCloud(id, data);
-      } catch (e) {
-        console.error("saveToCloud failed:", e);
-        await window.ui.alert("儲存失敗（雲端）：\n" + (e.code || "") + "\n" + (e.message || String(e)));
-        return;
-      }
-
+      await saveToCloud(id, data);
       location.href = ref;
     }
 
     async function removeTx(){
       localStorage.removeItem("tx:" + id);
       localStorage.setItem("tx:deleted:" + id, "1");
-
-      try {
-        await window.deleteFromCloud(id);
-      } catch (e) {
-        console.error("deleteFromCloud failed:", e);
-        await window.ui.alert("刪除失敗（雲端）：" + (e.message || e));
-        return;
-      }
-
+      await deleteFromCloud(id);
       await window.ui.alert("已刪除");
       location.href = ref;
     }
 
-    init();
+    els.backLink?.addEventListener("click", () => {
+      location.href = ref;
+    });
 
     els.currency?.addEventListener("change", updateCurrencyUI);
     els.amount?.addEventListener("input", updateTWDPreview);
     els.fxRate?.addEventListener("input", updateTWDPreview);
 
-    if (els.saveBtn) {
-      els.saveBtn.addEventListener("click", async () => {
-        await window.withButtonFeedback(
-          els.saveBtn,
-          async () => { await save(); },
-          {
-            loadingText: "儲存中…",
-            successText: "已儲存 ✓",
-            minShowMs: 120,
-            onError: (e) => window.ui.alert("儲存失敗：" + (e.message || e)),
-          }
-        );
-      });
-    }
-
-    if (els.deleteBtn) {
-      els.deleteBtn.addEventListener("click", async () => {
-        const ok = await window.ui.confirm("確定要刪除這筆明細嗎？", {
-          title: "刪除明細",
-          danger: true,
-          okText: "刪除",
-          cancelText: "取消",
-        });
-        if (!ok) return;
-        await removeTx();
-      });
-    }
-
-    document.querySelectorAll("a").forEach(link => {
-      link.addEventListener("click", (e) => {
-        const href = link.getAttribute("href");
-        if (!href || href.startsWith("#")) return;
-
-        e.preventDefault();
-
-        const page = document.querySelector(".page");
-        if (!page) { location.href = href; return; }
-
-        page.classList.add("leaving");
-        setTimeout(() => { location.href = href; }, 200);
-      });
+    els.saveBtn?.addEventListener("click", async () => {
+      await window.withButtonFeedback(
+        els.saveBtn,
+        async () => { await save(); },
+        {
+          loadingText: "儲存中…",
+          successText: "已儲存 ✓",
+          minShowMs: 120,
+          onError: (e) => window.ui.alert("儲存失敗：" + (e.message || e)),
+        }
+      );
     });
+
+    els.deleteBtn?.addEventListener("click", async () => {
+      const ok = await window.ui.confirm("確定要刪除這筆明細嗎？", {
+        title: "刪除明細",
+        danger: true,
+        okText: "刪除",
+        cancelText: "取消",
+      });
+      if (!ok) return;
+      await removeTx();
+    });
+
+    await init();
   </script>
 </body>
 </html>
