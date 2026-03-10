@@ -28,8 +28,29 @@ function initAdmin() {
   });
 }
 
+function normalizeCurrency(v) {
+  return String(v || "TWD").trim().toUpperCase();
+}
+
+function toNumber(v) {
+  const n = Number(String(v ?? "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function buildAllowedCurrencies(settings = {}) {
+  const list = ["TWD"];
+  const foreign = normalizeCurrency(settings.foreignCurrency || "");
+
+  if (foreign && foreign !== "TWD") {
+    list.push(foreign);
+  }
+
+  return list;
+}
+
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return json(200, { ok: true });
+
   if (event.httpMethod !== "POST") {
     return json(405, { ok: false, error: "Method Not Allowed" });
   }
@@ -41,7 +62,6 @@ export const handler = async (event) => {
     return json(400, { ok: false, error: "Invalid JSON" });
   }
 
-  // ✅ 重要：token trim + amount 轉數字
   const shortcutToken = String(body.shortcutToken || "").trim();
   const bookId = String(body.bookId || "").trim();
   const date = String(body.date || "").trim();
@@ -50,14 +70,19 @@ export const handler = async (event) => {
   const category = String(body.category || "").trim();
   const note = String(body.note || "").trim();
 
-  const amountNum = Number(String(body.amount ?? "").replace(/,/g, ""));
-  const amount = Number.isFinite(amountNum) ? amountNum : NaN;
+  const amount = toNumber(body.amount);
+  const inputCurrency = normalizeCurrency(body.currency || "TWD");
+  const inputFxRateToTWD = toNumber(body.fxRateToTWD);
 
   if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
     return json(400, {
       ok: false,
       error: "Missing fields",
-      detail: { date, category, amount: body.amount },
+      detail: {
+        date,
+        category,
+        amount: body.amount,
+      },
     });
   }
 
@@ -67,7 +92,6 @@ export const handler = async (event) => {
 
     let uid = null;
 
-    // A) Web / PWA：Firebase ID Token
     const authHeader = event.headers.authorization || event.headers.Authorization;
     if (authHeader?.startsWith("Bearer ")) {
       const idToken = authHeader.slice(7);
@@ -75,7 +99,6 @@ export const handler = async (event) => {
       uid = decoded.uid;
     }
 
-    // B) Shortcut：shortcutToken
     if (!uid) {
       if (!shortcutToken) {
         return json(401, { ok: false, error: "Unauthorized (missing shortcutToken)" });
@@ -94,7 +117,6 @@ export const handler = async (event) => {
       uid = snap.docs[0].id;
     }
 
-    // ✅ 如果捷徑沒傳 bookId，就給它用預設第一本（避免你忘了接）
     let finalBookId = bookId;
     if (!finalBookId) {
       const booksSnap = await db
@@ -111,25 +133,83 @@ export const handler = async (event) => {
       }
     }
 
+    if (!finalBookId) {
+      return json(400, { ok: false, error: "No available bookId" });
+    }
+
+    const bookRef = db.collection("users").doc(uid).collection("books").doc(finalBookId);
+    const bookSnap = await bookRef.get();
+    const bookData = bookSnap.exists ? (bookSnap.data() || {}) : {};
+    const settings = bookData.settings || {};
+    const allowedCurrencies = buildAllowedCurrencies(settings);
+
+    if (!allowedCurrencies.includes(inputCurrency)) {
+      return json(400, {
+        ok: false,
+        error: "Currency not allowed for this book",
+        detail: {
+          currency: inputCurrency,
+          allowedCurrencies,
+        },
+      });
+    }
+
+    let currency = inputCurrency;
+    let fxRateToTWD = 1;
+    let amountTWD = amount;
+
+    if (currency === "TWD") {
+      fxRateToTWD = 1;
+      amountTWD = amount;
+    } else {
+      if (!Number.isFinite(inputFxRateToTWD) || inputFxRateToTWD <= 0) {
+        return json(400, {
+          ok: false,
+          error: "Invalid fxRateToTWD",
+          detail: {
+            currency,
+            fxRateToTWD: body.fxRateToTWD,
+          },
+        });
+      }
+
+      fxRateToTWD = inputFxRateToTWD;
+      amountTWD = amount * fxRateToTWD;
+    }
+
     const docRef = await db
       .collection("users")
       .doc(uid)
       .collection("transactions")
       .add({
-        bookId: finalBookId || "", // ✅ 寫入 bookId（可能是空字串但至少不會漏）
+        bookId: finalBookId,
         date,
         time,
         type,
         amount,
         category,
         note,
+        currency,
+        fxRateToTWD,
+        amountTWD,
         source: shortcutToken ? "shortcut" : "web",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-    return json(200, { ok: true, id: docRef.id, bookId: finalBookId || "" });
+    return json(200, {
+      ok: true,
+      id: docRef.id,
+      bookId: finalBookId,
+      currency,
+      fxRateToTWD,
+      amountTWD,
+    });
   } catch (e) {
     console.error(e);
-    return json(500, { ok: false, error: "Server error" });
+    return json(500, {
+      ok: false,
+      error: "Server error",
+      detail: e?.message || String(e),
+    });
   }
 };
