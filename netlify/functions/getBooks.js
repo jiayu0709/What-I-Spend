@@ -28,8 +28,36 @@ function initAdmin() {
   });
 }
 
+function normalizeCurrency(v) {
+  return String(v || "").trim().toUpperCase();
+}
+
+function safeBookSettings(settings = {}) {
+  const defaultCurrency = normalizeCurrency(settings.defaultCurrency) || "TWD";
+  const primaryDisplayCurrency = normalizeCurrency(settings.primaryDisplayCurrency) || "TWD";
+  const foreignCurrency = normalizeCurrency(settings.foreignCurrency);
+
+  return {
+    defaultCurrency: ["TWD", "USD", "EUR"].includes(defaultCurrency) ? defaultCurrency : "TWD",
+    primaryDisplayCurrency: ["TWD", "USD", "EUR"].includes(primaryDisplayCurrency) ? primaryDisplayCurrency : "TWD",
+    foreignCurrency: ["USD", "EUR"].includes(foreignCurrency) ? foreignCurrency : "",
+  };
+}
+
+function buildAllowedCurrencies(settings = {}) {
+  const list = ["TWD"];
+  const foreign = normalizeCurrency(settings.foreignCurrency);
+
+  if (["USD", "EUR"].includes(foreign)) {
+    list.push(foreign);
+  }
+
+  return list;
+}
+
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return json(200, { ok: true });
+
   if (event.httpMethod !== "POST") {
     return json(405, { ok: false, error: "Method Not Allowed" });
   }
@@ -41,7 +69,7 @@ export const handler = async (event) => {
     return json(400, { ok: false, error: "Invalid JSON" });
   }
 
-  const { shortcutToken } = body;
+  const shortcutToken = String(body.shortcutToken || "").trim();
   if (!shortcutToken) {
     return json(400, { ok: false, error: "Missing shortcutToken" });
   }
@@ -74,12 +102,26 @@ export const handler = async (event) => {
 
     const books = booksSnap.docs.map((d) => {
       const data = d.data() || {};
-      return { id: d.id, name: data.name || "未命名帳本" };
+      const settings = safeBookSettings(data.settings || {});
+
+      return {
+        id: d.id,
+        name: String(data.name || "未命名帳本").trim() || "未命名帳本",
+        settings,
+        allowedCurrencies: buildAllowedCurrencies(settings),
+      };
     });
 
-    return json(200, { ok: true, books });
+    return json(200, {
+      ok: true,
+      books,
+    });
   } catch (e) {
     console.error(e);
-    return json(500, { ok: false, error: "Server error" });
+    return json(500, {
+      ok: false,
+      error: "Server error",
+      detail: e?.message || String(e),
+    });
   }
 };
