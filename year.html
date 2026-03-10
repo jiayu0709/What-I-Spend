@@ -11,8 +11,14 @@
   <title>分析</title>
 
   <style>
-    .monthbar{
+    .range-wrap{
+      position:relative;
       margin-top:6px;
+      z-index:20;
+    }
+
+    .monthbar{
+      margin-top:0;
       background: var(--card-bg);
       border-radius: var(--radius);
       padding:10px 12px;
@@ -20,6 +26,8 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
+      position:relative;
+      z-index:1;
     }
 
     .monthbar .m-btn{
@@ -47,18 +55,78 @@
       appearance:none;
       -webkit-appearance:none;
       font-size:16px;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    .range-menu{
-      margin-top:8px;
+    .toolbar-switches{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+      margin-bottom:12px;
+      align-items:start;
+      position:relative;
+      z-index:15;
+    }
+
+    .dropdown{
+      position:relative;
+      min-width:0;
+    }
+
+    .dropdown-btn{
+      width:100%;
+      border:0;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      padding:14px 38px 14px 14px;
+      font-size:15px;
+      font-weight:900;
+      color:var(--text);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      text-align:center;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      position:relative;
+    }
+
+    .dropdown-btn::after{
+      content:"▾";
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:12px;
+      color:var(--secondary);
+      pointer-events:none;
+    }
+
+    .dropdown.open .dropdown-btn{
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .dropdown-menu{
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      right:0;
       display:grid;
       gap:8px;
       background:var(--card-bg);
       border-radius:var(--radius);
       padding:10px;
+      z-index:40;
+      box-shadow:
+        0 12px 30px rgba(0,0,0,0.12),
+        0 2px 8px rgba(0,0,0,0.06);
     }
 
-    .range-menu-btn{
+    .dropdown-menu-btn{
       border:0;
       background:rgba(255,255,255,0.45);
       border:1px solid rgba(0,0,0,0.06);
@@ -71,62 +139,20 @@
       cursor:pointer;
       appearance:none;
       -webkit-appearance:none;
-    }
-
-    .toolbar-switches{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      margin-bottom:12px;
-      align-items:stretch;
-    }
-
-    .card.card--empty{
-      background:transparent;
-      padding:0;
-    }
-
-    .seg{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-      margin-bottom:12px;
-      padding:4px;
-      border-radius:12px;
-      background:rgba(255,255,255,0.45);
-      border:1px solid rgba(0,0,0,0.06);
-    }
-
-    .seg.seg-half{
-      margin-bottom:0;
-      min-width:0;
-    }
-
-    .seg-btn{
-      border:0;
-      background:transparent;
-      border-radius:10px;
-      padding:10px 0;
-      font-size:15px;
-      font-weight:800;
-      color:var(--secondary);
-      cursor:pointer;
-      appearance:none;
-      -webkit-appearance:none;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
-      -webkit-user-select:none;
-      transition:all .15s ease;
-      min-width:0;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    .seg-btn.active{
+    .dropdown-menu-btn.active{
       background:var(--accent-text);
       color:#fff;
       box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card.card--empty{
+      background:transparent;
+      padding:0;
     }
 
     .donut-wrap{
@@ -227,31 +253,45 @@
         </div>
       </div>
 
-      <div class="monthbar" aria-label="期間切換">
-        <button class="m-btn" type="button" id="btnPrev" aria-label="上一期">&lt;</button>
+      <div class="range-wrap">
+        <div class="monthbar" aria-label="期間切換">
+          <button class="m-btn" type="button" id="btnPrev" aria-label="上一期">&lt;</button>
 
-        <button class="m-title-btn" type="button" id="btnRangePicker" aria-label="選擇統計模式">
-          <span id="monthLabel">Loading...</span>
-        </button>
+          <button class="m-title-btn" type="button" id="btnRangePicker" aria-label="選擇統計模式">
+            <span id="monthLabel">Loading...</span>
+          </button>
 
-        <button class="m-btn" type="button" id="btnNext" aria-label="下一期">&gt;</button>
-      </div>
+          <button class="m-btn" type="button" id="btnNext" aria-label="下一期">&gt;</button>
+        </div>
 
-      <div class="range-menu hidden" id="rangeMenu">
-        <button class="range-menu-btn" type="button" id="btnModeMonth">以月份統計</button>
-        <button class="range-menu-btn" type="button" id="btnModeYear">以年度統計</button>
+        <div class="dropdown-menu hidden" id="rangeMenu">
+          <button class="dropdown-menu-btn" type="button" id="btnModeMonth">以月份統計</button>
+          <button class="dropdown-menu-btn" type="button" id="btnModeYear">以年度統計</button>
+        </div>
       </div>
 
       <section class="section">
         <div class="toolbar-switches">
-          <div class="seg seg-half" aria-label="統計類型切換">
-            <button class="seg-btn active" type="button" id="btnExpense">支出</button>
-            <button class="seg-btn" type="button" id="btnIncome">收入</button>
+          <div class="dropdown" id="typeDropdown">
+            <button class="dropdown-btn" type="button" id="btnTypePicker" aria-label="統計類型選擇">
+              <span id="typeLabel">支出</span>
+            </button>
+
+            <div class="dropdown-menu hidden" id="typeMenu">
+              <button class="dropdown-menu-btn" type="button" id="btnExpense">支出</button>
+              <button class="dropdown-menu-btn" type="button" id="btnIncome">收入</button>
+            </div>
           </div>
 
-          <div class="seg seg-half" aria-label="顯示幣別切換">
-            <button class="seg-btn active" type="button" id="btnCurTWD">TWD</button>
-            <button class="seg-btn hidden" type="button" id="btnCurForeign">USD</button>
+          <div class="dropdown" id="currencyDropdown">
+            <button class="dropdown-btn" type="button" id="btnCurrencyPicker" aria-label="顯示幣別選擇">
+              <span id="currencyLabel">TWD</span>
+            </button>
+
+            <div class="dropdown-menu hidden" id="currencyMenu">
+              <button class="dropdown-menu-btn" type="button" id="btnCurTWD">TWD</button>
+              <button class="dropdown-menu-btn hidden" type="button" id="btnCurForeign">USD</button>
+            </div>
           </div>
         </div>
 
@@ -351,15 +391,16 @@
     }
 
     function updateSegUI() {
+      $("typeLabel").textContent = currentMode === "income" ? "收入" : "支出";
       $("btnExpense").classList.toggle("active", currentMode === "expense");
       $("btnIncome").classList.toggle("active", currentMode === "income");
     }
 
     function updateCurrencyUI() {
-      const btnTWD = $("btnCurTWD");
       const btnForeign = $("btnCurForeign");
 
-      btnTWD.classList.toggle("active", displayCurrency === "TWD");
+      $("currencyLabel").textContent = displayCurrency;
+      $("btnCurTWD").classList.toggle("active", displayCurrency === "TWD");
 
       if (foreignCurrency && foreignCurrency !== "TWD") {
         btnForeign.classList.remove("hidden");
@@ -369,6 +410,11 @@
         btnForeign.classList.add("hidden");
         btnForeign.classList.remove("active");
       }
+    }
+
+    function updatePeriodMenuUI() {
+      $("btnModeMonth").classList.toggle("active", currentPeriod === "month");
+      $("btnModeYear").classList.toggle("active", currentPeriod === "year");
     }
 
     function applyDisplayCurrency(next) {
@@ -392,26 +438,54 @@
       applyDisplayCurrency(nextDisplay);
     }
 
-    function toggleRangeMenu(show) {
-      $("rangeMenu").classList.toggle("hidden", !show);
+    function closeAllMenus() {
+      $("rangeMenu").classList.add("hidden");
+      $("typeMenu").classList.add("hidden");
+      $("currencyMenu").classList.add("hidden");
+      $("typeDropdown").classList.remove("open");
+      $("currencyDropdown").classList.remove("open");
+    }
+
+    function toggleMenu(menuId, shouldShow, dropdownId = null) {
+      if (shouldShow) {
+        closeAllMenus();
+      }
+      $(menuId).classList.toggle("hidden", !shouldShow);
+      if (dropdownId) {
+        $(dropdownId).classList.toggle("open", shouldShow);
+      }
     }
 
     function updatePeriodUI() {
       updateRangeLabel();
+      updatePeriodMenuUI();
     }
 
     window.__applyBookCurrencySettings = applyBookCurrencySettings;
 
-    $("btnRangePicker").addEventListener("click", () => {
+    $("btnRangePicker").addEventListener("click", (e) => {
+      e.stopPropagation();
       const isHidden = $("rangeMenu").classList.contains("hidden");
-      toggleRangeMenu(isHidden);
+      toggleMenu("rangeMenu", isHidden);
+    });
+
+    $("btnTypePicker").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = $("typeMenu").classList.contains("hidden");
+      toggleMenu("typeMenu", isHidden, "typeDropdown");
+    });
+
+    $("btnCurrencyPicker").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = $("currencyMenu").classList.contains("hidden");
+      toggleMenu("currencyMenu", isHidden, "currencyDropdown");
     });
 
     $("btnModeMonth").addEventListener("click", async () => {
       currentPeriod = "month";
       localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
       updatePeriodUI();
-      toggleRangeMenu(false);
+      closeAllMenus();
       await window.__reloadStatsRange?.();
     });
 
@@ -419,22 +493,15 @@
       currentPeriod = "year";
       localStorage.setItem(LS_STATS_PERIOD, currentPeriod);
       updatePeriodUI();
-      toggleRangeMenu(false);
+      closeAllMenus();
       await window.__reloadStatsRange?.();
-    });
-
-    document.addEventListener("click", (e) => {
-      const picker = $("btnRangePicker");
-      const menu = $("rangeMenu");
-      if (!picker.contains(e.target) && !menu.contains(e.target)) {
-        toggleRangeMenu(false);
-      }
     });
 
     $("btnExpense").addEventListener("click", async () => {
       currentMode = "expense";
       localStorage.setItem(LS_STATS_MODE, currentMode);
       updateSegUI();
+      closeAllMenus();
       await window.__renderCurrentStatsMode();
     });
 
@@ -442,18 +509,35 @@
       currentMode = "income";
       localStorage.setItem(LS_STATS_MODE, currentMode);
       updateSegUI();
+      closeAllMenus();
       await window.__renderCurrentStatsMode();
     });
 
     $("btnCurTWD").addEventListener("click", async () => {
       applyDisplayCurrency("TWD");
+      closeAllMenus();
       await window.__renderCurrentStatsMode();
     });
 
     $("btnCurForeign").addEventListener("click", async () => {
       if (!foreignCurrency) return;
       applyDisplayCurrency(foreignCurrency);
+      closeAllMenus();
       await window.__renderCurrentStatsMode();
+    });
+
+    document.addEventListener("click", (e) => {
+      const rangeWrap = document.querySelector(".range-wrap");
+      const typeDropdown = $("typeDropdown");
+      const currencyDropdown = $("currencyDropdown");
+
+      if (
+        !rangeWrap.contains(e.target) &&
+        !typeDropdown.contains(e.target) &&
+        !currencyDropdown.contains(e.target)
+      ) {
+        closeAllMenus();
+      }
     });
 
     $("btnPrev").addEventListener("click", async () => {
@@ -463,6 +547,7 @@
           : addMonths(currentMonth, -1);
 
       updatePeriodUI();
+      closeAllMenus();
       await window.__reloadStatsRange?.();
     });
 
@@ -473,6 +558,7 @@
           : addMonths(currentMonth, 1);
 
       updatePeriodUI();
+      closeAllMenus();
       await window.__reloadStatsRange?.();
     });
 
