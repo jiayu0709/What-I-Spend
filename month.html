@@ -519,9 +519,8 @@
 
       availableCurrencies = getAvailableCurrencies();
 
-      const saved = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "";
       const preferred = String(settings.primaryDisplayCurrency || "TWD").toUpperCase();
-      const nextDisplay = normalizeDisplayCurrency(saved || preferred || "TWD");
+      const nextDisplay = normalizeDisplayCurrency(preferred);
 
       applyDisplayCurrency(nextDisplay);
     }

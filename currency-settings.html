@@ -32,16 +32,6 @@
           </div>
 
           <div class="field">
-            <div class="label">主要顯示幣別</div>
-            <select class="input" id="primaryDisplayCurrency">
-              <option value="TWD">TWD</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-            <div class="hint">本月、統計等頁面可優先以此幣別顯示。</div>
-          </div>
-
-          <div class="field">
             <div class="label">帳本外幣</div>
             <select class="input" id="foreignCurrency">
               <option value="">不使用外幣</option>
@@ -49,6 +39,14 @@
               <option value="EUR">EUR</option>
             </select>
             <div class="hint">一個帳本只使用一種外幣。新增頁之後只會出現 TWD 與這個外幣。</div>
+          </div>
+
+          <div class="field">
+            <div class="label">主要顯示幣別</div>
+            <select class="input" id="primaryDisplayCurrency">
+              <option value="TWD">TWD</option>
+            </select>
+            <div class="hint">本月、統計等頁面會優先以此幣別顯示。</div>
           </div>
         </div>
       </div>
@@ -64,6 +62,9 @@
     import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const LS_BOOK = "wis_currentBookId";
+    const LS_MONTH_DISPLAY_CURRENCY = "wis_month_display_currency";
+    const LS_STATS_DISPLAY_CURRENCY = "wis_stats_display_currency";
+
     const $ = (id) => document.getElementById(id);
 
     const DEFAULT_SETTINGS = {
@@ -71,6 +72,63 @@
       primaryDisplayCurrency: "TWD",
       foreignCurrency: "",
     };
+
+    function renderPrimaryDisplayOptions(foreignCurrency = "", selectedValue = "TWD") {
+      const sel = $("primaryDisplayCurrency");
+      const foreign = String(foreignCurrency || "").toUpperCase();
+      const allowed = ["TWD"];
+
+      if (foreign === "USD" || foreign === "EUR") {
+        allowed.push(foreign);
+      }
+
+      sel.innerHTML = "";
+
+      for (const code of allowed) {
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = code;
+        sel.appendChild(opt);
+      }
+
+      sel.value = allowed.includes(selectedValue) ? selectedValue : "TWD";
+    }
+
+    function normalizePrimaryDisplayCurrency(primaryDisplayCurrency, foreignCurrency) {
+      const primary = String(primaryDisplayCurrency || "TWD").toUpperCase();
+      const foreign = String(foreignCurrency || "").toUpperCase();
+
+      if (primary === "TWD") return "TWD";
+      if ((foreign === "USD" || foreign === "EUR") && primary === foreign) return foreign;
+
+      return "TWD";
+    }
+
+    function normalizeDefaultCurrency(defaultCurrency, foreignCurrency) {
+      const def = String(defaultCurrency || "TWD").toUpperCase();
+      const foreign = String(foreignCurrency || "").toUpperCase();
+
+      if (def === "TWD") return "TWD";
+      if ((foreign === "USD" || foreign === "EUR") && def === foreign) return foreign;
+
+      return "TWD";
+    }
+
+    async function renderBookBadge(user, bookId) {
+      try {
+        const ref = doc(db, "users", user.uid, "books", bookId);
+        const snap = await getDoc(ref);
+        const data = snap.data() || {};
+        const name = (data.name || "未命名帳本").trim();
+
+        const badge = $("bookBadge");
+        badge.textContent = name;
+        badge.title = name;
+        badge.style.display = "inline-flex";
+      } catch (e) {
+        console.error("renderBookBadge failed:", e);
+      }
+    }
 
     async function loadSettings() {
       await window.firebaseReady;
@@ -87,14 +145,22 @@
         return;
       }
 
+      await renderBookBadge(user, bookId);
+
       const ref = doc(db, "users", user.uid, "books", bookId);
       const snap = await getDoc(ref);
       const data = snap.data() || {};
-      const settings = data.settings || DEFAULT_SETTINGS;
+      const settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
 
-      $("defaultCurrency").value = settings.defaultCurrency || "TWD";
-      $("primaryDisplayCurrency").value = settings.primaryDisplayCurrency || "TWD";
-      $("foreignCurrency").value = settings.foreignCurrency || "";
+      const foreignCurrency = String(settings.foreignCurrency || "").toUpperCase();
+      const normalizedPrimary = normalizePrimaryDisplayCurrency(settings.primaryDisplayCurrency, foreignCurrency);
+      const normalizedDefault = normalizeDefaultCurrency(settings.defaultCurrency, foreignCurrency);
+
+      $("foreignCurrency").value = foreignCurrency;
+      renderPrimaryDisplayOptions(foreignCurrency, normalizedPrimary);
+
+      $("defaultCurrency").value = normalizedDefault;
+      $("primaryDisplayCurrency").value = normalizedPrimary;
     }
 
     async function saveSettings() {
@@ -107,9 +173,13 @@
         return;
       }
 
-      const defaultCurrency = $("defaultCurrency").value || "TWD";
-      const primaryDisplayCurrency = $("primaryDisplayCurrency").value || "TWD";
-      const foreignCurrency = $("foreignCurrency").value || "";
+      const foreignCurrency = ($("foreignCurrency").value || "").toUpperCase();
+
+      let defaultCurrency = ($("defaultCurrency").value || "TWD").toUpperCase();
+      let primaryDisplayCurrency = ($("primaryDisplayCurrency").value || "TWD").toUpperCase();
+
+      defaultCurrency = normalizeDefaultCurrency(defaultCurrency, foreignCurrency);
+      primaryDisplayCurrency = normalizePrimaryDisplayCurrency(primaryDisplayCurrency, foreignCurrency);
 
       const ref = doc(db, "users", user.uid, "books", bookId);
 
@@ -121,16 +191,34 @@
         }
       }, { merge: true });
 
+      // 重要：清掉各頁曾記住的顯示幣別，讓頁面回去吃帳本設定
+      localStorage.removeItem(LS_MONTH_DISPLAY_CURRENCY);
+      localStorage.removeItem(LS_STATS_DISPLAY_CURRENCY);
+
       await window.ui?.alert?.("幣別設定已儲存");
       history.back();
     }
+
+    $("foreignCurrency").addEventListener("change", () => {
+      const foreignCurrency = ($("foreignCurrency").value || "").toUpperCase();
+
+      const currentPrimary = $("primaryDisplayCurrency").value || "TWD";
+      renderPrimaryDisplayOptions(foreignCurrency, currentPrimary);
+
+      const currentDefault = ($("defaultCurrency").value || "TWD").toUpperCase();
+      $("defaultCurrency").value = normalizeDefaultCurrency(currentDefault, foreignCurrency);
+    });
+
+    $("backLink").addEventListener("click", () => {
+      history.back();
+    });
 
     $("saveBtn").addEventListener("click", async () => {
       try {
         await saveSettings();
       } catch (e) {
         console.error(e);
-        alert("儲存失敗：" + (e.message || e));
+        await window.ui?.alert?.("儲存失敗：" + (e.message || e));
       }
     });
 
