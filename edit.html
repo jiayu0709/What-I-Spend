@@ -2,8 +2,11 @@
 <!--
   edit.html
   ✅ 分類改抓目前帳本 books/{bookId}.categories
+  ✅ 幣別改抓目前帳本 books/{bookId}.settings.foreignCurrency
   ✅ 依 type 顯示 expense / income 分類
   ✅ 若原分類已不在帳本分類內，仍保留顯示
+  ✅ 若原幣別不在帳本可用幣別內，仍保留顯示
+  ✅ 金額區塊排版比照 add.html
   ✅ 刪除完成後自動返回 ref
 -->
 <html lang="zh-Hant">
@@ -29,6 +32,13 @@
     .field{display:grid;gap:8px;margin-top:14px;min-width:0}
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
+
+    .field-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      min-width:0;
+    }
 
     .input,
     input,
@@ -91,6 +101,93 @@
     }
     select option{ color: var(--accent-text); }
 
+    .amount-card{
+      display:grid;
+      gap:12px;
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,0.56);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .amount-main{
+      display:grid;
+      grid-template-columns:110px 1fr;
+      gap:12px;
+      align-items:center;
+      min-height:56px;
+    }
+
+    .currency-pill{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,0.08);
+      font-weight:900;
+      font-size:18px;
+      color:var(--text);
+    }
+
+    .amount-input{
+      width:100%;
+      height:56px;
+      border:0;
+      background:transparent;
+      outline:none;
+      font-size:34px;
+      line-height:56px;
+      font-weight:900;
+      color:var(--text);
+      padding:0;
+      margin:0;
+      min-width:0;
+      text-align:left;
+      -webkit-text-fill-color:var(--text);
+    }
+
+    .amount-input::placeholder{
+      color:#b4b4b4;
+      font-weight:800;
+    }
+
+    .fx-wrap{
+      display:grid;
+      gap:10px;
+      padding-top:2px;
+    }
+
+    .fx-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .preview-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:12px;
+      min-height:52px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.72);
+      border:1px solid rgba(0,0,0,0.06);
+    }
+
+    .preview-value{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+      white-space:nowrap;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
     .btnbar{margin-top:14px;display:grid;gap:10px}
 
     .btn{
@@ -107,10 +204,12 @@
       appearance:none;
       -webkit-appearance:none;
     }
+
     .btn.primary{
       background: var(--btn-primary-bg, var(--accent-text));
       color: var(--btn-primary-text, #fff);
     }
+
     .btn:active{opacity:.7;transform:scale(.98)}
 
     a, button{ -webkit-tap-highlight-color: transparent; }
@@ -119,6 +218,7 @@
       user-select:none;
       -webkit-user-select:none;
     }
+
     .back:active{opacity:.6;transform:scale(.98)}
     .btn.primary:active{opacity:.75}
   </style>
@@ -148,14 +248,58 @@
           <input class="input" type="time" id="time" />
         </div>
 
-        <div class="field">
-          <div class="label">分類</div>
-          <select class="input" id="category"></select>
+        <div class="field-row">
+          <div class="field">
+            <div class="label">分類</div>
+            <select class="input" id="category"></select>
+          </div>
+
+          <div class="field">
+            <div class="label">幣別</div>
+            <select class="input" id="currency"></select>
+          </div>
         </div>
 
         <div class="field">
           <div class="label">金額</div>
-          <input class="input" type="number" id="amount" placeholder="例如：200" />
+          <div class="amount-card">
+            <div class="amount-main">
+              <div class="currency-pill" id="currencyPill">TWD</div>
+              <input
+                class="amount-input"
+                type="number"
+                id="amount"
+                inputmode="decimal"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="fx-wrap hidden" id="fxWrap">
+              <div class="fx-row">
+                <div class="field">
+                  <div class="label">匯率</div>
+                  <input
+                    class="input"
+                    type="number"
+                    id="fxRate"
+                    inputmode="decimal"
+                    placeholder="1 外幣 = 幾 TWD"
+                  />
+                </div>
+
+                <div class="field">
+                  <div class="label">台幣金額</div>
+                  <div class="preview-box">
+                    <div class="preview-value" id="amountTWDPreview">NT$0</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hint" id="fxHint">
+                外幣會依匯率換算台幣。
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="field">
@@ -188,6 +332,9 @@
         category: data.category,
         note: data.note,
         amount: Number(String(data.amount).replace(/,/g, "")),
+        currency: data.currency,
+        fxRateToTWD: data.fxRateToTWD,
+        amountTWD: data.amountTWD,
       });
     };
 
@@ -199,7 +346,7 @@
       await deleteDoc(ref);
     };
 
-    window.getBookCategoriesFromCloud = async () => {
+    window.getCurrentBookDataFromCloud = async () => {
       const user = await window.requireAuth();
       if (!user) throw new Error("Not logged in");
 
@@ -208,8 +355,7 @@
 
       const ref = doc(db, "users", user.uid, "books", bookId);
       const snap = await getDoc(ref);
-      const data = snap.data() || {};
-      return data.categories || null;
+      return snap.data() || {};
     };
   </script>
 
@@ -228,12 +374,41 @@
       date: document.getElementById("date"),
       time: document.getElementById("time"),
       category: document.getElementById("category"),
-      note: document.getElementById("note"),
+      currency: document.getElementById("currency"),
+      currencyPill: document.getElementById("currencyPill"),
       amount: document.getElementById("amount"),
+      fxWrap: document.getElementById("fxWrap"),
+      fxRate: document.getElementById("fxRate"),
+      fxHint: document.getElementById("fxHint"),
+      amountTWDPreview: document.getElementById("amountTWDPreview"),
+      note: document.getElementById("note"),
       saveBtn: document.getElementById("saveBtn"),
       deleteBtn: document.getElementById("deleteBtn"),
       backLink: document.getElementById("backLink"),
     };
+
+    let BOOK_DATA = {};
+    let AVAILABLE_CURRENCIES = ["TWD"];
+
+    function moneyNT(n){
+      const v = Number(n || 0);
+      return "NT$" + Math.round(v).toLocaleString("en-US");
+    }
+
+    function parseAmount(v){
+      const n = Number(String(v ?? "").replace(/,/g, ""));
+      return isFinite(n) ? n : NaN;
+    }
+
+    function buildAvailableCurrencies(bookData = {}) {
+      const list = ["TWD"];
+      const foreign = String(bookData?.settings?.foreignCurrency || "").trim().toUpperCase();
+
+      if (foreign && foreign !== "TWD") {
+        list.push(foreign);
+      }
+      return list;
+    }
 
     if (els.backLink) {
       els.backLink.addEventListener("click", () => {
@@ -245,18 +420,11 @@
       const sel = els.category;
       if (!sel) return;
 
-      let categories = null;
-
-      try {
-        categories = await window.getBookCategoriesFromCloud();
-      } catch (e) {
-        console.error("getBookCategoriesFromCloud failed:", e);
-      }
-
+      const categories = BOOK_DATA.categories || {};
       const source =
         txType === "income"
-          ? (categories?.income || DEFAULT_CATEGORIES.income)
-          : (categories?.expense || DEFAULT_CATEGORIES.expense);
+          ? (categories.income || DEFAULT_CATEGORIES.income)
+          : (categories.expense || DEFAULT_CATEGORIES.expense);
 
       sel.innerHTML = "";
 
@@ -279,49 +447,140 @@
       sel.value = cur || source[0] || "";
     }
 
+    function renderCurrencyOptions(currentValue = ""){
+      const sel = els.currency;
+      if (!sel) return;
+
+      sel.innerHTML = "";
+
+      for (const c of AVAILABLE_CURRENCIES) {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        sel.appendChild(opt);
+      }
+
+      const cur = String(currentValue || "").trim().toUpperCase();
+
+      if (cur && !AVAILABLE_CURRENCIES.includes(cur)) {
+        const opt = document.createElement("option");
+        opt.value = cur;
+        opt.textContent = cur;
+        sel.insertBefore(opt, sel.firstChild);
+      }
+
+      sel.value = cur || AVAILABLE_CURRENCIES[0] || "TWD";
+    }
+
+    function updateTWDPreview() {
+      const currency = (els.currency?.value || "TWD").toUpperCase();
+      const amount = parseAmount(els.amount?.value);
+      const fxRate = parseAmount(els.fxRate?.value);
+
+      if (!isFinite(amount) || amount <= 0) {
+        els.amountTWDPreview.textContent = "NT$0";
+        return;
+      }
+
+      if (currency === "TWD") {
+        els.amountTWDPreview.textContent = moneyNT(amount);
+        return;
+      }
+
+      if (!isFinite(fxRate) || fxRate <= 0) {
+        els.amountTWDPreview.textContent = "NT$0";
+        return;
+      }
+
+      els.amountTWDPreview.textContent = moneyNT(amount * fxRate);
+    }
+
+    function updateCurrencyUI() {
+      const currency = (els.currency?.value || "TWD").toUpperCase();
+      els.currencyPill.textContent = currency;
+
+      const isTWD = currency === "TWD";
+
+      if (isTWD) {
+        els.fxWrap.classList.add("hidden");
+        els.fxRate.value = "1";
+        els.fxHint.textContent = "台幣不需匯率換算。";
+      } else {
+        els.fxWrap.classList.remove("hidden");
+        els.fxHint.textContent = `1 ${currency} = 幾 TWD`;
+        if (!els.fxRate.value) {
+          els.fxRate.value = "";
+        }
+      }
+
+      updateTWDPreview();
+    }
+
     async function init(){
-      const saved = localStorage.getItem("tx:" + id);
-      let data = null;
+      let saved = null;
+      try {
+        const raw = localStorage.getItem("tx:" + id);
+        saved = raw ? JSON.parse(raw) : null;
+      } catch {}
 
-      if (saved) {
-        try { data = JSON.parse(saved); } catch {}
+      let data = saved || {
+        id,
+        date: qs.get("date") || "",
+        time: qs.get("time") || "",
+        category: qs.get("cat") || "",
+        note: qs.get("note") || "",
+        amount: qs.get("amount") || "",
+        currency: qs.get("currency") || "TWD",
+        fxRateToTWD: qs.get("fxRateToTWD") || qs.get("fxRate") || "1",
+      };
+
+      try {
+        BOOK_DATA = await window.getCurrentBookDataFromCloud();
+      } catch (e) {
+        console.error("getCurrentBookDataFromCloud failed:", e);
+        BOOK_DATA = {};
       }
 
-      if (!data) {
-        data = {
-          id,
-          date: qs.get("date") || "",
-          time: qs.get("time") || "",
-          category: qs.get("cat") || "",
-          note: qs.get("note") || "",
-          amount: qs.get("amount") || "",
-        };
-      }
+      AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_DATA);
 
       if (els.date) els.date.value = data.date || "";
       if (els.time) els.time.value = data.time || "";
-
-      await renderCategoryOptions(data.category || "");
-
       if (els.note) els.note.value = data.note || "";
       if (els.amount) els.amount.value = data.amount || "";
+
+      await renderCategoryOptions(data.category || "");
+      renderCurrencyOptions(data.currency || "TWD");
+
+      els.fxRate.value = data.fxRateToTWD || "1";
+      updateCurrencyUI();
     }
 
     async function save(){
+      const currency = (els.currency?.value || "TWD").toUpperCase();
+      const amount = parseAmount(els.amount?.value);
+      const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate?.value);
+
+      if (!isFinite(amount) || amount <= 0) {
+        await window.ui.alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      if (currency !== "TWD" && (!isFinite(fxRate) || fxRate <= 0)) {
+        await window.ui.alert("請輸入正確匯率（> 0）");
+        return;
+      }
+
       const data = {
         id,
         date: els.date?.value || "",
         time: els.time?.value || "",
         category: (els.category?.value || "").trim(),
         note: (els.note?.value || "").trim(),
-        amount: els.amount?.value || "",
+        amount: amount,
+        currency,
+        fxRateToTWD: fxRate,
+        amountTWD: currency === "TWD" ? amount : amount * fxRate,
       };
-
-      const amt = Number(String(data.amount).replace(/,/g, ""));
-      if (!isFinite(amt) || amt <= 0) {
-        await window.ui.alert("請輸入正確金額（> 0）");
-        return;
-      }
 
       localStorage.setItem("tx:" + id, JSON.stringify(data));
 
@@ -353,6 +612,10 @@
     }
 
     init();
+
+    els.currency?.addEventListener("change", updateCurrencyUI);
+    els.amount?.addEventListener("input", updateTWDPreview);
+    els.fxRate?.addEventListener("input", updateTWDPreview);
 
     if (els.saveBtn) {
       els.saveBtn.addEventListener("click", async () => {
