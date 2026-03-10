@@ -2,8 +2,8 @@
 <!--
   edit.html
   ✅ 分類抓這筆交易所屬帳本 books/{bookId}.categories
-  ✅ 幣別抓這筆交易所屬帳本 books/{bookId}.settings.foreignCurrency
-  ✅ 編輯預設幣別 = 這筆交易原本的 currency
+  ✅ 幣別選項 = TWD + 該帳本 settings.foreignCurrency
+  ✅ 編輯預設幣別 = 這筆交易原本存的 currency
   ✅ 若原分類已不在帳本分類內，仍保留顯示
   ✅ 若原幣別已不在帳本可用幣別內，仍保留顯示
   ✅ 金額區塊排版比照 add.html
@@ -439,13 +439,18 @@
       return isFinite(n) ? n : NaN;
     }
 
+    function normalizeCurrency(v){
+      return String(v || "TWD").trim().toUpperCase();
+    }
+
     function buildAvailableCurrencies(bookData = {}) {
       const list = ["TWD"];
-      const foreign = String(bookData?.settings?.foreignCurrency || "").trim().toUpperCase();
+      const foreign = normalizeCurrency(bookData?.settings?.foreignCurrency || "");
 
       if (foreign && foreign !== "TWD") {
         list.push(foreign);
       }
+
       return list;
     }
 
@@ -499,7 +504,7 @@
         sel.appendChild(opt);
       }
 
-      const cur = String(currentValue || "").trim().toUpperCase();
+      const cur = normalizeCurrency(currentValue || "TWD");
 
       if (cur && !AVAILABLE_CURRENCIES.includes(cur)) {
         const opt = document.createElement("option");
@@ -508,11 +513,11 @@
         sel.insertBefore(opt, sel.firstChild);
       }
 
-      sel.value = cur || AVAILABLE_CURRENCIES[0] || "TWD";
+      sel.value = cur || "TWD";
     }
 
     function updateTWDPreview() {
-      const currency = (els.currency?.value || "TWD").toUpperCase();
+      const currency = normalizeCurrency(els.currency?.value || "TWD");
       const amount = parseAmount(els.amount?.value);
       const fxRate = parseAmount(els.fxRate?.value);
 
@@ -535,12 +540,10 @@
     }
 
     function updateCurrencyUI() {
-      const currency = (els.currency?.value || "TWD").toUpperCase();
+      const currency = normalizeCurrency(els.currency?.value || "TWD");
       els.currencyPill.textContent = currency;
 
-      const isTWD = currency === "TWD";
-
-      if (isTWD) {
+      if (currency === "TWD") {
         els.fxWrap.classList.add("hidden");
         els.fxRate.value = "1";
         els.fxHint.textContent = "台幣不需匯率換算。";
@@ -607,6 +610,8 @@
       if (els.amount) els.amount.value = data.amount || "";
 
       await renderCategoryOptions(data.category || "");
+
+      // 這裡就是關鍵：預設選這筆交易原本的幣別
       renderCurrencyOptions(data.currency || "TWD");
 
       els.fxRate.value = String(data.fxRateToTWD || "1");
@@ -614,7 +619,7 @@
     }
 
     async function save(){
-      const currency = (els.currency?.value || "TWD").toUpperCase();
+      const currency = normalizeCurrency(els.currency?.value || "TWD");
       const amount = parseAmount(els.amount?.value);
       const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate?.value);
 
