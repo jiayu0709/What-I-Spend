@@ -1,10 +1,9 @@
 <!doctype html>
 <!--
-  edit.html (cleaned)
-  ✅ 功能不變、畫面不變
-  ✅ 全站共用（nav/tabbar/drawer/modal/page transition/input colors...）交給 theme.css + app.js
-  ✅ 本頁只保留「編輯頁專屬」：表單版面、btnbar、欄位統一高度/置中
-  ✅ 分類清單仍用你原本的 CATEGORIES（不改行為）
+  edit.html
+  ✅ 分類改抓目前帳本 books/{bookId}.categories
+  ✅ 依 type 顯示 expense / income 分類
+  ✅ 若原分類已不在帳本分類內，仍保留顯示
   ✅ 刪除完成後自動返回 ref
 -->
 <html lang="zh-Hant">
@@ -175,7 +174,7 @@
   <script type="module" src="app.js"></script>
 
   <script type="module">
-    import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
     window.saveToCloud = async (id, data) => {
@@ -199,14 +198,31 @@
       const ref = doc(db, "users", user.uid, "transactions", id);
       await deleteDoc(ref);
     };
+
+    window.getBookCategoriesFromCloud = async () => {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+
+      const bookId = localStorage.getItem("wis_currentBookId");
+      if (!bookId) throw new Error("No current book");
+
+      const ref = doc(db, "users", user.uid, "books", bookId);
+      const snap = await getDoc(ref);
+      const data = snap.data() || {};
+      return data.categories || null;
+    };
   </script>
 
   <script>
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
     const ref = qs.get("ref") || "month.html";
+    const txType = qs.get("type") || "expense";
 
-    const CATEGORIES = ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他"];
+    const DEFAULT_CATEGORIES = {
+      expense: ["餐飲🥣","飲料🥤","交通🛵","日用🛍️","娛樂🎮","醫療🏥","治裝👗","家用🏠","旅遊🧳","其他🧶"],
+      income: ["薪資💼","獎金🎁","兼職🧑‍💻","投資📈","退款💵","其他🧶"],
+    };
 
     const els = {
       date: document.getElementById("date"),
@@ -225,12 +241,26 @@
       });
     }
 
-    function renderCategoryOptions(currentValue){
+    async function renderCategoryOptions(currentValue){
       const sel = els.category;
       if (!sel) return;
 
+      let categories = null;
+
+      try {
+        categories = await window.getBookCategoriesFromCloud();
+      } catch (e) {
+        console.error("getBookCategoriesFromCloud failed:", e);
+      }
+
+      const source =
+        txType === "income"
+          ? (categories?.income || DEFAULT_CATEGORIES.income)
+          : (categories?.expense || DEFAULT_CATEGORIES.expense);
+
       sel.innerHTML = "";
-      for (const name of CATEGORIES) {
+
+      for (const name of source) {
         const opt = document.createElement("option");
         opt.value = name;
         opt.textContent = name;
@@ -239,17 +269,17 @@
 
       const cur = (currentValue || "").trim();
 
-      if (cur && !CATEGORIES.includes(cur)) {
+      if (cur && !source.includes(cur)) {
         const opt = document.createElement("option");
         opt.value = cur;
         opt.textContent = cur;
         sel.insertBefore(opt, sel.firstChild);
       }
 
-      sel.value = cur || CATEGORIES[0];
+      sel.value = cur || source[0] || "";
     }
 
-    function init(){
+    async function init(){
       const saved = localStorage.getItem("tx:" + id);
       let data = null;
 
@@ -271,8 +301,7 @@
       if (els.date) els.date.value = data.date || "";
       if (els.time) els.time.value = data.time || "";
 
-      renderCategoryOptions(data.category || "");
-      if (els.category) els.category.value = (data.category || "").trim() || CATEGORIES[0];
+      await renderCategoryOptions(data.category || "");
 
       if (els.note) els.note.value = data.note || "";
       if (els.amount) els.amount.value = data.amount || "";
