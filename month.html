@@ -129,14 +129,6 @@
       border-color:transparent;
     }
 
-    .display-hint{
-      margin:8px 0 0;
-      font-size:12px;
-      color:var(--secondary);
-      font-weight:800;
-      line-height:1.45;
-    }
-
     .hidden{
       display:none !important;
     }
@@ -290,10 +282,6 @@
             <button class="dropdown-item hidden" type="button" id="btnCurForeign">USD</button>
           </div>
         </div>
-      </div>
-
-      <div class="display-hint" id="displayHint">
-        目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再顯示。
       </div>
 
       <section class="section">
@@ -492,12 +480,6 @@
       }
 
       $("currencyTriggerLabel").textContent = displayCurrency;
-
-      if (displayCurrency === "TWD") {
-        $("displayHint").textContent = "目前以 TWD 顯示；不同幣別明細會先換算成 TWD 後再顯示。";
-      } else {
-        $("displayHint").textContent = `目前以 ${displayCurrency} 顯示；TWD 與其他幣別明細會先換算成 ${displayCurrency} 後再顯示。`;
-      }
     }
 
     function applyDisplayCurrency(next, { persist = true, lock = false } = {}) {

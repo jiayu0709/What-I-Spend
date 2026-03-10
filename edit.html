@@ -33,11 +33,30 @@
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
 
-    .field-row{
+    .dual-field-row{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
+      margin-top:14px;
       min-width:0;
+      align-items:start;
+    }
+
+    .dual-field{
+      display:grid;
+      grid-template-rows:auto 52px;
+      gap:8px;
+      min-width:0;
+    }
+
+    .dual-field .label{
+      margin:0;
+      line-height:1.2;
+    }
+
+    .dual-field .input,
+    .dual-field select{
+      margin:0;
     }
 
     .input,
@@ -221,6 +240,17 @@
 
     .back:active{opacity:.6;transform:scale(.98)}
     .btn.primary:active{opacity:.75}
+
+    @media (max-width: 420px){
+      .dual-field-row{
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+
+      .dual-field .label{
+        font-size:13px;
+      }
+    }
   </style>
 </head>
 
@@ -248,13 +278,13 @@
           <input class="input" type="time" id="time" />
         </div>
 
-        <div class="field-row">
-          <div class="field">
+        <div class="dual-field-row">
+          <div class="dual-field">
             <div class="label">分類</div>
             <select class="input" id="category"></select>
           </div>
 
-          <div class="field">
+          <div class="dual-field">
             <div class="label">幣別</div>
             <select class="input" id="currency"></select>
           </div>
