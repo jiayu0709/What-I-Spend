@@ -41,6 +41,94 @@
       white-space:nowrap;
     }
 
+    .nav-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      position:relative;
+      min-width:0;
+    }
+
+    .wallet-badge-wrap{
+      position:relative;
+      min-width:0;
+    }
+
+    .wallet-badge-btn{
+      border:0;
+      background:var(--card-bg);
+      color:var(--text);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:900;
+      line-height:1;
+      display:none;
+      align-items:center;
+      gap:6px;
+      max-width:120px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+
+    .wallet-badge-btn .wallet-badge-label{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .wallet-badge-btn .wallet-badge-caret{
+      flex:0 0 auto;
+      opacity:.7;
+      font-size:10px;
+    }
+
+    .wallet-badge-menu{
+      position:absolute;
+      top:calc(100% + 8px);
+      right:0;
+      min-width:180px;
+      max-width:min(260px, 70vw);
+      display:grid;
+      gap:8px;
+      background:var(--card-bg);
+      border-radius:14px;
+      padding:10px;
+      box-shadow:0 12px 28px rgba(0,0,0,0.12);
+      border:1px solid rgba(0,0,0,0.06);
+      z-index:80;
+    }
+
+    .wallet-badge-item{
+      border:0;
+      background:rgba(255,255,255,0.45);
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      padding:12px 14px;
+      text-align:center;
+      font-size:14px;
+      font-weight:900;
+      color:var(--text);
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .wallet-badge-item.active{
+      background:var(--accent-text);
+      color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      border-color:transparent;
+    }
+
     .toolbar-switches{
       position:relative;
       display:grid;
@@ -247,6 +335,15 @@
         <div class="nav-left"></div>
         <div class="nav-title">本月</div>
         <div class="nav-right">
+          <div class="wallet-badge-wrap" id="walletBadgeWrap">
+            <button class="wallet-badge-btn" type="button" id="btnWalletFilter" aria-label="篩選錢包">
+              <span class="wallet-badge-label" id="walletBadgeLabel">全部錢包</span>
+              <span class="wallet-badge-caret">▾</span>
+            </button>
+
+            <div class="wallet-badge-menu hidden" id="walletBadgeMenu"></div>
+          </div>
+
           <div class="book-badge" id="bookBadge" style="display:none;"></div>
         </div>
       </div>
@@ -321,6 +418,7 @@
     const LS_MONTH_DISPLAY_CURRENCY = "wis_month_display_currency";
     const LS_MONTH_FILTER_MODE = "wis_month_filter_mode";
     const LS_MONTH_DISPLAY_CURRENCY_LOCK = "wis_month_display_currency_locked";
+    const LS_MONTH_WALLET_FILTER = "wis_month_wallet_filter";
 
     const qs = new URLSearchParams(location.search);
     const urlBook = qs.get("b");
@@ -369,7 +467,9 @@
     let availableCurrencies = ["TWD"];
     let displayCurrency = localStorage.getItem(LS_MONTH_DISPLAY_CURRENCY) || "TWD";
     let filterMode = localStorage.getItem(LS_MONTH_FILTER_MODE) || "all";
+    let walletFilter = localStorage.getItem(LS_MONTH_WALLET_FILTER) || "all";
     let latestMonthTxs = [];
+    let latestWallets = [];
     let hasRenderedOnce = false;
     let loadingTimer = null;
 
@@ -393,6 +493,18 @@
       if (mode === "expense") return "支出";
       if (mode === "income") return "收入";
       return "全部";
+    }
+
+    function getWalletLabelById(walletId) {
+      if (!walletId || walletId === "all") return "全部錢包";
+      const wallet = latestWallets.find(w => w.id === walletId);
+      return wallet?.name || "全部錢包";
+    }
+
+    function normalizeWalletFilter(walletId) {
+      const value = String(walletId || "all").trim();
+      if (value === "all") return "all";
+      return latestWallets.some(w => w.id === value) ? value : "all";
     }
 
     function formatMoney(currency, amount) {
@@ -448,6 +560,7 @@
     function closeAllMenus() {
       $("filterMenu").classList.add("hidden");
       $("currencyMenu").classList.add("hidden");
+      $("walletBadgeMenu").classList.add("hidden");
     }
 
     function toggleMenu(menuId) {
@@ -482,6 +595,41 @@
       $("currencyTriggerLabel").textContent = displayCurrency;
     }
 
+    function updateWalletFilterUI() {
+      const btn = $("btnWalletFilter");
+      const label = $("walletBadgeLabel");
+      label.textContent = getWalletLabelById(walletFilter);
+
+      btn.style.display = latestWallets.length ? "inline-flex" : "none";
+
+      const menu = $("walletBadgeMenu");
+      menu.innerHTML = "";
+
+      const allBtn = document.createElement("button");
+      allBtn.type = "button";
+      allBtn.className = "wallet-badge-item" + (walletFilter === "all" ? " active" : "");
+      allBtn.textContent = "全部錢包";
+      allBtn.addEventListener("click", async () => {
+        applyWalletFilter("all");
+        closeAllMenus();
+        await renderWithTxs(latestMonthTxs);
+      });
+      menu.appendChild(allBtn);
+
+      for (const wallet of latestWallets) {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "wallet-badge-item" + (walletFilter === wallet.id ? " active" : "");
+        item.textContent = wallet.name || "未命名錢包";
+        item.addEventListener("click", async () => {
+          applyWalletFilter(wallet.id);
+          closeAllMenus();
+          await renderWithTxs(latestMonthTxs);
+        });
+        menu.appendChild(item);
+      }
+    }
+
     function applyDisplayCurrency(next, { persist = true, lock = false } = {}) {
       displayCurrency = normalizeDisplayCurrency(next);
 
@@ -495,6 +643,12 @@
       filterMode = normalizeFilterMode(next);
       localStorage.setItem(LS_MONTH_FILTER_MODE, filterMode);
       updateFilterUI();
+    }
+
+    function applyWalletFilter(next) {
+      walletFilter = normalizeWalletFilter(next);
+      localStorage.setItem(LS_MONTH_WALLET_FILTER, walletFilter);
+      updateWalletFilterUI();
     }
 
     function applyBookCurrencySettings(settings = {}) {
@@ -538,6 +692,11 @@
       toggleMenu("currencyMenu");
     });
 
+    $("btnWalletFilter").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleMenu("walletBadgeMenu");
+    });
+
     $("btnModeAll").addEventListener("click", async () => {
       applyFilterMode("all");
       closeAllMenus();
@@ -572,11 +731,42 @@
     document.addEventListener("click", (e) => {
       const filterDropdown = $("filterDropdown");
       const currencyDropdown = $("currencyDropdown");
+      const walletBadgeWrap = $("walletBadgeWrap");
 
-      if (!filterDropdown.contains(e.target) && !currencyDropdown.contains(e.target)) {
+      if (
+        !filterDropdown.contains(e.target) &&
+        !currencyDropdown.contains(e.target) &&
+        !walletBadgeWrap.contains(e.target)
+      ) {
         closeAllMenus();
       }
     });
+
+    async function loadWalletsForCurrentBook(uid, bookId) {
+      if (!uid || !bookId) {
+        latestWallets = [];
+        applyWalletFilter("all");
+        return;
+      }
+
+      try {
+        const walletsRef = collection(db, "users", uid, "books", bookId, "wallets");
+        const q1 = query(
+          walletsRef,
+          where("archived", "==", false),
+          orderBy("createdAt", "asc")
+        );
+
+        const snap = await getDocs(q1);
+        latestWallets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        console.error("讀取錢包失敗:", e);
+        latestWallets = [];
+      }
+
+      walletFilter = normalizeWalletFilter(localStorage.getItem(LS_MONTH_WALLET_FILTER) || "all");
+      updateWalletFilterUI();
+    }
 
     async function renderCurrentBookBadge(uid) {
       const bookBadge = $("bookBadge");
@@ -585,6 +775,7 @@
       if (!bookId) {
         bookBadge.style.display = "none";
         applyBookCurrencySettings({});
+        await loadWalletsForCurrentBook(uid, "");
         return;
       }
 
@@ -601,6 +792,7 @@
         bookBadge.style.display = "inline-flex";
 
         applyBookCurrencySettings(curBook?.settings || {});
+        await loadWalletsForCurrentBook(uid, bookId);
       } catch (e) {
         console.error("讀取帳本 badge 失敗:", e);
         bookBadge.style.display = "none";
@@ -610,8 +802,10 @@
           const snap = await getDoc(ref);
           const data = snap.data() || {};
           applyBookCurrencySettings(data.settings || {});
+          await loadWalletsForCurrentBook(uid, bookId);
         } catch {
           applyBookCurrencySettings({});
+          await loadWalletsForCurrentBook(uid, "");
         }
       }
     }
@@ -663,8 +857,12 @@
 
     function shouldShowTx(tx) {
       const type = String(tx.type || "expense");
-      if (filterMode === "expense") return type === "expense";
-      if (filterMode === "income") return type === "income";
+      const txWalletId = String(tx.walletId || "").trim();
+
+      if (filterMode === "expense" && type !== "expense") return false;
+      if (filterMode === "income" && type !== "income") return false;
+      if (walletFilter !== "all" && txWalletId !== walletFilter) return false;
+
       return true;
     }
 
@@ -688,6 +886,8 @@
       params.set("amount", String(parseAmount(tx.amount)));
       params.set("cat", tx.category || "");
       params.set("note", tx.note || "");
+      if (tx.currency) params.set("currency", tx.currency);
+      if (tx.fxRateToTWD) params.set("fxRateToTWD", String(tx.fxRateToTWD));
 
       row.addEventListener("click", () => {
         location.href = "edit.html?" + params.toString();
@@ -702,10 +902,13 @@
       cat.textContent = tx.category || "";
       left.appendChild(cat);
 
-      const noteTxt = (tx.note || "").trim();
+      const walletName = String(tx.walletName || "").trim();
+      const noteTxt = String(tx.note || "").trim();
+      const subText = [walletName, noteTxt].filter(Boolean).join(" · ");
+
       const note = document.createElement("div");
       note.className = "note";
-      if (noteTxt) note.textContent = noteTxt;
+      if (subText) note.textContent = subText;
       else note.style.display = "none";
       left.appendChild(note);
 
@@ -734,10 +937,12 @@
       const root = $("list-root");
       root.innerHTML = "";
 
+      const filteredTxs = latestMonthTxs.filter(shouldShowTx);
+
       let income = 0;
       let expense = 0;
 
-      for (const tx of latestMonthTxs) {
+      for (const tx of filteredTxs) {
         const amt = await convertTxToDisplayAmount(tx, displayCurrency);
         if (tx.type === "income") income += amt;
         else expense += amt;
@@ -753,17 +958,17 @@
       balEl.classList.remove("green", "red");
       balEl.classList.add(balance >= 0 ? "green" : "red");
 
-      const filteredTxs = latestMonthTxs.filter(shouldShowTx);
-
       if (!filteredTxs.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent =
-          filterMode === "expense"
-            ? "這個月份還沒有支出明細。"
-            : filterMode === "income"
-              ? "這個月份還沒有收入明細。"
-              : "這個月份還沒有明細，去新增一筆吧！";
+          walletFilter !== "all"
+            ? "這個錢包在本月還沒有符合條件的明細。"
+            : filterMode === "expense"
+              ? "這個月份還沒有支出明細。"
+              : filterMode === "income"
+                ? "這個月份還沒有收入明細。"
+                : "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
         hasRenderedOnce = true;
         return;
@@ -913,6 +1118,7 @@
 
     updateFilterUI();
     updateCurrencyUI();
+    updateWalletFilterUI();
 
     let isInitialCheck = true;
 
@@ -923,6 +1129,7 @@
         try {
           await window.ensureDefaultBookAndCategories(user.uid);
           await renderCurrentBookBadge(user.uid);
+          await renderWithTxs(latestMonthTxs);
           watchMonthTxs(user.uid);
         } catch (e) {
           stopSoftLoading();
