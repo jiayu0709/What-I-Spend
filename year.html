@@ -358,6 +358,13 @@
     let foreignCurrency = "";
     let availableCurrencies = ["TWD"];
     let latestStatsTxs = null;
+    let firstPaintDone = false;
+
+    function finishFirstPaint() {
+      if (firstPaintDone) return;
+      firstPaintDone = true;
+      window.pageLoader?.hide();
+    }
 
     function updateRangeLabel() {
       $("monthLabel").textContent =
@@ -789,6 +796,7 @@
                 ? "這個月份還沒有收入資料，先去新增幾筆吧！"
                 : "這個月份還沒有支出資料，先去新增幾筆吧！");
         root.appendChild(empty);
+        finishFirstPaint();
         return;
       }
 
@@ -860,6 +868,7 @@
       }
 
       root.append(donutArea, legend);
+      finishFirstPaint();
     }
 
     async function renderCurrentStatsMode() {
@@ -882,6 +891,8 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, orderBy, onSnapshot, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
+
+    window.pageLoader?.show("讀取中…");
 
     function monthStartKey(dateObj) {
       const y = dateObj.getFullYear();
@@ -1019,9 +1030,9 @@
           const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           await window.__setStatsTxs(txs);
         },
-        (e) => {
+        async (e) => {
           console.error("統計頁即時監聽失敗:", e);
-          window.__setStatsTxs(null);
+          await window.__setStatsTxs(null);
         }
       );
     }
@@ -1060,6 +1071,7 @@
     onAuthStateChanged(window.auth, async (user) => {
       if (!user) {
         stopWatchingStats();
+        window.pageLoader?.hide();
         const next = encodeURIComponent(location.href);
         location.replace(`login.html?next=${next}`);
         return;
@@ -1071,7 +1083,7 @@
         await window.__watchStatsForCurrentRange?.();
       } catch (e) {
         console.error("統計頁初始化失敗:", e);
-        window.__setStatsTxs(null);
+        await window.__setStatsTxs(null);
       }
     });
 
