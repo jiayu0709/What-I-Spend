@@ -37,9 +37,22 @@
     .wallet-meta{
       font-size:14px;
       color:var(--secondary);
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+      display:grid;
+      gap:6px;
+    }
+
+    .wallet-balance{
+      font-size:16px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .wallet-balance.positive{
+      color:var(--green);
+    }
+
+    .wallet-balance.negative{
+      color:var(--red);
     }
 
     .wallet-actions{
@@ -175,6 +188,7 @@
     let availableCurrencies = ["TWD"];
     let wallets = [];
     let editingWalletId = "";
+    let walletBalanceMap = new Map();
 
     function normalizeCurrency(v) {
       return String(v || "TWD").trim().toUpperCase();
@@ -249,8 +263,44 @@
           const bSec = b?.createdAt?.seconds || 0;
           return aSec - bSec;
         });
+    }
 
-      renderWalletList();
+    async function loadWalletBalances() {
+      walletBalanceMap = new Map();
+
+      const txRef = collection(db, "users", currentUser.uid, "transactions");
+      let snap;
+
+      try {
+        snap = await getDocs(query(
+          txRef,
+          where("bookId", "==", currentBookId)
+        ));
+      } catch (e) {
+        console.error("讀取交易失敗:", e);
+        snap = { docs: [] };
+      }
+
+      for (const wallet of wallets) {
+        walletBalanceMap.set(wallet.id, Number(wallet.openingBalance || 0));
+      }
+
+      for (const d of snap.docs) {
+        const tx = d.data() || {};
+        const walletId = String(tx.walletId || "").trim();
+        if (!walletId) continue;
+        if (!walletBalanceMap.has(walletId)) continue;
+
+        const amount = Number(tx.amount || 0);
+        if (!Number.isFinite(amount)) continue;
+
+        const current = Number(walletBalanceMap.get(walletId) || 0);
+        const next = tx.type === "income"
+          ? current + amount
+          : current - amount;
+
+        walletBalanceMap.set(walletId, next);
+      }
     }
 
     function resetForm() {
@@ -281,6 +331,10 @@
       els.emptyState.classList.add("hidden");
 
       for (const wallet of wallets) {
+        const currency = normalizeCurrency(wallet.currency || "TWD");
+        const openingBalance = Number(wallet.openingBalance || 0);
+        const currentBalance = Number(walletBalanceMap.get(wallet.id) || 0);
+
         const item = document.createElement("div");
         item.className = "wallet-item";
 
@@ -320,14 +374,25 @@
 
         const meta = document.createElement("div");
         meta.className = "wallet-meta";
-        meta.innerHTML = `
-          <span>幣別：${normalizeCurrency(wallet.currency || "TWD")}</span>
-          <span>初始餘額：${money(normalizeCurrency(wallet.currency || "TWD"), wallet.openingBalance || 0)}</span>
-        `;
+
+        const line1 = document.createElement("div");
+        line1.textContent = `幣別：${currency}　初始餘額：${money(currency, openingBalance)}`;
+
+        const line2 = document.createElement("div");
+        line2.className = "wallet-balance " + (currentBalance >= 0 ? "positive" : "negative");
+        line2.textContent = `目前餘額：${money(currency, currentBalance)}`;
+
+        meta.append(line1, line2);
 
         item.append(top, meta);
         els.walletList.appendChild(item);
       }
+    }
+
+    async function refreshWalletSection() {
+      await loadWallets();
+      await loadWalletBalances();
+      renderWalletList();
     }
 
     async function saveWallet() {
@@ -370,7 +435,7 @@
       }
 
       resetForm();
-      await loadWallets();
+      await refreshWalletSection();
     }
 
     async function archiveWallet(walletId) {
@@ -383,7 +448,7 @@
         resetForm();
       }
 
-      await loadWallets();
+      await refreshWalletSection();
     }
 
     async function init() {
@@ -397,7 +462,7 @@
 
       await window.ensureDefaultBookAndCategories(currentUser.uid);
       await loadBookData();
-      await loadWallets();
+      await refreshWalletSection();
       resetForm();
     }
 
