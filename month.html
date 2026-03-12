@@ -65,7 +65,7 @@
       color:var(--text);
       border-radius:999px;
       padding:8px 12px;
-      height:32px;              /* 跟 book-badge 體感一致 */
+      height:32px;
       font-size:12px;
       font-weight:900;
       line-height:1;
@@ -73,7 +73,7 @@
       align-items:center;
       gap:6px;
       min-width:72px;
-      max-width:120px;          /* 可比帳本長一些 */
+      max-width:120px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -452,6 +452,7 @@
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
+    window.pageLoader?.show("讀取中…");
     await window.firebaseReady;
 
     const LS_BOOK = "wis_currentBookId";
@@ -511,7 +512,14 @@
     let latestMonthTxs = [];
     let latestWallets = [];
     let hasRenderedOnce = false;
+    let firstPaintDone = false;
     let loadingTimer = null;
+
+    function finishFirstPaint() {
+      if (firstPaintDone) return;
+      firstPaintDone = true;
+      window.pageLoader?.hide();
+    }
 
     function getAvailableCurrencies() {
       const list = ["TWD"];
@@ -928,6 +936,7 @@
       params.set("note", tx.note || "");
       if (tx.currency) params.set("currency", tx.currency);
       if (tx.fxRateToTWD) params.set("fxRateToTWD", String(tx.fxRateToTWD));
+      if (tx.walletId) params.set("walletId", tx.walletId);
 
       row.addEventListener("click", () => {
         location.href = "edit.html?" + params.toString();
@@ -1011,6 +1020,7 @@
                 : "這個月份還沒有明細，去新增一筆吧！";
         root.appendChild(empty);
         hasRenderedOnce = true;
+        finishFirstPaint();
         return;
       }
 
@@ -1076,6 +1086,7 @@
       }
 
       hasRenderedOnce = true;
+      finishFirstPaint();
     }
 
     let unsubscribeMonthTxs = null;
@@ -1094,6 +1105,7 @@
 
       if (!bookId) {
         stopWatchingMonthTxs();
+        finishFirstPaint();
         location.replace("books.html");
         return;
       }
@@ -1127,6 +1139,7 @@
         },
         (e) => {
           stopSoftLoading();
+          finishFirstPaint();
           console.error("即時監聽失敗:", e);
           $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
@@ -1173,12 +1186,14 @@
           watchMonthTxs(user.uid);
         } catch (e) {
           stopSoftLoading();
+          finishFirstPaint();
           console.error("初始化失敗:", e);
           $("list-root").innerHTML = "<div class='empty'>讀取失敗，請確認 Firestore 規則與索引</div>";
         }
       } else {
         stopWatchingMonthTxs();
         stopSoftLoading();
+        finishFirstPaint();
 
         if (isInitialCheck) {
           setTimeout(() => {
