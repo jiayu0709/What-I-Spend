@@ -46,15 +46,17 @@
       align-items:center;
       justify-content:flex-end;
       gap:8px;
-      position:relative;
       min-width:0;
-      flex:1 1 auto;
+      flex:0 0 auto;   /* 不要讓右側區塊亂撐 */
     }
 
     .wallet-badge-wrap{
       position:relative;
       min-width:0;
-      flex:0 1 auto;
+      flex:1 1 auto;   /* 錢包按鈕吃剩餘空間 */
+      display:flex;
+      justify-content:flex-end;
+      max-width:calc(100% - 64px);
     }
 
     .wallet-badge-btn{
@@ -69,7 +71,8 @@
       display:none;
       align-items:center;
       gap:6px;
-      max-width:92px;
+      width:auto;
+      max-width:100%;   /* 改成不要寫死 92px */
       min-width:0;
       white-space:nowrap;
       overflow:hidden;
@@ -87,7 +90,7 @@
     }
 
     .book-badge{
-      flex:0 0 auto;
+      flex:0 0 auto;    /* 帳本按鈕固定，不被壓縮 */
       max-width:56px;
     }
 
@@ -348,13 +351,14 @@
       }
 
       .wallet-badge-btn{
-        max-width:76px;
+        max-width:100%;   /* 不要再限制 76px */
         padding:6px 8px;
         font-size:11px;
       }
 
       .book-badge{
         max-width:50px;
+        flex:0 0 auto;
       }
     }
   </style>
