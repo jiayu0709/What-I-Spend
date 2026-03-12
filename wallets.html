@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>錢包設定</title>
+
+  <style>
+    .wallet-list{
+      display:grid;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .wallet-item{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      display:grid;
+      gap:10px;
+    }
+
+    .wallet-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .wallet-name{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .wallet-meta{
+      font-size:14px;
+      color:var(--secondary);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .wallet-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .mini-btn{
+      border:0;
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:14px;
+      font-weight:900;
+      cursor:pointer;
+      background:rgba(255,255,255,0.72);
+      color:var(--accent-text);
+      appearance:none;
+      -webkit-appearance:none;
+    }
+
+    .mini-btn.danger{
+      color:var(--red);
+    }
+
+    .form-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .field-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      min-width:0;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .empty{
+      margin-top:16px;
+      padding:18px;
+      border-radius:var(--radius);
+      background:var(--card-bg);
+      color:var(--secondary);
+      font-weight:800;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <main class="page">
+      <div class="nav">
+        <div class="nav-left">
+          <button class="back-btn" id="backBtn" type="button">‹ 返回</button>
+        </div>
+        <div class="nav-title">錢包設定</div>
+        <div class="nav-right">
+          <div class="book-badge" id="bookBadge" style="display:none;"></div>
+        </div>
+      </div>
+
+      <section class="section">
+        <div class="card">
+          <div class="form-grid">
+            <div class="field">
+              <div class="label">錢包名稱</div>
+              <input class="input" id="walletName" type="text" placeholder="例如：現金、永豐、旅遊錢包" />
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <div class="label">幣別</div>
+                <select class="input" id="walletCurrency"></select>
+              </div>
+
+              <div class="field">
+                <div class="label">初始餘額</div>
+                <input class="input" id="openingBalance" type="number" inputmode="decimal" placeholder="0" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="save" id="saveBtn" type="button">新增錢包</button>
+      </section>
+
+      <section class="section">
+        <div id="walletList" class="wallet-list"></div>
+        <div id="emptyState" class="empty hidden">目前還沒有錢包。</div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import {
+      collection,
+      addDoc,
+      doc,
+      getDoc,
+      getDocs,
+      updateDoc,
+      query,
+      where,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const LS_BOOK = "wis_currentBookId";
+
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      backBtn: $("backBtn"),
+      bookBadge: $("bookBadge"),
+      walletName: $("walletName"),
+      walletCurrency: $("walletCurrency"),
+      openingBalance: $("openingBalance"),
+      saveBtn: $("saveBtn"),
+      walletList: $("walletList"),
+      emptyState: $("emptyState"),
+    };
+
+    let currentUser = null;
+    let currentBookId = "";
+    let availableCurrencies = ["TWD"];
+    let wallets = [];
+    let editingWalletId = "";
+
+    function normalizeCurrency(v) {
+      return String(v || "TWD").trim().toUpperCase();
+    }
+
+    function buildAvailableCurrencies(settings = {}) {
+      const list = ["TWD"];
+      const foreign = normalizeCurrency(settings.foreignCurrency || "");
+      if (foreign && foreign !== "TWD") list.push(foreign);
+      return list;
+    }
+
+    function money(currency, amount) {
+      const n = Number(amount || 0);
+      if (currency === "TWD") return Math.round(n).toLocaleString("en-US");
+      return n.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    }
+
+    function renderCurrencyOptions(selected = "TWD") {
+      els.walletCurrency.innerHTML = "";
+      for (const c of availableCurrencies) {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        els.walletCurrency.appendChild(opt);
+      }
+      els.walletCurrency.value = availableCurrencies.includes(selected) ? selected : "TWD";
+    }
+
+    async function loadBookData() {
+      currentBookId = localStorage.getItem(LS_BOOK) || "";
+      if (!currentBookId) {
+        location.replace("books.html");
+        return;
+      }
+
+      const ref = doc(db, "users", currentUser.uid, "books", currentBookId);
+      const snap = await getDoc(ref);
+      const data = snap.data() || {};
+      const bookName = (data.name || "未命名帳本").trim();
+
+      els.bookBadge.textContent = bookName;
+      els.bookBadge.title = bookName;
+      els.bookBadge.style.display = "inline-flex";
+
+      availableCurrencies = buildAvailableCurrencies(data.settings || {});
+      renderCurrencyOptions("TWD");
+    }
+
+    async function loadWallets() {
+      const ref = collection(db, "users", currentUser.uid, "books", currentBookId, "wallets");
+
+      let snap;
+      try {
+        snap = await getDocs(query(
+          ref,
+          where("archived", "==", false),
+          orderBy("createdAt", "asc")
+        ));
+      } catch {
+        snap = await getDocs(ref);
+      }
+
+      wallets = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(w => w.archived !== true)
+        .sort((a, b) => {
+          const aSec = a?.createdAt?.seconds || 0;
+          const bSec = b?.createdAt?.seconds || 0;
+          return aSec - bSec;
+        });
+
+      renderWalletList();
+    }
+
+    function resetForm() {
+      editingWalletId = "";
+      els.walletName.value = "";
+      els.walletCurrency.value = availableCurrencies[0] || "TWD";
+      els.openingBalance.value = "";
+      els.saveBtn.textContent = "新增錢包";
+    }
+
+    function fillForm(wallet) {
+      editingWalletId = wallet.id;
+      els.walletName.value = wallet.name || "";
+      renderCurrencyOptions(normalizeCurrency(wallet.currency || "TWD"));
+      els.openingBalance.value = String(wallet.openingBalance ?? 0);
+      els.saveBtn.textContent = "儲存修改";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderWalletList() {
+      els.walletList.innerHTML = "";
+
+      if (!wallets.length) {
+        els.emptyState.classList.remove("hidden");
+        return;
+      }
+
+      els.emptyState.classList.add("hidden");
+
+      for (const wallet of wallets) {
+        const item = document.createElement("div");
+        item.className = "wallet-item";
+
+        const top = document.createElement("div");
+        top.className = "wallet-top";
+
+        const name = document.createElement("div");
+        name.className = "wallet-name";
+        name.textContent = wallet.name || "未命名錢包";
+
+        const actions = document.createElement("div");
+        actions.className = "wallet-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "mini-btn";
+        editBtn.type = "button";
+        editBtn.textContent = "編輯";
+        editBtn.addEventListener("click", () => fillForm(wallet));
+
+        const archiveBtn = document.createElement("button");
+        archiveBtn.className = "mini-btn danger";
+        archiveBtn.type = "button";
+        archiveBtn.textContent = "封存";
+        archiveBtn.addEventListener("click", async () => {
+          const ok = await window.ui.confirm(`確定要封存「${wallet.name || "未命名錢包"}」嗎？`, {
+            title: "封存錢包",
+            danger: true,
+            okText: "封存",
+            cancelText: "取消",
+          });
+          if (!ok) return;
+          await archiveWallet(wallet.id);
+        });
+
+        actions.append(editBtn, archiveBtn);
+        top.append(name, actions);
+
+        const meta = document.createElement("div");
+        meta.className = "wallet-meta";
+        meta.innerHTML = `
+          <span>幣別：${normalizeCurrency(wallet.currency || "TWD")}</span>
+          <span>初始餘額：${money(normalizeCurrency(wallet.currency || "TWD"), wallet.openingBalance || 0)}</span>
+        `;
+
+        item.append(top, meta);
+        els.walletList.appendChild(item);
+      }
+    }
+
+    async function saveWallet() {
+      const name = (els.walletName.value || "").trim();
+      const currency = normalizeCurrency(els.walletCurrency.value || "TWD");
+      const openingBalance = Number(els.openingBalance.value || 0);
+
+      if (!name) {
+        await window.ui.alert("請輸入錢包名稱");
+        return;
+      }
+
+      if (!availableCurrencies.includes(currency)) {
+        await window.ui.alert("這個幣別不在帳本可用幣別內");
+        return;
+      }
+
+      if (!Number.isFinite(openingBalance)) {
+        await window.ui.alert("請輸入正確初始餘額");
+        return;
+      }
+
+      const ref = collection(db, "users", currentUser.uid, "books", currentBookId, "wallets");
+
+      if (editingWalletId) {
+        const walletRef = doc(db, "users", currentUser.uid, "books", currentBookId, "wallets", editingWalletId);
+        await updateDoc(walletRef, {
+          name,
+          currency,
+          openingBalance,
+        });
+      } else {
+        await addDoc(ref, {
+          name,
+          currency,
+          openingBalance,
+          archived: false,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      resetForm();
+      await loadWallets();
+    }
+
+    async function archiveWallet(walletId) {
+      const ref = doc(db, "users", currentUser.uid, "books", currentBookId, "wallets", walletId);
+      await updateDoc(ref, {
+        archived: true,
+      });
+
+      if (editingWalletId === walletId) {
+        resetForm();
+      }
+
+      await loadWallets();
+    }
+
+    async function init() {
+      await window.firebaseReady;
+
+      currentUser = await window.waitForAuthReady();
+      if (!currentUser) {
+        location.replace("index.html?next=" + encodeURIComponent(location.href));
+        return;
+      }
+
+      await window.ensureDefaultBookAndCategories(currentUser.uid);
+      await loadBookData();
+      await loadWallets();
+      resetForm();
+    }
+
+    els.backBtn.addEventListener("click", () => {
+      history.back();
+    });
+
+    els.saveBtn.addEventListener("click", async () => {
+      await window.withButtonFeedback(
+        els.saveBtn,
+        async () => { await saveWallet(); },
+        {
+          loadingText: "儲存中…",
+          successText: "已儲存 ✓",
+          minShowMs: 120,
+          successHoldMs: 700,
+          onError: (e) => {
+            console.error(e);
+            window.ui.alert("儲存失敗：" + (e.message || e));
+          },
+        }
+      );
+    });
+
+    await init();
+  </script>
+</body>
+</html>
