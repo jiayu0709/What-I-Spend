@@ -271,6 +271,8 @@
       getWalletById
     } from "./wallet-utils.js";
 
+    window.pageLoader?.show("讀取中…");
+
     const LS_BOOK = "wis_currentBookId";
 
     const DEFAULT_CATEGORIES = {
@@ -760,7 +762,11 @@
       );
     });
 
-    await bootstrap();
+    try {
+      await bootstrap();
+    } finally {
+      window.pageLoader?.hide();
+    }
   </script>
 </body>
 </html>
