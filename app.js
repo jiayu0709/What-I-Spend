@@ -282,6 +282,7 @@ const DRAWER_EXCLUDE = new Set([
   "books.html",
   "categories.html",
   "currency-settings.html",
+  "wallets.html",
 ]);
 
 function shouldShowDrawer() {
