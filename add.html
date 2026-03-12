@@ -185,14 +185,9 @@
               </div>
 
               <div class="field">
-                <div class="label">幣別</div>
-                <select class="input" id="currency"></select>
+                <div class="label">錢包</div>
+                <select class="input" id="wallet"></select>
               </div>
-            </div>
-
-            <div class="field">
-              <div class="label">錢包</div>
-              <select class="input" id="wallet"></select>
             </div>
 
             <div class="field">
@@ -272,7 +267,6 @@
     import {
       ensureDefaultWallet,
       getCurrentBookWallets,
-      filterWalletsByCurrency,
       renderWalletOptions,
       getWalletById
     } from "./wallet-utils.js";
@@ -297,7 +291,6 @@
       btnExpense: $("btn-expense"),
       btnIncome: $("btn-income"),
       category: $("category"),
-      currency: $("currency"),
       wallet: $("wallet"),
       currencyPill: $("currencyPill"),
       fxWrap: $("fxWrap"),
@@ -312,9 +305,7 @@
 
     let BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     let BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
-    let AVAILABLE_CURRENCIES = ["TWD"];
     let BOOK_WALLETS = [];
-    let FILTERED_WALLETS = [];
     let currentType = "expense";
 
     const todayYMD = () => {
@@ -340,47 +331,18 @@
       return "NT$" + Math.round(v).toLocaleString("en-US");
     };
 
-    function isSupportedCurrency(v) {
-      return AVAILABLE_CURRENCIES.includes(String(v || "").toUpperCase());
+    function normalizeCurrency(v) {
+      return String(v || "TWD").trim().toUpperCase();
     }
 
-    function buildAvailableCurrencies(settings) {
-      const list = ["TWD"];
-      const foreign = String(settings?.foreignCurrency || "").toUpperCase();
-
-      if (foreign && foreign !== "TWD" && ["USD", "EUR"].includes(foreign)) {
-        list.push(foreign);
-      }
-
-      return list;
+    function getSelectedWallet() {
+      const walletId = els.wallet.value || "";
+      return getWalletById(BOOK_WALLETS, walletId);
     }
 
-    function renderCurrencyOptions(selectedValue = "") {
-      const prev = selectedValue || els.currency.value || "TWD";
-
-      els.currency.innerHTML = "";
-
-      for (const c of AVAILABLE_CURRENCIES) {
-        const opt = document.createElement("option");
-        opt.value = c;
-        opt.textContent = c;
-        els.currency.appendChild(opt);
-      }
-
-      els.currency.value = isSupportedCurrency(prev) ? prev : "TWD";
-    }
-
-    async function loadWalletOptions(uid, selectedWalletId = "") {
-      BOOK_WALLETS = await getCurrentBookWallets(db, uid);
-
-      const currency = String(els.currency.value || "TWD").toUpperCase();
-      FILTERED_WALLETS = filterWalletsByCurrency(BOOK_WALLETS, currency);
-
-      renderWalletOptions(els.wallet, FILTERED_WALLETS, selectedWalletId);
-    }
-
-    function hasAvailableWallet() {
-      return Array.isArray(FILTERED_WALLETS) && FILTERED_WALLETS.length > 0;
+    function getSelectedWalletCurrency() {
+      const wallet = getSelectedWallet();
+      return normalizeCurrency(wallet?.currency || "TWD");
     }
 
     function categoriesFor(type) {
@@ -428,7 +390,7 @@
     }
 
     async function fetchDefaultFxRate(currency) {
-      const c = String(currency || "TWD").toUpperCase();
+      const c = normalizeCurrency(currency);
       if (c === "TWD") return 1;
 
       const res = await fetch(`/.netlify/functions/getFxRate?currency=${encodeURIComponent(c)}`);
@@ -476,7 +438,6 @@
 
       if (!bookId) {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
-        AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_SETTINGS);
         return BOOK_SETTINGS;
       }
 
@@ -491,12 +452,24 @@
         foreignCurrency: settings.foreignCurrency || "",
       };
 
-      AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_SETTINGS);
       return BOOK_SETTINGS;
     }
 
+    async function loadWalletOptions(uid, selectedWalletId = "") {
+      BOOK_WALLETS = await getCurrentBookWallets(db, uid);
+      renderWalletOptions(els.wallet, BOOK_WALLETS, selectedWalletId);
+
+      if (!els.wallet.value && BOOK_WALLETS.length > 0) {
+        els.wallet.value = BOOK_WALLETS[0].id;
+      }
+    }
+
+    function hasAvailableWallet() {
+      return Array.isArray(BOOK_WALLETS) && BOOK_WALLETS.length > 0;
+    }
+
     function updateTWDPreview() {
-      const currency = els.currency.value || "TWD";
+      const currency = getSelectedWalletCurrency();
       const amount = parseAmount(els.amount.value);
       const fxRate = parseAmount(els.fxRate.value);
 
@@ -518,8 +491,8 @@
       els.amountTWDPreview.textContent = moneyNT(amount * fxRate);
     }
 
-    async function updateCurrencyUI({ autoFetch = true } = {}) {
-      const currency = els.currency.value || "TWD";
+    async function updateWalletCurrencyUI({ autoFetch = true } = {}) {
+      const currency = getSelectedWalletCurrency();
       const isTWD = currency === "TWD";
 
       els.currencyPill.textContent = currency;
@@ -635,7 +608,6 @@
       const category = (els.category.value || "").trim();
       const note = (els.note.value || "").trim();
       const amount = parseAmount(els.amount.value);
-      const currency = els.currency.value || "TWD";
 
       if (!category) {
         await window.ui.alert("請選擇分類");
@@ -646,6 +618,22 @@
         await window.ui.alert("請輸入正確金額（> 0）");
         return;
       }
+
+      const bookId = localStorage.getItem(LS_BOOK);
+      if (!bookId) {
+        location.replace("books.html");
+        return;
+      }
+
+      const walletId = els.wallet.value || "";
+      const wallet = getWalletById(BOOK_WALLETS, walletId);
+
+      if (!walletId || !wallet) {
+        await window.ui.alert("請選擇錢包");
+        return;
+      }
+
+      const currency = normalizeCurrency(wallet.currency || "TWD");
 
       let fxRateToTWD = 1;
       let amountTWD = amount;
@@ -659,20 +647,6 @@
         }
 
         amountTWD = amount * fxRateToTWD;
-      }
-
-      const bookId = localStorage.getItem(LS_BOOK);
-      if (!bookId) {
-        location.replace("books.html");
-        return;
-      }
-
-      const walletId = els.wallet.value || "";
-      const wallet = getWalletById(FILTERED_WALLETS, walletId);
-
-      if (!walletId || !wallet) {
-        await window.ui.alert("請選擇錢包");
-        return;
       }
 
       const payload = {
@@ -707,8 +681,8 @@
       const qsCategory = qs.get("category");
       const qsNote = qs.get("note");
       const qsDate = qs.get("date");
-      const qsCurrency = qs.get("currency");
       const qsFxRate = qs.get("fxRate");
+      const qsWalletId = qs.get("walletId");
 
       if (qsType === "income" || qsType === "expense") setType(qsType);
       if (qsDate && /^\d{4}-\d{2}-\d{2}$/.test(qsDate)) els.date.value = qsDate;
@@ -716,7 +690,7 @@
       if (qsNote) els.note.value = qsNote;
       if (qsFxRate) els.fxRate.value = qsFxRate;
 
-      return { qsCategory, qsCurrency };
+      return { qsCategory, qsWalletId };
     }
 
     async function bootstrap() {
@@ -724,7 +698,7 @@
       setType("expense");
       setInitialFxHiddenState();
 
-      const { qsCategory, qsCurrency } = applyQueryPrefill();
+      const { qsCategory, qsWalletId } = applyQueryPrefill();
 
       await window.firebaseReady;
 
@@ -742,31 +716,17 @@
         }
       } else {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
-        AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_SETTINGS);
       }
 
       renderCategoryOptions(currentType);
-      renderCurrencyOptions();
-
-      const preferredCurrency =
-        (qsCurrency && isSupportedCurrency(qsCurrency))
-          ? qsCurrency.toUpperCase()
-          : (isSupportedCurrency(BOOK_SETTINGS.defaultCurrency)
-              ? BOOK_SETTINGS.defaultCurrency.toUpperCase()
-              : "TWD");
-
-      els.currency.value = preferredCurrency;
 
       if (qsCategory && [...els.category.options].some(o => o.value === qsCategory)) {
         els.category.value = qsCategory;
       }
 
-      await updateCurrencyUI({
-        autoFetch: preferredCurrency !== "TWD"
-      });
-
       if (uid) {
-        await loadWalletOptions(uid);
+        await loadWalletOptions(uid, qsWalletId || "");
+        await updateWalletCurrencyUI({ autoFetch: getSelectedWalletCurrency() !== "TWD" });
       }
 
       els.saveBtn.disabled = uid ? !hasAvailableWallet() : false;
@@ -775,14 +735,8 @@
     els.btnExpense.addEventListener("click", () => setType("expense"));
     els.btnIncome.addEventListener("click", () => setType("income"));
 
-    els.currency.addEventListener("change", async () => {
-      await updateCurrencyUI({ autoFetch: true });
-
-      const user = await window.waitForAuthReady();
-      if (user) {
-        await loadWalletOptions(user.uid);
-      }
-
+    els.wallet.addEventListener("change", async () => {
+      await updateWalletCurrencyUI({ autoFetch: true });
       els.saveBtn.disabled = !hasAvailableWallet();
     });
 
