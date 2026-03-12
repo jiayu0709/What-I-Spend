@@ -688,3 +688,56 @@ function bindBackLink() {
     location.href = backTarget;
   });
 }
+
+(function initPageLoader(){
+  function ensureLoader() {
+    let loader = document.getElementById("globalPageLoader");
+    if (loader) return loader;
+
+    loader = document.createElement("div");
+    loader.id = "globalPageLoader";
+    loader.className = "page-loader";
+    loader.innerHTML = `
+      <div class="page-loader-spinner"></div>
+      <div class="page-loader-text">讀取中…</div>
+    `;
+    document.body.appendChild(loader);
+    return loader;
+  }
+
+  function ensurePageShell() {
+    const main = document.querySelector("main.page");
+    if (!main) return null;
+
+    if (!main.classList.contains("page-shell")) {
+      main.classList.add("page-shell");
+    }
+    return main;
+  }
+
+  window.pageLoader = {
+    show(text = "讀取中…") {
+      document.documentElement.classList.add("page-loading");
+
+      const loader = ensureLoader();
+      const shell = ensurePageShell();
+      const textEl = loader.querySelector(".page-loader-text");
+
+      if (textEl) textEl.textContent = text;
+      loader.classList.remove("hidden");
+      if (shell) shell.classList.remove("ready");
+    },
+
+    hide() {
+      const loader = ensureLoader();
+      const shell = ensurePageShell();
+
+      if (shell) shell.classList.add("ready");
+      loader.classList.add("hidden");
+
+      setTimeout(() => {
+        document.documentElement.classList.remove("page-loading");
+      }, 220);
+    }
+  };
+})();
