@@ -69,22 +69,24 @@ export const handler = async (event) => {
   const type = String(body.type || "expense").trim();
   const category = String(body.category || "").trim();
   const note = String(body.note || "").trim();
-
+  const walletId = String(body.walletId || "").trim();
+  const walletName = String(body.walletName || "").trim();
   const amount = toNumber(body.amount);
   const inputCurrency = normalizeCurrency(body.currency || "TWD");
   const inputFxRateToTWD = toNumber(body.fxRateToTWD);
 
-  if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
-    return json(400, {
-      ok: false,
-      error: "Missing fields",
-      detail: {
-        date,
-        category,
-        amount: body.amount,
-      },
-    });
-  }
+  if (!date || !category || !walletId || !Number.isFinite(amount) || amount <= 0) {
+  return json(400, {
+    ok: false,
+    error: "Missing fields",
+    detail: {
+      date,
+      category,
+      walletId,
+      amount: body.amount,
+    },
+  });
+}
 
   try {
     initAdmin();
@@ -183,6 +185,8 @@ export const handler = async (event) => {
       .collection("transactions")
       .add({
         bookId: finalBookId,
+        walletId,
+        walletName,
         date,
         time,
         type,

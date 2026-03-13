@@ -355,6 +355,8 @@
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
 
+    window.pageLoader?.show("讀取中…");
+
     const qs = new URLSearchParams(location.search);
     const id = qs.get("id") || "tx-unknown";
     const ref = qs.get("ref") || "month.html";
@@ -783,7 +785,11 @@
       await removeTx();
     });
 
-    await init();
+    try {
+      await init();
+    } finally {
+      window.pageLoader?.hide();
+    }
   </script>
 </body>
 </html>
