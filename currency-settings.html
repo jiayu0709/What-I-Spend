@@ -1,3 +1,14 @@
+下面是你要的完整修改版，已改成：
+	•	順序變成：
+	1.	帳本外幣
+	2.	預設幣別
+	3.	主要顯示幣別
+	•	預設幣別 的選項會和 主要顯示幣別 一樣
+只會出現：
+	•	TWD
+	•	以及你在「帳本外幣」選的那個外幣
+	•	當帳本外幣選「不使用外幣」時，後面兩個就只剩 TWD
+
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -22,16 +33,6 @@
       <div class="card">
         <div class="form-grid">
           <div class="field">
-            <div class="label">預設幣別</div>
-            <select class="input" id="defaultCurrency">
-              <option value="TWD">TWD</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-            <div class="hint">新增紀錄時，會預設使用這個幣別。</div>
-          </div>
-
-          <div class="field">
             <div class="label">帳本外幣</div>
             <select class="input" id="foreignCurrency">
               <option value="">不使用外幣</option>
@@ -39,6 +40,14 @@
               <option value="EUR">EUR</option>
             </select>
             <div class="hint">一個帳本只使用一種外幣。頁面只會顯示 TWD 與這個外幣。</div>
+          </div>
+
+          <div class="field">
+            <div class="label">預設幣別</div>
+            <select class="input" id="defaultCurrency">
+              <option value="TWD">TWD</option>
+            </select>
+            <div class="hint">新增紀錄時，會預設使用這個幣別。</div>
           </div>
 
           <div class="field">
@@ -78,8 +87,8 @@
     const els = {
       backLink: $("backLink"),
       bookBadge: $("bookBadge"),
-      defaultCurrency: $("defaultCurrency"),
       foreignCurrency: $("foreignCurrency"),
+      defaultCurrency: $("defaultCurrency"),
       primaryDisplayCurrency: $("primaryDisplayCurrency"),
       saveBtn: $("saveBtn"),
     };
@@ -115,19 +124,18 @@
       return allowed.includes(def) ? def : "TWD";
     }
 
-    function renderPrimaryDisplayOptions(foreignCurrency = "", selectedValue = "TWD") {
+    function renderCurrencyOptions(selectEl, foreignCurrency = "", selectedValue = "TWD") {
       const allowed = buildAllowedCurrencies(foreignCurrency);
-      els.primaryDisplayCurrency.innerHTML = "";
+      selectEl.innerHTML = "";
 
       for (const code of allowed) {
         const opt = document.createElement("option");
         opt.value = code;
         opt.textContent = code;
-        els.primaryDisplayCurrency.appendChild(opt);
+        selectEl.appendChild(opt);
       }
 
-      const normalizedSelected = normalizePrimaryDisplayCurrency(selectedValue, foreignCurrency);
-      els.primaryDisplayCurrency.value = normalizedSelected;
+      selectEl.value = allowed.includes(selectedValue) ? selectedValue : "TWD";
     }
 
     function renderBookBadge(bookData = {}) {
@@ -164,10 +172,23 @@
       const normalizedDefault = normalizeDefaultCurrency(settings.defaultCurrency, foreignCurrency);
       const normalizedPrimary = normalizePrimaryDisplayCurrency(settings.primaryDisplayCurrency, foreignCurrency);
 
-      els.foreignCurrency.value = foreignCurrency;
-      renderPrimaryDisplayOptions(foreignCurrency, normalizedPrimary);
-      els.defaultCurrency.value = normalizedDefault;
-      els.primaryDisplayCurrency.value = normalizedPrimary;
+      els.foreignCurrency.value =
+        foreignCurrency === "USD" || foreignCurrency === "EUR" ? foreignCurrency : "";
+
+      renderCurrencyOptions(els.defaultCurrency, foreignCurrency, normalizedDefault);
+      renderCurrencyOptions(els.primaryDisplayCurrency, foreignCurrency, normalizedPrimary);
+    }
+
+    function syncDependentCurrencySelectors() {
+      const foreignCurrency = normalizeCurrency(els.foreignCurrency.value || "");
+      const currentDefault = normalizeCurrency(els.defaultCurrency.value || "TWD");
+      const currentPrimary = normalizeCurrency(els.primaryDisplayCurrency.value || "TWD");
+
+      const normalizedDefault = normalizeDefaultCurrency(currentDefault, foreignCurrency);
+      const normalizedPrimary = normalizePrimaryDisplayCurrency(currentPrimary, foreignCurrency);
+
+      renderCurrencyOptions(els.defaultCurrency, foreignCurrency, normalizedDefault);
+      renderCurrencyOptions(els.primaryDisplayCurrency, foreignCurrency, normalizedPrimary);
     }
 
     async function loadPage() {
@@ -212,9 +233,9 @@
       primaryDisplayCurrency = normalizePrimaryDisplayCurrency(primaryDisplayCurrency, foreignCurrency);
 
       const nextSettings = {
+        foreignCurrency,
         defaultCurrency,
         primaryDisplayCurrency,
-        foreignCurrency,
       };
 
       const ref = doc(db, "users", currentUser.uid, "books", currentBookId);
@@ -238,12 +259,7 @@
     }
 
     els.foreignCurrency.addEventListener("change", () => {
-      const foreignCurrency = normalizeCurrency(els.foreignCurrency.value || "");
-      const currentPrimary = normalizeCurrency(els.primaryDisplayCurrency.value || "TWD");
-      const currentDefault = normalizeCurrency(els.defaultCurrency.value || "TWD");
-
-      renderPrimaryDisplayOptions(foreignCurrency, currentPrimary);
-      els.defaultCurrency.value = normalizeDefaultCurrency(currentDefault, foreignCurrency);
+      syncDependentCurrencySelectors();
     });
 
     els.backLink.addEventListener("click", () => {
