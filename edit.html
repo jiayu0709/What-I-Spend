@@ -23,32 +23,6 @@
     .field:first-child{margin-top:0}
     .label{font-size:14px;font-weight:900;color:var(--secondary)}
 
-    .dual-field-row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:14px;
-      min-width:0;
-      align-items:start;
-    }
-
-    .dual-field{
-      display:grid;
-      grid-template-rows:auto 52px;
-      gap:8px;
-      min-width:0;
-    }
-
-    .dual-field .label{
-      margin:0;
-      line-height:1.2;
-    }
-
-    .dual-field .input,
-    .dual-field select{
-      margin:0;
-    }
-
     .input,
     input,
     select{
@@ -231,17 +205,6 @@
     }
 
     .btn:active{opacity:.7;transform:scale(.98)}
-
-    @media (max-width:420px){
-      .dual-field-row{
-        grid-template-columns:1fr 1fr;
-        gap:10px;
-      }
-
-      .dual-field .label{
-        font-size:13px;
-      }
-    }
   </style>
 </head>
 
@@ -269,16 +232,9 @@
           <input class="input" type="time" id="time" />
         </div>
 
-        <div class="dual-field-row">
-          <div class="dual-field">
-            <div class="label">分類</div>
-            <select class="input" id="category"></select>
-          </div>
-
-          <div class="dual-field">
-            <div class="label">幣別</div>
-            <select class="input" id="currency"></select>
-          </div>
+        <div class="field">
+          <div class="label">分類</div>
+          <select class="input" id="category"></select>
         </div>
 
         <div class="field">
@@ -371,7 +327,6 @@
       date: document.getElementById("date"),
       time: document.getElementById("time"),
       category: document.getElementById("category"),
-      currency: document.getElementById("currency"),
       wallet: document.getElementById("wallet"),
       currencyPill: document.getElementById("currencyPill"),
       amount: document.getElementById("amount"),
@@ -387,7 +342,6 @@
     };
 
     let BOOK_DATA = {};
-    let AVAILABLE_CURRENCIES = ["TWD"];
     let TX_DATA = null;
     let TX_TYPE = txTypeFromQs;
     let ALL_WALLETS = [];
@@ -404,6 +358,15 @@
     function moneyNT(n){
       const v = Number(n || 0);
       return "NT$" + Math.round(v).toLocaleString("en-US");
+    }
+
+    function getSelectedWallet() {
+      const walletId = String(els.wallet.value || "").trim();
+      return ALL_WALLETS.find(w => w.id === walletId) || null;
+    }
+
+    function getSelectedWalletCurrency() {
+      return normalizeCurrency(getSelectedWallet()?.currency || "TWD");
     }
 
     async function getTransactionFromCloud(id) {
@@ -496,48 +459,22 @@
       await deleteDoc(ref);
     }
 
-    function buildAvailableCurrencies(bookData = {}) {
-      const list = ["TWD"];
-      const foreign = normalizeCurrency(bookData?.settings?.foreignCurrency || "");
-
-      if (foreign && foreign !== "TWD") {
-        list.push(foreign);
-      }
-
-      return list;
-    }
-
-    function getWalletsByCurrency(currency) {
-      const cur = normalizeCurrency(currency);
-      return ALL_WALLETS.filter(w => normalizeCurrency(w.currency || "TWD") === cur);
-    }
-
     function renderWalletOptions(selectedWalletId = "") {
-      const currency = normalizeCurrency(els.currency.value || "TWD");
-      const wallets = getWalletsByCurrency(currency);
       const selected = String(selectedWalletId || "").trim();
 
       els.wallet.innerHTML = "";
 
-      for (const wallet of wallets) {
+      for (const wallet of ALL_WALLETS) {
         const opt = document.createElement("option");
         opt.value = wallet.id;
         opt.textContent = wallet.name || "未命名錢包";
         els.wallet.appendChild(opt);
       }
 
-      const currentTxWallet = ALL_WALLETS.find(w => w.id === selected);
-
-      if (selected && wallets.some(w => w.id === selected)) {
+      if (selected && ALL_WALLETS.some(w => w.id === selected)) {
         els.wallet.value = selected;
-      } else if (currentTxWallet && normalizeCurrency(currentTxWallet.currency) !== currency) {
-        const opt = document.createElement("option");
-        opt.value = currentTxWallet.id;
-        opt.textContent = `${currentTxWallet.name || "未命名錢包"}（原錢包）`;
-        els.wallet.insertBefore(opt, els.wallet.firstChild);
-        els.wallet.value = currentTxWallet.id;
-      } else if (wallets.length > 0) {
-        els.wallet.value = wallets[0].id;
+      } else if (ALL_WALLETS.length > 0) {
+        els.wallet.value = ALL_WALLETS[0].id;
       }
     }
 
@@ -569,30 +506,8 @@
       els.category.value = cur || source[0] || "";
     }
 
-    function renderCurrencyOptions(currentValue = ""){
-      els.currency.innerHTML = "";
-
-      for (const c of AVAILABLE_CURRENCIES) {
-        const opt = document.createElement("option");
-        opt.value = c;
-        opt.textContent = c;
-        els.currency.appendChild(opt);
-      }
-
-      const cur = normalizeCurrency(currentValue || "TWD");
-
-      if (cur && !AVAILABLE_CURRENCIES.includes(cur)) {
-        const opt = document.createElement("option");
-        opt.value = cur;
-        opt.textContent = cur;
-        els.currency.insertBefore(opt, els.currency.firstChild);
-      }
-
-      els.currency.value = cur;
-    }
-
     function updateTWDPreview() {
-      const currency = normalizeCurrency(els.currency.value || "TWD");
+      const currency = getSelectedWalletCurrency();
       const amount = parseAmount(els.amount.value);
       const fxRate = parseAmount(els.fxRate.value);
 
@@ -614,8 +529,8 @@
       els.amountTWDPreview.textContent = moneyNT(amount * fxRate);
     }
 
-    function updateCurrencyUI({ keepWalletId = "" } = {}) {
-      const currency = normalizeCurrency(els.currency.value || "TWD");
+    function updateWalletCurrencyUI({ keepFx = true } = {}) {
+      const currency = getSelectedWalletCurrency();
       els.currencyPill.textContent = currency;
 
       if (currency === "TWD") {
@@ -625,10 +540,12 @@
       } else {
         els.fxWrap.classList.remove("hidden");
         els.fxHint.textContent = `1 ${currency} = 幾 TWD`;
-        if (!els.fxRate.value) els.fxRate.value = "";
+
+        if (!keepFx && !els.fxRate.value) {
+          els.fxRate.value = "";
+        }
       }
 
-      renderWalletOptions(keepWalletId || els.wallet.value || TX_DATA?.walletId || "");
       updateTWDPreview();
     }
 
@@ -686,8 +603,6 @@
         ALL_WALLETS = [];
       }
 
-      AVAILABLE_CURRENCIES = buildAvailableCurrencies(BOOK_DATA);
-
       els.date.value = data.date || "";
       els.time.value = data.time || "";
       els.note.value = data.note || "";
@@ -701,37 +616,33 @@
       }
 
       await renderCategoryOptions(data.category || "");
-      renderCurrencyOptions(data.currency || "TWD");
+      renderWalletOptions(data.walletId || "");
 
       els.fxRate.value = String(data.fxRateToTWD || "1");
-      updateCurrencyUI({ keepWalletId: data.walletId || "" });
+      updateWalletCurrencyUI({ keepFx: true });
     }
 
     async function save(){
-      const currency = normalizeCurrency(els.currency.value || "TWD");
-      const amount = parseAmount(els.amount.value);
-      const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate.value);
       const walletId = String(els.wallet.value || "").trim();
       const wallet = ALL_WALLETS.find(w => w.id === walletId) || null;
       const walletName = wallet?.name || "";
+      const currency = normalizeCurrency(wallet?.currency || "TWD");
+
+      const amount = parseAmount(els.amount.value);
+      const fxRate = currency === "TWD" ? 1 : parseAmount(els.fxRate.value);
 
       if (!isFinite(amount) || amount <= 0) {
         await window.ui.alert("請輸入正確金額（> 0）");
         return;
       }
 
-      if (currency !== "TWD" && (!isFinite(fxRate) || fxRate <= 0)) {
-        await window.ui.alert("請輸入正確匯率（> 0）");
-        return;
-      }
-
-      if (!walletId) {
+      if (!walletId || !wallet) {
         await window.ui.alert("請選擇錢包");
         return;
       }
 
-      if (normalizeCurrency(wallet?.currency || "") !== currency) {
-        await window.ui.alert("所選錢包幣別與目前幣別不一致");
+      if (currency !== "TWD" && (!isFinite(fxRate) || fxRate <= 0)) {
+        await window.ui.alert("請輸入正確匯率（> 0）");
         return;
       }
 
@@ -784,8 +695,8 @@
       location.href = ref;
     });
 
-    els.currency?.addEventListener("change", () => {
-      updateCurrencyUI({ keepWalletId: "" });
+    els.wallet?.addEventListener("change", () => {
+      updateWalletCurrencyUI({ keepFx: false });
     });
 
     els.amount?.addEventListener("input", updateTWDPreview);
