@@ -31,6 +31,24 @@
       align-items:start;
     }
 
+    .field-row .field{
+      margin-top:0;
+    }
+
+    .field-row .label{
+      margin:0 0 8px;
+      min-height:20px;
+      display:flex;
+      align-items:flex-end;
+    }
+
+    @media (max-width:420px){
+      .field-row{
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+    }
+
     .input,
     input,
     select{
@@ -213,32 +231,6 @@
     }
 
     .btn:active{opacity:.7;transform:scale(.98)}
-
-    @media (max-width:420px){
-      .field-row{
-        grid-template-columns:1fr 1fr;
-        gap:10px;
-      }
-    }
-
-    .field-row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      min-width:0;
-      align-items:start;
-    }
-
-    .field-row .field{
-      margin-top:0;
-    }
-
-    .field-row .label{
-      margin:0 0 8px;
-      min-height:20px;
-      display:flex;
-      align-items:flex-end;
-    }
   </style>
 </head>
 
@@ -266,14 +258,16 @@
           <input class="input" type="time" id="time" />
         </div>
 
-        <div class="field">
-          <div class="label">分類</div>
-          <select class="input" id="category"></select>
-        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="label">分類</div>
+            <select class="input" id="category"></select>
+          </div>
 
-        <div class="field">
-          <div class="label">錢包</div>
-          <select class="input" id="wallet"></select>
+          <div class="field">
+            <div class="label">錢包</div>
+            <select class="input" id="wallet"></select>
+          </div>
         </div>
 
         <div class="field">
