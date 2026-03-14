@@ -168,8 +168,12 @@
     /* ===== Action button ===== */
     .actions{
       margin-top:14px;
-      display:grid;
-      gap:10px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .actions .btn{
+      width:100%;
     }
 
     .btn{
@@ -293,7 +297,7 @@
 
   <script>
     // ===== copy safari login url =====
-    const loginUrl = new URL("login.html", location.href).toString();
+    const loginUrl = new URL("a2hs.html", location.href).toString();
     const copyBtn = document.getElementById("copyBtn");
     const toast = document.getElementById("toast");
 
