@@ -56,8 +56,25 @@
       -webkit-appearance:none;
       font-size:16px;
       min-width:0;
+      max-width:100%;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+
+    .m-title-btn #monthLabel{
+      min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
+    }
+
+    .m-title-caret{
+      flex:0 0 auto;
+      font-size:12px;
+      color:var(--secondary);
+      opacity:.8;
+      line-height:1;
     }
 
     .toolbar-switches{
@@ -259,6 +276,7 @@
 
           <button class="m-title-btn" type="button" id="btnRangePicker" aria-label="選擇統計模式">
             <span id="monthLabel">Loading...</span>
+            <span class="m-title-caret">▾</span>
           </button>
 
           <button class="m-btn" type="button" id="btnNext" aria-label="下一期">&gt;</button>
