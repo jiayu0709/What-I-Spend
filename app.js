@@ -741,3 +741,61 @@ function bindBackLink() {
     }
   };
 })();
+
+window.appCache = window.appCache || {
+  books: new Map(),
+  wallets: new Map(),
+};
+
+window.dataUtils = {
+  getBookKey(uid, bookId) {
+    return `${uid}:${bookId}`;
+  },
+
+  getWalletKey(uid, bookId) {
+    return `${uid}:${bookId}`;
+  },
+
+  getCachedBook(uid, bookId) {
+    const key = this.getBookKey(uid, bookId);
+    return window.appCache.books.get(key) || null;
+  },
+
+  setCachedBook(uid, bookId, data) {
+    const key = this.getBookKey(uid, bookId);
+    window.appCache.books.set(key, data || {});
+    return data || {};
+  },
+
+  getCachedWallets(uid, bookId) {
+    const key = this.getWalletKey(uid, bookId);
+    return window.appCache.wallets.get(key) || null;
+  },
+
+  setCachedWallets(uid, bookId, wallets) {
+    const key = this.getWalletKey(uid, bookId);
+    const safeWallets = Array.isArray(wallets) ? wallets : [];
+    window.appCache.wallets.set(key, safeWallets);
+    return safeWallets;
+  },
+
+  clearBookCache(uid, bookId) {
+    const key = this.getBookKey(uid, bookId);
+    window.appCache.books.delete(key);
+  },
+
+  clearWalletCache(uid, bookId) {
+    const key = this.getWalletKey(uid, bookId);
+    window.appCache.wallets.delete(key);
+  },
+
+  clearBookAndWalletCache(uid, bookId) {
+    this.clearBookCache(uid, bookId);
+    this.clearWalletCache(uid, bookId);
+  },
+
+  clearAllCache() {
+    window.appCache.books.clear();
+    window.appCache.wallets.clear();
+  }
+};

@@ -415,14 +415,22 @@
       return snap.exists() ? { id: snap.id, ...snap.data() } : null;
     }
 
-    async function getBookDataFromCloud(bookId) {
+    async function getBookDataFromCloud(bookId, { force = false } = {}) {
       const user = await window.requireAuth();
       if (!user) throw new Error("Not logged in");
       if (!bookId) throw new Error("No bookId");
 
+      if (!force) {
+        const cached = window.dataUtils?.getCachedBook(user.uid, bookId);
+        if (cached) return cached;
+      }
+
       const ref = doc(db, "users", user.uid, "books", bookId);
       const snap = await getDoc(ref);
-      return snap.exists() ? (snap.data() || {}) : {};
+      const data = snap.exists() ? (snap.data() || {}) : {};
+
+      window.dataUtils?.setCachedBook(user.uid, bookId, data);
+      return data;
     }
 
     async function getWalletsFromCloud(bookId) {

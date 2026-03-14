@@ -434,6 +434,8 @@
         });
       }
 
+      window.dataUtils?.clearBookAndWalletCache(user.uid, bookId);
+
       resetForm();
       await refreshWalletSection();
     }
@@ -443,6 +445,8 @@
       await updateDoc(ref, {
         archived: true,
       });
+
+      window.dataUtils?.clearBookAndWalletCache(currentUser.uid, currentBookId);
 
       if (editingWalletId === walletId) {
         resetForm();
