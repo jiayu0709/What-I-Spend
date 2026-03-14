@@ -82,7 +82,7 @@
       -webkit-appearance:none;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset;
+      box-shadow:0 1px 0 rgba(255,255,255,0.45) inset;
     }
 
     .wallet-badge-btn .wallet-badge-label{
@@ -380,7 +380,6 @@
               <span class="wallet-badge-label" id="walletBadgeLabel">全部錢包</span>
               <span class="wallet-badge-caret">▾</span>
             </button>
-
             <div class="wallet-badge-menu hidden" id="walletBadgeMenu"></div>
           </div>
 
@@ -514,6 +513,8 @@
     let hasRenderedOnce = false;
     let firstPaintDone = false;
     let loadingTimer = null;
+    let currentWatchingKey = "";
+    let unsubscribeMonthTxs = null;
 
     function finishFirstPaint() {
       if (firstPaintDone) return;
@@ -660,7 +661,6 @@
       allBtn.addEventListener("click", async () => {
         applyWalletFilter("all");
         closeAllMenus();
-        await renderWithTxs(latestMonthTxs);
       });
       menu.appendChild(allBtn);
 
@@ -672,7 +672,6 @@
         item.addEventListener("click", async () => {
           applyWalletFilter(wallet.id);
           closeAllMenus();
-          await renderWithTxs(latestMonthTxs);
         });
         menu.appendChild(item);
       }
@@ -691,12 +690,20 @@
       filterMode = normalizeFilterMode(next);
       localStorage.setItem(LS_MONTH_FILTER_MODE, filterMode);
       updateFilterUI();
+      renderWithTxs(latestMonthTxs);
     }
 
     function applyWalletFilter(next) {
       walletFilter = normalizeWalletFilter(next);
       localStorage.setItem(LS_MONTH_WALLET_FILTER, walletFilter);
       updateWalletFilterUI();
+
+      const user = window.auth.currentUser;
+      if (user) {
+        watchMonthTxs(user.uid);
+      } else {
+        renderWithTxs(latestMonthTxs);
+      }
     }
 
     function applyBookCurrencySettings(settings = {}) {
@@ -745,22 +752,19 @@
       toggleMenu("walletBadgeMenu");
     });
 
-    $("btnModeAll").addEventListener("click", async () => {
+    $("btnModeAll").addEventListener("click", () => {
       applyFilterMode("all");
       closeAllMenus();
-      await renderWithTxs(latestMonthTxs);
     });
 
-    $("btnModeExpense").addEventListener("click", async () => {
+    $("btnModeExpense").addEventListener("click", () => {
       applyFilterMode("expense");
       closeAllMenus();
-      await renderWithTxs(latestMonthTxs);
     });
 
-    $("btnModeIncome").addEventListener("click", async () => {
+    $("btnModeIncome").addEventListener("click", () => {
       applyFilterMode("income");
       closeAllMenus();
-      await renderWithTxs(latestMonthTxs);
     });
 
     $("btnCurTWD").addEventListener("click", async () => {
@@ -790,14 +794,23 @@
       }
     });
 
-    async function loadWalletsForCurrentBook(uid, bookId) {
+    async function loadWalletsForCurrentBook(uid, bookId, { force = false } = {}) {
       if (!uid || !bookId) {
         latestWallets = [];
         applyWalletFilter("all");
         return;
       }
 
+      const cached = window.dataUtils?.getCachedWallets(uid, bookId);
+
       try {
+        if (!force && cached) {
+          latestWallets = cached;
+          walletFilter = normalizeWalletFilter(localStorage.getItem(LS_MONTH_WALLET_FILTER) || "all");
+          updateWalletFilterUI();
+          return;
+        }
+
         const walletsRef = collection(db, "users", uid, "books", bookId, "wallets");
         const q1 = query(
           walletsRef,
@@ -807,9 +820,11 @@
 
         const snap = await getDocs(q1);
         latestWallets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        window.dataUtils?.setCachedWallets(uid, bookId, latestWallets);
       } catch (e) {
         console.error("讀取錢包失敗:", e);
-        latestWallets = [];
+        latestWallets = cached || [];
       }
 
       walletFilter = normalizeWalletFilter(localStorage.getItem(LS_MONTH_WALLET_FILTER) || "all");
@@ -828,33 +843,28 @@
       }
 
       try {
-        const booksRef = collection(db, "users", uid, "books");
-        const q1 = query(booksRef, orderBy("createdAt", "asc"));
-        const snap = await getDocs(q1);
-        const allBooks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const curBook = allBooks.find(b => b.id === bookId);
-        const name = (curBook?.name || "未命名帳本").trim();
+        let data = window.dataUtils?.getCachedBook(uid, bookId);
+
+        if (!data) {
+          const ref = doc(db, "users", uid, "books", bookId);
+          const snap = await getDoc(ref);
+          data = snap.exists() ? (snap.data() || {}) : {};
+          window.dataUtils?.setCachedBook(uid, bookId, data);
+        }
+
+        const name = (data.name || "未命名帳本").trim();
 
         bookBadge.textContent = name;
         bookBadge.title = name;
         bookBadge.style.display = "inline-flex";
 
-        applyBookCurrencySettings(curBook?.settings || {});
+        applyBookCurrencySettings(data.settings || {});
         await loadWalletsForCurrentBook(uid, bookId);
       } catch (e) {
         console.error("讀取帳本 badge 失敗:", e);
         bookBadge.style.display = "none";
-
-        try {
-          const ref = doc(db, "users", uid, "books", bookId);
-          const snap = await getDoc(ref);
-          const data = snap.data() || {};
-          applyBookCurrencySettings(data.settings || {});
-          await loadWalletsForCurrentBook(uid, bookId);
-        } catch {
-          applyBookCurrencySettings({});
-          await loadWalletsForCurrentBook(uid, "");
-        }
+        applyBookCurrencySettings({});
+        await loadWalletsForCurrentBook(uid, "");
       }
     }
 
@@ -903,6 +913,15 @@
       return amountTWD / targetRateToTWD;
     }
 
+    async function prepareDisplayAmounts(txs, targetCurrency) {
+      return Promise.all(
+        txs.map(async (tx) => ({
+          ...tx,
+          __displayAmount: await convertTxToDisplayAmount(tx, targetCurrency),
+        }))
+      );
+    }
+
     function shouldShowTx(tx) {
       const type = String(tx.type || "expense");
       const txWalletId = String(tx.walletId || "").trim();
@@ -914,8 +933,8 @@
       return true;
     }
 
-    async function buildTxRow(tx) {
-      const shownAmt = await convertTxToDisplayAmount(tx, displayCurrency);
+    function buildTxRow(tx) {
+      const shownAmt = Number(tx.__displayAmount || 0);
       const isIncome = tx.type === "income";
 
       const row = document.createElement("div");
@@ -987,12 +1006,13 @@
       root.innerHTML = "";
 
       const filteredTxs = latestMonthTxs.filter(shouldShowTx);
+      const preparedTxs = await prepareDisplayAmounts(filteredTxs, displayCurrency);
 
       let income = 0;
       let expense = 0;
 
-      for (const tx of filteredTxs) {
-        const amt = await convertTxToDisplayAmount(tx, displayCurrency);
+      for (const tx of preparedTxs) {
+        const amt = Number(tx.__displayAmount || 0);
         if (tx.type === "income") income += amt;
         else expense += amt;
       }
@@ -1007,7 +1027,7 @@
       balEl.classList.remove("green", "red");
       balEl.classList.add(balance >= 0 ? "green" : "red");
 
-      if (!filteredTxs.length) {
+      if (!preparedTxs.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent =
@@ -1025,13 +1045,14 @@
       }
 
       const groups = new Map();
-      for (const tx of filteredTxs) {
+      for (const tx of preparedTxs) {
         const key = tx.date || "unknown";
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(tx);
       }
 
       const dates = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+      const frag = document.createDocumentFragment();
 
       for (const dateKey of dates) {
         const section = document.createElement("section");
@@ -1048,7 +1069,7 @@
         let dayIncome = 0;
         let dayExpense = 0;
         for (const tx of list) {
-          const amt = await convertTxToDisplayAmount(tx, displayCurrency);
+          const amt = Number(tx.__displayAmount || 0);
           if (tx.type === "income") dayIncome += amt;
           else dayExpense += amt;
         }
@@ -1071,7 +1092,7 @@
         card.className = "day-card";
 
         for (let idx = 0; idx < list.length; idx++) {
-          const txRow = await buildTxRow(list[idx]);
+          const txRow = buildTxRow(list[idx]);
           card.appendChild(txRow);
 
           if (idx !== list.length - 1) {
@@ -1082,15 +1103,14 @@
         }
 
         section.appendChild(card);
-        root.appendChild(section);
+        frag.appendChild(section);
       }
+
+      root.appendChild(frag);
 
       hasRenderedOnce = true;
       finishFirstPaint();
     }
-
-    let unsubscribeMonthTxs = null;
-    let currentWatchingKey = "";
 
     function stopWatchingMonthTxs() {
       if (unsubscribeMonthTxs) {
@@ -1110,7 +1130,7 @@
         return;
       }
 
-      const watchKey = `${uid}__${bookId}__${currentKey}`;
+      const watchKey = `${uid}__${bookId}__${currentKey}__${walletFilter}`;
       if (unsubscribeMonthTxs && currentWatchingKey === watchKey) return;
 
       stopWatchingMonthTxs();
@@ -1120,11 +1140,19 @@
       const start = `${currentKey}-01`;
       const end = `${nextMonthKey(currentKey)}-01`;
 
-      const q = query(
-        txRef,
+      const conditions = [
         where("bookId", "==", bookId),
         where("date", ">=", start),
         where("date", "<", end),
+      ];
+
+      if (walletFilter !== "all") {
+        conditions.push(where("walletId", "==", walletFilter));
+      }
+
+      const q = query(
+        txRef,
+        ...conditions,
         orderBy("date", "desc"),
         orderBy("time", "desc")
       );
@@ -1182,7 +1210,6 @@
         try {
           await window.ensureDefaultBookAndCategories(user.uid);
           await renderCurrentBookBadge(user.uid);
-          await renderWithTxs(latestMonthTxs);
           watchMonthTxs(user.uid);
         } catch (e) {
           stopSoftLoading();
