@@ -303,12 +303,14 @@
       amount: $("amount"),
       note: $("note"),
       saveBtn: $("saveBtn"),
+      bookBadge: $("bookBadge"),
     };
 
     let BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     let BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
     let BOOK_WALLETS = [];
     let currentType = "expense";
+    let currentUid = "";
 
     const todayYMD = () => {
       const d = new Date();
@@ -335,6 +337,10 @@
 
     function normalizeCurrency(v) {
       return String(v || "TWD").trim().toUpperCase();
+    }
+
+    function getCurrentBookId() {
+      return localStorage.getItem(LS_BOOK) || "";
     }
 
     function getSelectedWallet() {
@@ -412,13 +418,40 @@
       return rate;
     }
 
-    async function loadBookCategories(uid) {
-      const bookId = localStorage.getItem(LS_BOOK);
-      if (!bookId) return;
+    async function getBookDataCached(uid, bookId, { force = false } = {}) {
+      if (!uid || !bookId) return {};
+
+      if (!force) {
+        const cached = window.dataUtils?.getCachedBook(uid, bookId);
+        if (cached) return cached;
+      }
 
       const bookRef = doc(db, "users", uid, "books", bookId);
       const snap = await getDoc(bookRef);
-      const data = snap.data() || {};
+      const data = snap.exists() ? (snap.data() || {}) : {};
+
+      window.dataUtils?.setCachedBook(uid, bookId, data);
+      return data;
+    }
+
+    async function getWalletsCached(uid, bookId, { force = false } = {}) {
+      if (!uid || !bookId) return [];
+
+      if (!force) {
+        const cached = window.dataUtils?.getCachedWallets(uid, bookId);
+        if (cached) return cached;
+      }
+
+      const wallets = await getCurrentBookWallets(db, uid);
+      window.dataUtils?.setCachedWallets(uid, bookId, wallets);
+      return wallets;
+    }
+
+    async function loadBookCategories(uid) {
+      const bookId = getCurrentBookId();
+      if (!bookId) return;
+
+      const data = await getBookDataCached(uid, bookId);
       const c = data.categories;
 
       const ok =
@@ -431,21 +464,23 @@
         return;
       }
 
+      const bookRef = doc(db, "users", uid, "books", bookId);
       await updateDoc(bookRef, { categories: DEFAULT_CATEGORIES });
+
+      const nextData = { ...data, categories: DEFAULT_CATEGORIES };
+      window.dataUtils?.setCachedBook(uid, bookId, nextData);
       BOOK_CATEGORIES = structuredClone(DEFAULT_CATEGORIES);
     }
 
     async function loadBookSettings(uid) {
-      const bookId = localStorage.getItem(LS_BOOK);
+      const bookId = getCurrentBookId();
 
       if (!bookId) {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
         return BOOK_SETTINGS;
       }
 
-      const bookRef = doc(db, "users", uid, "books", bookId);
-      const snap = await getDoc(bookRef);
-      const data = snap.data() || {};
+      const data = await getBookDataCached(uid, bookId);
       const settings = data.settings || {};
 
       BOOK_SETTINGS = {
@@ -454,11 +489,20 @@
         foreignCurrency: settings.foreignCurrency || "",
       };
 
+      const bookName = String(data.name || "").trim();
+      if (bookName && els.bookBadge) {
+        els.bookBadge.textContent = bookName;
+        els.bookBadge.title = bookName;
+        els.bookBadge.style.display = "inline-flex";
+      }
+
       return BOOK_SETTINGS;
     }
 
     async function loadWalletOptions(uid, selectedWalletId = "") {
-      BOOK_WALLETS = await getCurrentBookWallets(db, uid);
+      const bookId = getCurrentBookId();
+      BOOK_WALLETS = await getWalletsCached(uid, bookId);
+
       renderWalletOptions(els.wallet, BOOK_WALLETS, selectedWalletId);
 
       if (!els.wallet.value && BOOK_WALLETS.length > 0) {
@@ -621,7 +665,7 @@
         return;
       }
 
-      const bookId = localStorage.getItem(LS_BOOK);
+      const bookId = getCurrentBookId();
       if (!bookId) {
         location.replace("books.html");
         return;
@@ -668,6 +712,8 @@
 
       await writeTransaction(payload, { prefer: "client" });
 
+      window.dataUtils?.clearWalletCache(user.uid, bookId);
+
       if (redirectAfter) {
         const ym = monthKeyFromDateStr(date);
         const b = encodeURIComponent(bookId);
@@ -702,19 +748,18 @@
 
       const { qsCategory, qsWalletId } = applyQueryPrefill();
 
-      await window.firebaseReady;
-
       const initialUser = await window.waitForAuthReady();
-      const uid = initialUser?.uid || null;
+      currentUid = initialUser?.uid || "";
 
-      if (uid) {
-        await window.ensureDefaultBookAndCategories(uid);
-        await loadBookCategories(uid);
-        await loadBookSettings(uid);
+      if (currentUid) {
+        await window.ensureDefaultBookAndCategories(currentUid);
+        await loadBookCategories(currentUid);
+        await loadBookSettings(currentUid);
 
-        const bookId = localStorage.getItem(LS_BOOK) || "";
+        const bookId = getCurrentBookId();
         if (bookId) {
-          await ensureDefaultWallet(db, uid, bookId);
+          await ensureDefaultWallet(db, currentUid, bookId);
+          window.dataUtils?.clearWalletCache(currentUid, bookId);
         }
       } else {
         BOOK_SETTINGS = { ...DEFAULT_SETTINGS };
@@ -726,12 +771,12 @@
         els.category.value = qsCategory;
       }
 
-      if (uid) {
-        await loadWalletOptions(uid, qsWalletId || "");
+      if (currentUid) {
+        await loadWalletOptions(currentUid, qsWalletId || "");
         await updateWalletCurrencyUI({ autoFetch: getSelectedWalletCurrency() !== "TWD" });
       }
 
-      els.saveBtn.disabled = uid ? !hasAvailableWallet() : false;
+      els.saveBtn.disabled = currentUid ? !hasAvailableWallet() : false;
     }
 
     els.btnExpense.addEventListener("click", () => setType("expense"));
