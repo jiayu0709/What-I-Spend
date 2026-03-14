@@ -639,9 +639,16 @@ async function updateBookBadge() {
       return;
     }
 
-    const ref = doc(window.db, "users", user.uid, "books", bookId);
-    const snap = await getDoc(ref);
-    const name = snap.exists() ? (snap.data()?.name || "未命名帳本") : "未命名帳本";
+    let bookData = window.dataUtils?.getCachedBook(user.uid, bookId);
+
+    if (!bookData) {
+      const ref = doc(window.db, "users", user.uid, "books", bookId);
+      const snap = await getDoc(ref);
+      bookData = snap.exists() ? (snap.data() || {}) : {};
+      window.dataUtils?.setCachedBook(user.uid, bookId, bookData);
+    }
+
+const name = bookData?.name || "未命名帳本";
 
     el.textContent = name;
     el.style.display = "block";
