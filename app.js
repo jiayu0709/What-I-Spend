@@ -335,7 +335,7 @@ function injectDrawer() {
     </button>
 
     <button class="drawer-item" type="button" data-href="wallets.html">
-      錢包設定
+      我的錢包
     </button>
   </div>
 `;

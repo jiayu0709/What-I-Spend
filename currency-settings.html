@@ -25,8 +25,16 @@
             <div class="label">預設幣別</div>
             <select class="input" id="defaultCurrency">
               <option value="TWD">TWD</option>
-              <option value="USD">USD</option>
+              <option value="AUD">AUD</option>
+              <option value="CAD">CAD</option>
+              <option value="CNY">CNY</option>
               <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="HKD">HKD</option>
+              <option value="JPY">JPY</option>
+              <option value="KRW">KRW</option>
+              <option value="SGD">SGD</option>
+              <option value="USD">USD</option>
             </select>
             <div class="hint">新增紀錄時，會預設使用這個幣別。</div>
           </div>
@@ -35,8 +43,16 @@
             <div class="label">帳本外幣</div>
             <select class="input" id="foreignCurrency">
               <option value="">不使用外幣</option>
-              <option value="USD">USD</option>
+              <option value="AUD">AUD</option>
+              <option value="CAD">CAD</option>
+              <option value="CNY">CNY</option>
               <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="HKD">HKD</option>
+              <option value="JPY">JPY</option>
+              <option value="KRW">KRW</option>
+              <option value="SGD">SGD</option>
+              <option value="USD">USD</option>
             </select>
             <div class="hint">一個帳本只使用一種外幣。頁面只會顯示 TWD 與這個外幣。</div>
           </div>
@@ -75,6 +91,21 @@
       foreignCurrency: "",
     };
 
+    const SUPPORTED_FOREIGN_CURRENCIES = [
+      "AUD",
+      "CAD",
+      "CNY",
+      "EUR",
+      "GBP",
+      "HKD",
+      "JPY",
+      "KRW",
+      "SGD",
+      "USD",
+    ];
+
+    const SUPPORTED_ALL_CURRENCIES = ["TWD", ...SUPPORTED_FOREIGN_CURRENCIES];
+
     const els = {
       backLink: $("backLink"),
       bookBadge: $("bookBadge"),
@@ -96,7 +127,7 @@
       const list = ["TWD"];
       const foreign = normalizeCurrency(foreignCurrency);
 
-      if (foreign === "USD" || foreign === "EUR") {
+      if (SUPPORTED_FOREIGN_CURRENCIES.includes(foreign)) {
         list.push(foreign);
       }
 
@@ -164,9 +195,9 @@
       const normalizedDefault = normalizeDefaultCurrency(settings.defaultCurrency, foreignCurrency);
       const normalizedPrimary = normalizePrimaryDisplayCurrency(settings.primaryDisplayCurrency, foreignCurrency);
 
-      els.foreignCurrency.value = foreignCurrency;
+      els.foreignCurrency.value = SUPPORTED_FOREIGN_CURRENCIES.includes(foreignCurrency) ? foreignCurrency : "";
+      els.defaultCurrency.value = SUPPORTED_ALL_CURRENCIES.includes(normalizedDefault) ? normalizedDefault : "TWD";
       renderPrimaryDisplayOptions(foreignCurrency, normalizedPrimary);
-      els.defaultCurrency.value = normalizedDefault;
       els.primaryDisplayCurrency.value = normalizedPrimary;
     }
 
