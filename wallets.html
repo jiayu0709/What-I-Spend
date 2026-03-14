@@ -168,6 +168,8 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    window.pageLoader?.show("讀取中…");
+
     const LS_BOOK = "wis_currentBookId";
 
     const $ = (id) => document.getElementById(id);
@@ -185,6 +187,7 @@
 
     let currentUser = null;
     let currentBookId = "";
+    let currentBookData = {};
     let availableCurrencies = ["TWD"];
     let wallets = [];
     let editingWalletId = "";
@@ -212,13 +215,66 @@
 
     function renderCurrencyOptions(selected = "TWD") {
       els.walletCurrency.innerHTML = "";
+
       for (const c of availableCurrencies) {
         const opt = document.createElement("option");
         opt.value = c;
         opt.textContent = c;
         els.walletCurrency.appendChild(opt);
       }
+
       els.walletCurrency.value = availableCurrencies.includes(selected) ? selected : "TWD";
+    }
+
+    async function getBookData(uid, bookId, { force = false } = {}) {
+      if (!uid) throw new Error("Missing uid");
+      if (!bookId) throw new Error("Missing bookId");
+
+      if (!force) {
+        const cached = window.dataUtils?.getCachedBook(uid, bookId);
+        if (cached) return cached;
+      }
+
+      const ref = doc(db, "users", uid, "books", bookId);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+
+      window.dataUtils?.setCachedBook(uid, bookId, data);
+      return data;
+    }
+
+    async function getWalletsData(uid, bookId, { force = false } = {}) {
+      if (!uid || !bookId) return [];
+
+      if (!force) {
+        const cached = window.dataUtils?.getCachedWallets(uid, bookId);
+        if (cached) return cached;
+      }
+
+      const ref = collection(db, "users", uid, "books", bookId, "wallets");
+
+      let rows = [];
+      try {
+        const snap = await getDocs(query(
+          ref,
+          where("archived", "==", false),
+          orderBy("createdAt", "asc")
+        ));
+        rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch {
+        const snap = await getDocs(ref);
+        rows = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(w => w.archived !== true)
+          .sort((a, b) => {
+            const aSec = a?.createdAt?.seconds || 0;
+            const bSec = b?.createdAt?.seconds || 0;
+            return aSec - bSec;
+          });
+      }
+
+      window.dataUtils?.setCachedWallets(uid, bookId, rows);
+      return rows;
     }
 
     async function loadBookData() {
@@ -228,45 +284,29 @@
         return;
       }
 
-      const ref = doc(db, "users", currentUser.uid, "books", currentBookId);
-      const snap = await getDoc(ref);
-      const data = snap.data() || {};
-      const bookName = (data.name || "未命名帳本").trim();
+      currentBookData = await getBookData(currentUser.uid, currentBookId);
+      const bookName = String(currentBookData.name || "未命名帳本").trim();
 
       els.bookBadge.textContent = bookName;
       els.bookBadge.title = bookName;
       els.bookBadge.style.display = "inline-flex";
 
-      availableCurrencies = buildAvailableCurrencies(data.settings || {});
+      availableCurrencies = buildAvailableCurrencies(currentBookData.settings || {});
       renderCurrencyOptions("TWD");
     }
 
-    async function loadWallets() {
-      const ref = collection(db, "users", currentUser.uid, "books", currentBookId, "wallets");
-
-      let snap;
-      try {
-        snap = await getDocs(query(
-          ref,
-          where("archived", "==", false),
-          orderBy("createdAt", "asc")
-        ));
-      } catch {
-        snap = await getDocs(ref);
-      }
-
-      wallets = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(w => w.archived !== true)
-        .sort((a, b) => {
-          const aSec = a?.createdAt?.seconds || 0;
-          const bSec = b?.createdAt?.seconds || 0;
-          return aSec - bSec;
-        });
+    async function loadWallets({ force = false } = {}) {
+      wallets = await getWalletsData(currentUser.uid, currentBookId, { force });
     }
 
     async function loadWalletBalances() {
       walletBalanceMap = new Map();
+
+      for (const wallet of wallets) {
+        walletBalanceMap.set(wallet.id, Number(wallet.openingBalance || 0));
+      }
+
+      if (!wallets.length) return;
 
       const txRef = collection(db, "users", currentUser.uid, "transactions");
       let snap;
@@ -278,27 +318,19 @@
         ));
       } catch (e) {
         console.error("讀取交易失敗:", e);
-        snap = { docs: [] };
-      }
-
-      for (const wallet of wallets) {
-        walletBalanceMap.set(wallet.id, Number(wallet.openingBalance || 0));
+        return;
       }
 
       for (const d of snap.docs) {
         const tx = d.data() || {};
         const walletId = String(tx.walletId || "").trim();
-        if (!walletId) continue;
-        if (!walletBalanceMap.has(walletId)) continue;
+        if (!walletId || !walletBalanceMap.has(walletId)) continue;
 
         const amount = Number(tx.amount || 0);
         if (!Number.isFinite(amount)) continue;
 
-        const current = Number(walletBalanceMap.get(walletId) || 0);
-        const next = tx.type === "income"
-          ? current + amount
-          : current - amount;
-
+        const prev = Number(walletBalanceMap.get(walletId) || 0);
+        const next = tx.type === "income" ? prev + amount : prev - amount;
         walletBalanceMap.set(walletId, next);
       }
     }
@@ -329,6 +361,8 @@
       }
 
       els.emptyState.classList.add("hidden");
+
+      const frag = document.createDocumentFragment();
 
       for (const wallet of wallets) {
         const currency = normalizeCurrency(wallet.currency || "TWD");
@@ -385,18 +419,20 @@
         meta.append(line1, line2);
 
         item.append(top, meta);
-        els.walletList.appendChild(item);
+        frag.appendChild(item);
       }
+
+      els.walletList.appendChild(frag);
     }
 
-    async function refreshWalletSection() {
-      await loadWallets();
+    async function refreshWalletSection({ force = false } = {}) {
+      await loadWallets({ force });
       await loadWalletBalances();
       renderWalletList();
     }
 
     async function saveWallet() {
-      const name = (els.walletName.value || "").trim();
+      const name = String(els.walletName.value || "").trim();
       const currency = normalizeCurrency(els.walletCurrency.value || "TWD");
       const openingBalance = Number(els.openingBalance.value || 0);
 
@@ -434,10 +470,10 @@
         });
       }
 
-      window.dataUtils?.clearBookAndWalletCache(user.uid, bookId);
+      window.dataUtils?.clearBookAndWalletCache(currentUser.uid, currentBookId);
 
       resetForm();
-      await refreshWalletSection();
+      await refreshWalletSection({ force: true });
     }
 
     async function archiveWallet(walletId) {
@@ -452,7 +488,7 @@
         resetForm();
       }
 
-      await refreshWalletSection();
+      await refreshWalletSection({ force: true });
     }
 
     async function init() {
@@ -483,15 +519,19 @@
           successText: "已儲存 ✓",
           minShowMs: 120,
           successHoldMs: 700,
-          onError: (e) => {
+          onError: async (e) => {
             console.error(e);
-            window.ui.alert("儲存失敗：" + (e.message || e));
+            await window.ui.alert("儲存失敗：" + (e.message || e));
           },
         }
       );
     });
 
-    await init();
+    try {
+      await init();
+    } finally {
+      window.pageLoader?.hide();
+    }
   </script>
 </body>
 </html>
