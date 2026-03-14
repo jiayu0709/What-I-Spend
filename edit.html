@@ -433,24 +433,29 @@
       return data;
     }
 
-    async function getWalletsFromCloud(bookId) {
+    async function getWalletsFromCloud(bookId, { force = false } = {}) {
       const user = await window.requireAuth();
       if (!user) throw new Error("Not logged in");
       if (!bookId) return [];
 
+      if (!force) {
+        const cached = window.dataUtils?.getCachedWallets(user.uid, bookId);
+        if (cached) return cached;
+      }
+
       const ref = collection(db, "users", user.uid, "books", bookId, "wallets");
 
+      let wallets = [];
       try {
         const snap = await getDocs(query(
           ref,
           where("archived", "==", false),
           orderBy("createdAt", "asc")
         ));
-
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        wallets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (e) {
         const snap = await getDocs(ref);
-        return snap.docs
+        wallets = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .filter(w => w.archived !== true)
           .sort((a, b) => {
@@ -459,6 +464,9 @@
             return aSec - bSec;
           });
       }
+
+      window.dataUtils?.setCachedWallets(user.uid, bookId, wallets);
+      return wallets;
     }
 
     async function saveToCloud(id, data) {
@@ -665,16 +673,16 @@
       const txBookId = data.bookId || localStorage.getItem("wis_currentBookId") || "";
 
       try {
-        BOOK_DATA = await getBookDataFromCloud(txBookId);
-      } catch (e) {
-        console.error("getBookDataFromCloud failed:", e);
-        BOOK_DATA = {};
-      }
+        const [bookData, wallets] = await Promise.all([
+          getBookDataFromCloud(txBookId),
+          getWalletsFromCloud(txBookId),
+        ]);
 
-      try {
-        ALL_WALLETS = await getWalletsFromCloud(txBookId);
+        BOOK_DATA = bookData || {};
+        ALL_WALLETS = wallets || [];
       } catch (e) {
-        console.error("getWalletsFromCloud failed:", e);
+        console.error("load book/wallets failed:", e);
+        BOOK_DATA = {};
         ALL_WALLETS = [];
       }
 
@@ -747,6 +755,13 @@
       }));
 
       await saveToCloud(id, data);
+
+      const user = await window.waitForAuthReady();
+      const bookId = TX_DATA?.bookId || localStorage.getItem("wis_currentBookId") || "";
+      if (user && bookId) {
+        window.dataUtils?.clearWalletCache(user.uid, bookId);
+      }
+
       location.href = ref;
     }
 
@@ -754,6 +769,13 @@
       localStorage.removeItem("tx:" + id);
       localStorage.setItem("tx:deleted:" + id, "1");
       await deleteFromCloud(id);
+
+      const user = await window.waitForAuthReady();
+      const bookId = TX_DATA?.bookId || localStorage.getItem("wis_currentBookId") || "";
+      if (user && bookId) {
+        window.dataUtils?.clearWalletCache(user.uid, bookId);
+      }
+
       await window.ui.alert("已刪除");
       location.href = ref;
     }
