@@ -313,6 +313,8 @@
   <script type="module" src="app.js"></script>
 
   <script>
+    window.pageLoader?.show("讀取中…");
+
     const $ = (id) => document.getElementById(id);
     const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -357,7 +359,7 @@
     let displayCurrency = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "TWD";
     let foreignCurrency = "";
     let availableCurrencies = ["TWD"];
-    let latestStatsTxs = null;
+    let latestStatsTxs = [];
     let firstPaintDone = false;
 
     function finishFirstPaint() {
@@ -439,7 +441,8 @@
       availableCurrencies = getAvailableCurrencies();
 
       const preferred = String(settings.primaryDisplayCurrency || "TWD").toUpperCase();
-      const nextDisplay = normalizeDisplayCurrency(preferred);
+      const saved = localStorage.getItem(LS_STATS_DISPLAY_CURRENCY) || "";
+      const nextDisplay = normalizeDisplayCurrency(saved || preferred || "TWD");
 
       applyDisplayCurrency(nextDisplay);
     }
@@ -453,13 +456,9 @@
     }
 
     function toggleMenu(menuId, shouldShow, dropdownId = null) {
-      if (shouldShow) {
-        closeAllMenus();
-      }
+      if (shouldShow) closeAllMenus();
       $(menuId).classList.toggle("hidden", !shouldShow);
-      if (dropdownId) {
-        $(dropdownId).classList.toggle("open", shouldShow);
-      }
+      if (dropdownId) $(dropdownId).classList.toggle("open", shouldShow);
     }
 
     function updatePeriodUI() {
@@ -471,20 +470,17 @@
 
     $("btnRangePicker").addEventListener("click", (e) => {
       e.stopPropagation();
-      const isHidden = $("rangeMenu").classList.contains("hidden");
-      toggleMenu("rangeMenu", isHidden);
+      toggleMenu("rangeMenu", $("rangeMenu").classList.contains("hidden"));
     });
 
     $("btnTypePicker").addEventListener("click", (e) => {
       e.stopPropagation();
-      const isHidden = $("typeMenu").classList.contains("hidden");
-      toggleMenu("typeMenu", isHidden, "typeDropdown");
+      toggleMenu("typeMenu", $("typeMenu").classList.contains("hidden"), "typeDropdown");
     });
 
     $("btnCurrencyPicker").addEventListener("click", (e) => {
       e.stopPropagation();
-      const isHidden = $("currencyMenu").classList.contains("hidden");
-      toggleMenu("currencyMenu", isHidden, "currencyDropdown");
+      toggleMenu("currencyMenu", $("currencyMenu").classList.contains("hidden"), "currencyDropdown");
     });
 
     $("btnModeMonth").addEventListener("click", async () => {
@@ -571,28 +567,6 @@
     updatePeriodUI();
     updateSegUI();
     updateCurrencyUI();
-
-    const getTxIndex = () => {
-      try {
-        const raw = localStorage.getItem("tx:index");
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
-    };
-
-    const readTx = (id) => {
-      const raw = localStorage.getItem("tx:" + id);
-      if (!raw) return null;
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    };
-
-    const isDeleted = (id) => localStorage.getItem("tx:deleted:" + id) === "1";
 
     const polarToCartesian = (cx, cy, r, angleDeg) => {
       const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -686,19 +660,6 @@
       return svg;
     }
 
-    function getSourceTxs(txs) {
-      if (Array.isArray(txs)) return txs;
-
-      const ids = getTxIndex().filter(Boolean);
-      const tmp = [];
-      for (const id of ids) {
-        if (isDeleted(id)) continue;
-        const tx = readTx(id);
-        if (tx) tmp.push(tx);
-      }
-      return tmp;
-    }
-
     async function fetchRateToTWD(currency) {
       const c = String(currency || "TWD").toUpperCase();
       if (c === "TWD") return 1;
@@ -737,13 +698,8 @@
       const rawAmount = Number(tx.amount || 0);
       const amountTWD = Number(tx.amountTWD || rawAmount || 0);
 
-      if (target === "TWD") {
-        return amountTWD;
-      }
-
-      if (txCurrency === target && rawAmount > 0) {
-        return rawAmount;
-      }
+      if (target === "TWD") return amountTWD;
+      if (txCurrency === target && rawAmount > 0) return rawAmount;
 
       const targetRateToTWD = await getRateToTWD(target);
       return amountTWD / targetRateToTWD;
@@ -760,15 +716,26 @@
       return date.startsWith(monthKeyFromDate(currentMonth));
     }
 
+    async function prepareStatsTxs(txs, kind, targetCurrency) {
+      const filtered = txs.filter((tx) => {
+        if (!txInCurrentRange(tx)) return false;
+        return String(tx.type || "expense") === kind;
+      });
+
+      return Promise.all(
+        filtered.map(async (tx) => ({
+          ...tx,
+          __displayAmount: await convertTxToDisplayAmount(tx, targetCurrency),
+        }))
+      );
+    }
+
     async function renderCategoryChart(kind, txs) {
+      const preparedTxs = await prepareStatsTxs(Array.isArray(txs) ? txs : [], kind, displayCurrency);
       const sumsByCat = new Map();
-      const sourceTxs = getSourceTxs(txs);
 
-      for (const tx of sourceTxs) {
-        if (!txInCurrentRange(tx)) continue;
-        if (String(tx.type || "expense") !== kind) continue;
-
-        const shownAmount = await convertTxToDisplayAmount(tx, displayCurrency);
+      for (const tx of preparedTxs) {
+        const shownAmount = Number(tx.__displayAmount || 0);
         if (!Number.isFinite(shownAmount) || shownAmount <= 0) continue;
 
         const cat = (tx.category || "Uncategorized").trim() || "Uncategorized";
@@ -876,7 +843,7 @@
     }
 
     window.__setStatsTxs = async (txs) => {
-      latestStatsTxs = Array.isArray(txs) ? txs : null;
+      latestStatsTxs = Array.isArray(txs) ? txs : [];
       await renderCurrentStatsMode();
     };
 
@@ -889,10 +856,16 @@
 
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, orderBy, onSnapshot, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import {
+      collection,
+      query,
+      where,
+      orderBy,
+      onSnapshot,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { db } from "./firebase-config.js";
-
-    window.pageLoader?.show("讀取中…");
 
     function monthStartKey(dateObj) {
       const y = dateObj.getFullYear();
@@ -922,11 +895,16 @@
       }
 
       try {
-        const ref = doc(db, "users", uid, "books", bookId);
-        const snap = await getDoc(ref);
-        const data = snap.data() || {};
-        const settings = data.settings || {};
-        window.__applyBookCurrencySettings?.(settings);
+        let data = window.dataUtils?.getCachedBook(uid, bookId);
+
+        if (!data) {
+          const ref = doc(db, "users", uid, "books", bookId);
+          const snap = await getDoc(ref);
+          data = snap.exists() ? (snap.data() || {}) : {};
+          window.dataUtils?.setCachedBook(uid, bookId, data);
+        }
+
+        window.__applyBookCurrencySettings?.(data.settings || {});
       } catch (e) {
         console.error("讀取帳本設定失敗:", e);
         window.__applyBookCurrencySettings?.({});
@@ -944,18 +922,20 @@
       }
 
       try {
-        const booksRef = collection(db, "users", uid, "books");
-        const q1 = query(booksRef, orderBy("createdAt", "asc"));
-        const snap = await getDocs(q1);
-        const books = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const current = books.find(b => b.id === bookId);
+        let data = window.dataUtils?.getCachedBook(uid, bookId);
 
-        badge.textContent = (current?.name || "未命名帳本").trim();
+        if (!data) {
+          const ref = doc(db, "users", uid, "books", bookId);
+          const snap = await getDoc(ref);
+          data = snap.exists() ? (snap.data() || {}) : {};
+          window.dataUtils?.setCachedBook(uid, bookId, data);
+        }
+
+        badge.textContent = (data.name || "未命名帳本").trim();
         badge.title = badge.textContent;
         badge.style.display = "inline-flex";
 
-        const settings = current?.settings || {};
-        window.__applyBookCurrencySettings?.(settings);
+        window.__applyBookCurrencySettings?.(data.settings || {});
       } catch (e) {
         console.error("讀取帳本 badge 失敗:", e);
         badge.style.display = "none";
@@ -1005,7 +985,7 @@
     function watchStats(uid, currentPeriod, currentMonth, bookId) {
       if (!bookId) {
         stopWatchingStats();
-        window.__setStatsTxs(null);
+        window.__setStatsTxs([]);
         return;
       }
 
@@ -1032,7 +1012,7 @@
         },
         async (e) => {
           console.error("統計頁即時監聽失敗:", e);
-          await window.__setStatsTxs(null);
+          await window.__setStatsTxs([]);
         }
       );
     }
@@ -1083,7 +1063,7 @@
         await window.__watchStatsForCurrentRange?.();
       } catch (e) {
         console.error("統計頁初始化失敗:", e);
-        await window.__setStatsTxs(null);
+        await window.__setStatsTxs([]);
       }
     });
 
