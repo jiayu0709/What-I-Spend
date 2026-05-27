@@ -522,6 +522,14 @@
       window.pageLoader?.hide();
     }
 
+    function isTransferTx(tx) {
+      return tx?.isTransfer === true;
+    }
+
+    function getTransferRole(tx) {
+      return String(tx?.transferRole || "").toLowerCase();
+    }
+
     function getAvailableCurrencies() {
       const list = ["TWD"];
       if (foreignCurrency && foreignCurrency !== "TWD") list.push(foreignCurrency);
@@ -925,10 +933,19 @@
     function shouldShowTx(tx) {
       const type = String(tx.type || "expense");
       const txWalletId = String(tx.walletId || "").trim();
+      const isTransfer = isTransferTx(tx);
 
-      if (filterMode === "expense" && type !== "expense") return false;
-      if (filterMode === "income" && type !== "income") return false;
       if (walletFilter !== "all" && txWalletId !== walletFilter) return false;
+
+      if (filterMode === "expense") {
+        if (isTransfer) return false;
+        return type === "expense";
+      }
+
+      if (filterMode === "income") {
+        if (isTransfer) return false;
+        return type === "income";
+      }
 
       return true;
     }
@@ -936,6 +953,8 @@
     function buildTxRow(tx) {
       const shownAmt = Number(tx.__displayAmount || 0);
       const isIncome = tx.type === "income";
+      const isTransfer = isTransferTx(tx);
+      const transferRole = getTransferRole(tx);
 
       const row = document.createElement("div");
       row.className = "tx";
@@ -967,12 +986,27 @@
 
       const cat = document.createElement("div");
       cat.className = "cat";
-      cat.textContent = tx.category || "";
+      if (isTransfer) {
+        cat.textContent = transferRole === "in" ? "轉帳轉入" : "轉帳轉出";
+      } else {
+        cat.textContent = tx.category || "";
+      }
       left.appendChild(cat);
 
       const walletName = String(tx.walletName || "").trim();
       const noteTxt = String(tx.note || "").trim();
-      const subText = [walletName, noteTxt].filter(Boolean).join(" · ");
+      const transferTo = String(tx.transferCounterpartyWalletName || "").trim();
+
+      let subText = "";
+      if (isTransfer) {
+        if (transferRole === "in") {
+          subText = [walletName, transferTo ? `來自 ${transferTo}` : "", noteTxt].filter(Boolean).join(" · ");
+        } else {
+          subText = [walletName, transferTo ? `到 ${transferTo}` : "", noteTxt].filter(Boolean).join(" · ");
+        }
+      } else {
+        subText = [walletName, noteTxt].filter(Boolean).join(" · ");
+      }
 
       const note = document.createElement("div");
       note.className = "note";
@@ -985,8 +1019,16 @@
 
       const amt = document.createElement("div");
       amt.className = "amt";
-      amt.textContent = (isIncome ? "+" : "-") + formatMoney(displayCurrency, shownAmt);
-      amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+
+      if (isTransfer) {
+        const sign = transferRole === "in" ? "+" : "-";
+        amt.textContent = sign + formatMoney(displayCurrency, shownAmt);
+        amt.style.color = "var(--secondary)";
+      } else {
+        amt.textContent = (isIncome ? "+" : "-") + formatMoney(displayCurrency, shownAmt);
+        amt.style.color = isIncome ? "var(--green)" : "var(--red)";
+      }
+
       right.appendChild(amt);
 
       const time = document.createElement("div");
@@ -1012,6 +1054,8 @@
       let expense = 0;
 
       for (const tx of preparedTxs) {
+        if (isTransferTx(tx)) continue;
+
         const amt = Number(tx.__displayAmount || 0);
         if (tx.type === "income") income += amt;
         else expense += amt;
@@ -1069,6 +1113,8 @@
         let dayIncome = 0;
         let dayExpense = 0;
         for (const tx of list) {
+          if (isTransferTx(tx)) continue;
+
           const amt = Number(tx.__displayAmount || 0);
           if (tx.type === "income") dayIncome += amt;
           else dayExpense += amt;

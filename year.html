@@ -386,6 +386,10 @@
       window.pageLoader?.hide();
     }
 
+    function isTransferTx(tx) {
+      return tx?.isTransfer === true;
+    }
+
     function updateRangeLabel() {
       $("monthLabel").textContent =
         currentPeriod === "year"
@@ -737,6 +741,7 @@
     async function prepareStatsTxs(txs, kind, targetCurrency) {
       const filtered = txs.filter((tx) => {
         if (!txInCurrentRange(tx)) return false;
+        if (isTransferTx(tx)) return false;
         return String(tx.type || "expense") === kind;
       });
 

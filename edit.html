@@ -260,7 +260,7 @@
           <input class="input" type="time" id="time" />
         </div>
 
-        <div class="field-row">
+        <div class="field-row" id="normalFieldsRow">
           <div class="field">
             <div class="label">分類</div>
             <select class="input" id="category"></select>
@@ -269,6 +269,18 @@
           <div class="field">
             <div class="label">錢包</div>
             <select class="input" id="wallet"></select>
+          </div>
+        </div>
+
+        <div class="field-row hidden" id="transferFieldsRow">
+          <div class="field">
+            <div class="label">轉出錢包</div>
+            <select class="input" id="fromWallet"></select>
+          </div>
+
+          <div class="field">
+            <div class="label">轉入錢包</div>
+            <select class="input" id="toWallet"></select>
           </div>
         </div>
 
@@ -358,6 +370,10 @@
       time: document.getElementById("time"),
       category: document.getElementById("category"),
       wallet: document.getElementById("wallet"),
+      fromWallet: document.getElementById("fromWallet"),
+      toWallet: document.getElementById("toWallet"),
+      normalFieldsRow: document.getElementById("normalFieldsRow"),
+      transferFieldsRow: document.getElementById("transferFieldsRow"),
       currencyPill: document.getElementById("currencyPill"),
       amount: document.getElementById("amount"),
       fxWrap: document.getElementById("fxWrap"),
@@ -375,6 +391,8 @@
     let TX_DATA = null;
     let TX_TYPE = txTypeFromQs;
     let ALL_WALLETS = [];
+    let TRANSFER_PAIR_TX = null;
+    let IS_TRANSFER = false;
 
     function normalizeCurrency(v){
       return String(v || "TWD").trim().toUpperCase();
@@ -395,8 +413,26 @@
       return ALL_WALLETS.find(w => w.id === walletId) || null;
     }
 
-    function getSelectedWalletCurrency() {
+    function getSelectedFromWallet() {
+      const walletId = String(els.fromWallet.value || "").trim();
+      return ALL_WALLETS.find(w => w.id === walletId) || null;
+    }
+
+    function getSelectedToWallet() {
+      const walletId = String(els.toWallet.value || "").trim();
+      return ALL_WALLETS.find(w => w.id === walletId) || null;
+    }
+
+    function getActiveCurrency() {
+      if (IS_TRANSFER) {
+        return normalizeCurrency(getSelectedFromWallet()?.currency || "TWD");
+      }
       return normalizeCurrency(getSelectedWallet()?.currency || "TWD");
+    }
+
+    function updateModeUI() {
+      els.normalFieldsRow.classList.toggle("hidden", IS_TRANSFER);
+      els.transferFieldsRow.classList.toggle("hidden", !IS_TRANSFER);
     }
 
     async function getTransactionFromCloud(id) {
@@ -406,6 +442,21 @@
       const ref = doc(db, "users", user.uid, "transactions", id);
       const snap = await getDoc(ref);
       return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    }
+
+    async function getTransferPairFromCloud(transferGroupId, selfId) {
+      const user = await window.requireAuth();
+      if (!user) throw new Error("Not logged in");
+      if (!transferGroupId) return null;
+
+      const txRef = collection(db, "users", user.uid, "transactions");
+      const snap = await getDocs(query(
+        txRef,
+        where("transferGroupId", "==", transferGroupId)
+      ));
+
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      return list.find(tx => tx.id !== selfId) || null;
     }
 
     async function getBookDataFromCloud(bookId, { force = false } = {}) {
@@ -467,18 +518,7 @@
       if (!user) throw new Error("Not logged in");
 
       const ref = doc(db, "users", user.uid, "transactions", id);
-      await updateDoc(ref, {
-        date: data.date,
-        time: data.time,
-        category: data.category,
-        note: data.note,
-        amount: data.amount,
-        currency: data.currency,
-        fxRateToTWD: data.fxRateToTWD,
-        amountTWD: data.amountTWD,
-        walletId: data.walletId || "",
-        walletName: data.walletName || "",
-      });
+      await updateDoc(ref, data);
     }
 
     async function deleteFromCloud(id) {
@@ -489,22 +529,21 @@
       await deleteDoc(ref);
     }
 
-    function renderWalletOptions(selectedWalletId = "") {
+    function renderWalletOptions(selectEl, selectedWalletId = "") {
       const selected = String(selectedWalletId || "").trim();
-
-      els.wallet.innerHTML = "";
+      selectEl.innerHTML = "";
 
       for (const wallet of ALL_WALLETS) {
         const opt = document.createElement("option");
         opt.value = wallet.id;
         opt.textContent = wallet.name || "未命名錢包";
-        els.wallet.appendChild(opt);
+        selectEl.appendChild(opt);
       }
 
       if (selected && ALL_WALLETS.some(w => w.id === selected)) {
-        els.wallet.value = selected;
+        selectEl.value = selected;
       } else if (ALL_WALLETS.length > 0) {
-        els.wallet.value = ALL_WALLETS[0].id;
+        selectEl.value = ALL_WALLETS[0].id;
       }
     }
 
@@ -537,7 +576,7 @@
     }
 
     function updateTWDPreview() {
-      const currency = getSelectedWalletCurrency();
+      const currency = getActiveCurrency();
       const amount = parseAmount(els.amount.value);
       const fxRate = parseAmount(els.fxRate.value);
 
@@ -560,7 +599,7 @@
     }
 
     function updateWalletCurrencyUI({ keepFx = true } = {}) {
-      const currency = getSelectedWalletCurrency();
+      const currency = getActiveCurrency();
       els.currencyPill.textContent = currency;
 
       if (currency === "TWD") {
@@ -606,6 +645,11 @@
         bookId: localStorage.getItem("wis_currentBookId") || "",
         walletId: "",
         walletName: "",
+        isTransfer: false,
+        transferGroupId: "",
+        transferRole: "",
+        transferCounterpartyWalletId: "",
+        transferCounterpartyWalletName: "",
       };
 
       const data = {
@@ -615,7 +659,17 @@
       };
 
       TX_DATA = data;
-      TX_TYPE = data.type || txTypeFromQs || "expense";
+      IS_TRANSFER = data.isTransfer === true;
+      TX_TYPE = IS_TRANSFER ? "transfer" : (data.type || txTypeFromQs || "expense");
+
+      if (IS_TRANSFER && data.transferGroupId) {
+        try {
+          TRANSFER_PAIR_TX = await getTransferPairFromCloud(data.transferGroupId, data.id);
+        } catch (e) {
+          console.error("getTransferPairFromCloud failed:", e);
+          TRANSFER_PAIR_TX = null;
+        }
+      }
 
       const txBookId = data.bookId || localStorage.getItem("wis_currentBookId") || "";
 
@@ -645,14 +699,26 @@
         els.bookBadge.style.display = "inline-flex";
       }
 
-      await renderCategoryOptions(data.category || "");
-      renderWalletOptions(data.walletId || "");
+      updateModeUI();
+
+      if (IS_TRANSFER) {
+        const outTx = data.transferRole === "out" ? data : TRANSFER_PAIR_TX;
+        const inTx = data.transferRole === "in" ? data : TRANSFER_PAIR_TX;
+
+        renderWalletOptions(els.fromWallet, outTx?.walletId || "");
+        renderWalletOptions(els.toWallet, inTx?.walletId || "");
+
+        els.category.innerHTML = "";
+      } else {
+        await renderCategoryOptions(data.category || "");
+        renderWalletOptions(els.wallet, data.walletId || "");
+      }
 
       els.fxRate.value = String(data.fxRateToTWD || "1");
       updateWalletCurrencyUI({ keepFx: true });
     }
 
-    async function save(){
+    async function saveNormal(){
       const walletId = String(els.wallet.value || "").trim();
       const wallet = ALL_WALLETS.find(w => w.id === walletId) || null;
       const walletName = wallet?.name || "";
@@ -677,7 +743,6 @@
       }
 
       const data = {
-        id,
         date: els.date.value || "",
         time: els.time.value || "",
         category: (els.category.value || "").trim(),
@@ -696,6 +761,124 @@
       }));
 
       await saveToCloud(id, data);
+    }
+
+    async function saveTransfer(){
+      if (!TX_DATA?.transferGroupId) {
+        await window.ui.alert("找不到這筆轉帳的配對資料");
+        return;
+      }
+
+      if (!TRANSFER_PAIR_TX?.id) {
+        await window.ui.alert("找不到這筆轉帳的另一筆配對資料");
+        return;
+      }
+
+      const fromWalletId = String(els.fromWallet.value || "").trim();
+      const toWalletId = String(els.toWallet.value || "").trim();
+
+      const fromWallet = ALL_WALLETS.find(w => w.id === fromWalletId) || null;
+      const toWallet = ALL_WALLETS.find(w => w.id === toWalletId) || null;
+
+      if (!fromWalletId || !fromWallet) {
+        await window.ui.alert("請選擇轉出錢包");
+        return;
+      }
+
+      if (!toWalletId || !toWallet) {
+        await window.ui.alert("請選擇轉入錢包");
+        return;
+      }
+
+      if (fromWalletId === toWalletId) {
+        await window.ui.alert("轉出與轉入錢包不可相同");
+        return;
+      }
+
+      const fromCurrency = normalizeCurrency(fromWallet.currency || "TWD");
+      const toCurrency = normalizeCurrency(toWallet.currency || "TWD");
+
+      if (fromCurrency !== toCurrency) {
+        await window.ui.alert("目前轉帳只支援相同幣別的錢包");
+        return;
+      }
+
+      const amount = parseAmount(els.amount.value);
+      if (!isFinite(amount) || amount <= 0) {
+        await window.ui.alert("請輸入正確金額（> 0）");
+        return;
+      }
+
+      const fxRate = fromCurrency === "TWD" ? 1 : parseAmount(els.fxRate.value);
+      if (fromCurrency !== "TWD" && (!isFinite(fxRate) || fxRate <= 0)) {
+        await window.ui.alert("請輸入正確匯率（> 0）");
+        return;
+      }
+
+      const amountTWD = fromCurrency === "TWD" ? amount : amount * fxRate;
+      const note = (els.note.value || "").trim();
+      const date = els.date.value || "";
+      const time = els.time.value || "";
+
+      const outData = {
+        date,
+        time,
+        category: "轉帳",
+        note,
+        amount,
+        currency: fromCurrency,
+        fxRateToTWD: fxRate,
+        amountTWD,
+        walletId: fromWalletId,
+        walletName: fromWallet.name || "",
+        isTransfer: true,
+        transferRole: "out",
+        transferGroupId: TX_DATA.transferGroupId,
+        transferCounterpartyWalletId: toWalletId,
+        transferCounterpartyWalletName: toWallet.name || "",
+      };
+
+      const inData = {
+        date,
+        time,
+        category: "轉帳",
+        note,
+        amount,
+        currency: toCurrency,
+        fxRateToTWD: fxRate,
+        amountTWD,
+        walletId: toWalletId,
+        walletName: toWallet.name || "",
+        isTransfer: true,
+        transferRole: "in",
+        transferGroupId: TX_DATA.transferGroupId,
+        transferCounterpartyWalletId: fromWalletId,
+        transferCounterpartyWalletName: fromWallet.name || "",
+      };
+
+      const outId = TX_DATA.transferRole === "out" ? TX_DATA.id : TRANSFER_PAIR_TX.id;
+      const inId = TX_DATA.transferRole === "in" ? TX_DATA.id : TRANSFER_PAIR_TX.id;
+
+      await saveToCloud(outId, outData);
+      await saveToCloud(inId, inData);
+
+      localStorage.setItem("tx:" + outId, JSON.stringify({
+        ...(TX_DATA.transferRole === "out" ? TX_DATA : TRANSFER_PAIR_TX),
+        ...outData,
+      }));
+
+      localStorage.setItem("tx:" + inId, JSON.stringify({
+        ...(TX_DATA.transferRole === "in" ? TX_DATA : TRANSFER_PAIR_TX),
+        ...inData,
+      }));
+    }
+
+    async function save(){
+      if (IS_TRANSFER) {
+        await saveTransfer();
+      } else {
+        await saveNormal();
+      }
 
       const user = await window.waitForAuthReady();
       const bookId = TX_DATA?.bookId || localStorage.getItem("wis_currentBookId") || "";
@@ -707,6 +890,14 @@
     }
 
     async function removeTx(){
+      if (IS_TRANSFER && TX_DATA?.transferGroupId) {
+        if (TRANSFER_PAIR_TX?.id) {
+          localStorage.removeItem("tx:" + TRANSFER_PAIR_TX.id);
+          localStorage.setItem("tx:deleted:" + TRANSFER_PAIR_TX.id, "1");
+          await deleteFromCloud(TRANSFER_PAIR_TX.id);
+        }
+      }
+
       localStorage.removeItem("tx:" + id);
       localStorage.setItem("tx:deleted:" + id, "1");
       await deleteFromCloud(id);
@@ -727,6 +918,18 @@
 
     els.wallet?.addEventListener("change", () => {
       updateWalletCurrencyUI({ keepFx: false });
+    });
+
+    els.fromWallet?.addEventListener("change", () => {
+      if (els.fromWallet.value === els.toWallet.value && ALL_WALLETS.length > 1) {
+        const alt = ALL_WALLETS.find(w => w.id !== els.fromWallet.value);
+        if (alt) els.toWallet.value = alt.id;
+      }
+      updateWalletCurrencyUI({ keepFx: false });
+    });
+
+    els.toWallet?.addEventListener("change", () => {
+      updateWalletCurrencyUI({ keepFx: true });
     });
 
     els.amount?.addEventListener("input", updateTWDPreview);
